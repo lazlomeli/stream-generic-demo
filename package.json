@@ -1,0 +1,15 @@
+{
+  "name": "vercel-token-service",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "jose": "^5.9.3",
+    "stream-chat": "^9.16.0",
+    "getstream": "^8.8.0",
+    "@stream-io/node-sdk": "^0.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "typescript": "^5.5.4"
+  }
+}
