@@ -34,16 +34,16 @@ const Home: React.FC = () => {
               <span className="text-white text-4xl font-bold">🚀</span>
             </div>
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              Coming soon!
+              Welcome to StreamApp!
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
-              We're working hard to bring you something amazing. Stay tuned for updates and new features.
+            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
+              Your real-time chat application is ready. Click the chat button in the header to start messaging!
             </p>
-          </div>
-          <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <span>Building in progress</span>
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span>Ready to chat</span>
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+            </div>
           </div>
         </div>
       )}

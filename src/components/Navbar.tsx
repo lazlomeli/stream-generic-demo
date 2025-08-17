@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './Header'
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  onChatClick: () => void
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onChatClick }) => {
   const { isAuthenticated, loginWithRedirect, logout } = useAuth0()
 
   const handleLogin = () => {
@@ -16,7 +20,7 @@ const Navbar: React.FC = () => {
   
   return (
     <>
-      <Header />
+      <Header onChatClick={onChatClick} />
       <nav className="bg-gray-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-12">
