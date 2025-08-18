@@ -1,231 +1,302 @@
-import React, { useEffect, useState } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import {
   Chat as ChatComponent,
   Channel,
   ChannelHeader,
-  ChannelList,
   MessageInput,
   MessageList,
   Thread,
   Window,
-} from 'stream-chat-react'
-import { StreamChat } from 'stream-chat'
-import 'stream-chat-react/dist/css/v2/index.css'
+} from "stream-chat-react";
+import { StreamChat } from "stream-chat";
+import "stream-chat-react/dist/css/v2/index.css";
+
+import SampleChannels from "./SampleChannels";
+import ChannelListComponent from "./ChannelList";
+import type { ChannelItem } from "../hooks/listMyChannels"
+import "./Chat.css";
 
 interface ChatProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
+const sanitizeUserId = (userId: string) =>
+  userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
+
 const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
-  const { user, isAuthenticated, getAccessTokenSilently } = useAuth0()
-  const [client, setClient] = useState<StreamChat | null>(null)
-  const [channel, setChannel] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isConnecting, setIsConnecting] = useState(false)
+  const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
 
-  // Function to sanitize user ID for Stream (remove invalid characters)
-  const sanitizeUserId = (userId: string): string => {
-    // Replace invalid characters with valid ones
-    return userId
-      .replace(/[^a-zA-Z0-9@_-]/g, '_') // Replace invalid chars with underscore
-      .substring(0, 64); // Stream has a 64 character limit
-  }
+  const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
 
-  // Function to get Stream token from your backend
-  const getStreamToken = async (userId: string): Promise<string> => {
-    try {
-      const sanitizedUserId = sanitizeUserId(userId);
-      console.log('Getting Stream token for userId:', userId);
-      console.log('Sanitized userId for Stream:', sanitizedUserId);
-      
+  const [clientReady, setClientReady] = useState(false);
+  const [channel, setChannel] = useState<any>(null);
+  const [channels, setChannels] = useState<ChannelItem[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState("general");
+  const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Keep a single client instance per tab
+  const clientRef = useRef<StreamChat | null>(null);
+
+  // Memoize current user id once
+  const rawUserId = user?.sub || user?.email || "anonymous";
+  const sanitizedUserId = useMemo(() => sanitizeUserId(rawUserId), [rawUserId]);
+
+  // --- helpers ---
+  const getStreamToken = useCallback(
+    async (userId: string): Promise<string> => {
       const accessToken = await getAccessTokenSilently();
-      console.log('Auth0 access token obtained');
-      
-      const response = await fetch('/api/stream/chat-token', {
-        method: 'POST',
+      const res = await fetch("/api/stream/chat-token", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ userId: sanitizedUserId })
+        body: JSON.stringify({ userId }),
       });
-
-      console.log('API Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error('Failed to get chat token from backend');
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`chat-token failed: ${res.status} ${text}`);
       }
+      const json = await res.json();
+      return json.token as string;
+    },
+    [getAccessTokenSilently]
+  );
 
-      const data = await response.json();
-      console.log('Stream token received:', data);
-      return data.token;
-    } catch (error) {
-      console.error('Error getting Stream token:', error);
-      throw new Error('Failed to authenticate with chat service');
-    }
-  }
+  const seedIfNeeded = useCallback(
+    async (userId: string) => {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch("/api/stream/seed", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        // Not fatal for chat connection, but log it
+        console.warn("seed failed:", res.status, text);
+      }
+    },
+    [getAccessTokenSilently]
+  );
 
-  // Cleanup effect when chat closes
+  const switchChannel = useCallback(
+    async (channelId: string) => {
+      const client = clientRef.current;
+      if (!client) return;
+      try {
+        let newChannel;
+        if (channelId === "general") {
+          newChannel = client.channel("messaging", "general", {
+            members: [sanitizedUserId],
+          });
+        } else {
+          newChannel = client.channel("messaging", channelId);
+        }
+        await newChannel.watch();
+        setChannel(newChannel);
+        setSelectedChannel(channelId);
+      } catch (e) {
+        console.error("Error switching channel:", e);
+      }
+    },
+    [sanitizedUserId]
+  );
+
+  const handleChannelsCreated = useCallback((newChannels: ChannelItem[]) => {
+    setChannels(newChannels);
+  }, []);
+
+  // Reset state when drawer closes
   useEffect(() => {
     if (!isOpen) {
-      // Reset state when chat closes
-      setClient(null)
-      setChannel(null)
-      setError(null)
-      setIsConnecting(false)
+      setClientReady(false);
+      setChannel(null);
+      setError(null);
+      setIsConnecting(false);
+      setSelectedChannel("general");
+      setChannels([]);
+      // do NOT disconnect here; cleanup runs in main effect’s return
     }
-  }, [isOpen])
+  }, [isOpen]);
 
+  // Main connect effect
   useEffect(() => {
-    if (!isOpen || !isAuthenticated || !user) {
-      return
-    }
+    if (!isOpen) return;
+    if (!isAuthenticated || !user) return;
 
-    const apiKey = import.meta.env.VITE_STREAM_API_KEY
     if (!apiKey) {
-      setError('Stream API key not configured. Please add VITE_STREAM_API_KEY to your environment variables.')
-      return
+      setError(
+        "Stream API key not configured. Set VITE_STREAM_API_KEY in your frontend env."
+      );
+      return;
     }
 
-    // Initialize Stream Chat client
-    const streamClient = new StreamChat(apiKey)
+    let cancelled = false;
+    const client = clientRef.current ?? StreamChat.getInstance(apiKey);
+    clientRef.current = client;
 
-    // Connect user to Stream
-    const connectUser = async () => {
+    const run = async () => {
       try {
-        setError(null)
-        setIsConnecting(true)
-        
-        const userId = user.sub || user.email || 'anonymous'
-        const sanitizedUserId = sanitizeUserId(userId)
-        
-        // Stream will automatically create the user when we connect
-        // No need for separate user creation endpoint
-        
-        // Get Stream token from your backend
-        const streamToken = await getStreamToken(userId)
+        setIsConnecting(true);
+        setError(null);
 
-        await streamClient.connectUser(
+        // Do seed and token fetch in parallel
+        const [_, token] = await Promise.all([
+          seedIfNeeded(sanitizedUserId),
+          getStreamToken(sanitizedUserId),
+        ]);
+        if (cancelled) return;
+
+        await client.connectUser(
           {
             id: sanitizedUserId,
-            name: user.name || user.email || 'Anonymous User',
+            name: user.name || user.email || "Anonymous User",
             image: user.picture || undefined,
           },
-          streamToken
-        )
+          token
+        );
+        if (cancelled) return;
 
-        const channel = streamClient.channel('messaging', 'general', {
-          // @ts-ignore - Stream types are sometimes strict about channel data
-          name: 'General Chat',
+        // Ensure default channel available and watched
+        const general = client.channel("messaging", "general", {
           members: [sanitizedUserId],
-        })
+        });
+        await general.watch();
+        if (cancelled) return;
 
-        await channel.watch()
-        setChannel(channel)
-        setClient(streamClient)
-        setIsConnecting(false)
-      } catch (error) {
-        console.error('Error connecting to Stream:', error)
-        setError('Failed to connect to chat. Please try again.')
-        setIsConnecting(false)
-        // Clean up failed client
-        try {
-          streamClient.disconnectUser()
-        } catch (cleanupError) {
-          console.warn('Error during failed client cleanup:', cleanupError)
-        }
+        setChannel(general);
+        setClientReady(true);
+      } catch (e: any) {
+        console.error("Error connecting to Stream:", e);
+        if (!cancelled) setError("Failed to connect to chat. Please try again.");
+      } finally {
+        if (!cancelled) setIsConnecting(false);
       }
-    }
+    };
 
-    connectUser()
+    run();
 
-    // Cleanup on unmount or when chat closes
+    // Cleanup on unmount / auth change / apiKey change
     return () => {
-      try {
-        streamClient.disconnectUser()
-      } catch (error) {
-        console.warn('Error during cleanup:', error)
+      cancelled = true;
+      const c = clientRef.current;
+      if (c?.userID) {
+        // Disconnect only if connected
+        c.disconnectUser().catch((e) =>
+          console.warn("Chat disconnect warning:", e)
+        );
       }
-    }
-  }, [isOpen, isAuthenticated, user, getAccessTokenSilently])
+      clientRef.current = null;
+    };
+  }, [
+    isOpen,
+    isAuthenticated,
+    user,
+    apiKey,
+    getStreamToken,
+    seedIfNeeded,
+    sanitizedUserId,
+  ]);
 
-  if (!isOpen) return null
+  // --- render states ---
+  if (!isOpen) return null;
 
   if (error) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg">
+      <div className="chat-error">
+        <div className="chat-error-content">
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <div className="chat-error-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Connection Error</h3>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={onClose}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
+            <h3 className="chat-error-title">Connection Error</h3>
+            <p className="chat-error-message">{error}</p>
+            <button onClick={onClose} className="chat-error-button">
               Go Back
             </button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!client || !channel) {
+  if (!clientReady || !clientRef.current || !channel) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg">
+      <div className="chat-loading">
+        <div className="chat-loading-content">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">
-              {isConnecting ? 'Reconnecting to chat...' : 'Connecting to chat...'}
+            <div className="chat-loading-spinner"></div>
+            <p className="chat-loading-text">
+              {isConnecting ? "Reconnecting to chat..." : "Connecting to chat..."}
             </p>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
+  const client = clientRef.current;
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-white">
+    <div className="chat-container">
       {/* Chat Header with Back Button */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Stream Chat</h1>
-        <button
-          onClick={onClose}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
+      <div className="chat-header">
+        <h1 className="chat-header-title">Messages</h1>
+        <button onClick={onClose} className="chat-header-back-button">
           ← Back to Home
         </button>
       </div>
 
-      {/* Stream Chat Interface */}
-      <div className="h-[calc(100vh-8rem)]">
-        <ChatComponent 
-          client={client} 
-          theme="str-chat__theme-light"
-          key={`chat-${client?.userID || 'disconnected'}`}
-        >
-          <Channel channel={channel}>
-            <Window>
-              <ChannelHeader />
-              <MessageList />
-              <MessageInput />
-            </Window>
-            <Thread />
-          </Channel>
-        </ChatComponent>
-      </div>
-    </div>
-  )
-}
+      {/* Layout */}
+      <div className="chat-layout">
+        {/* Left — Channel List */}
+        <ChannelListComponent
+          channels={channels}
+          selectedChannel={selectedChannel}
+          onChannelSelect={switchChannel}
+        />
 
-export default Chat
+        {/* Right — Chat Area */}
+        <div className="chat-area">
+          <ChatComponent
+            client={client}
+            theme="str-chat__theme-light"
+            key={`chat-${client.userID || "disconnected"}`}
+          >
+            <Channel channel={channel}>
+              <Window>
+                <ChannelHeader />
+                <MessageList />
+                <MessageInput />
+              </Window>
+              <Thread />
+            </Channel>
+          </ChatComponent>
+        </div>
+      </div>
+
+      {/* Invisible manager: fills your channels via backend seed + query */}
+      <SampleChannels
+        streamClient={client}
+        currentUserId={sanitizedUserId}
+        onChannelsCreated={handleChannelsCreated}
+      />
+    </div>
+  );
+};
+
+export default Chat;
