@@ -13,6 +13,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   selectedChannel, 
   onChannelSelect 
 }) => {
+
   return (
     <div className="channel-list">
       <div className="channel-list-content">
@@ -30,7 +31,9 @@ const ChannelList: React.FC<ChannelListProps> = ({
               <p className="channel-list-loading-text">Loading...</p>
             </div>
           ) : (
-            channels.map((channelItem) => (
+            channels.map((channelItem) => { 
+              console.log('channelItem', channelItem.image);
+              return (
               <button
                 key={channelItem.id}
                 onClick={() => onChannelSelect(channelItem.id)}
@@ -39,7 +42,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
                 }`}
               >
                 <div className="channel-item-content">
-                  {channelItem.type === 'dm' ? (
                     <div className="channel-item-avatar">
                       <img
                         src={channelItem.image}
@@ -51,11 +53,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
                         channelItem.status === 'away' ? 'away' : 'offline'
                       }`}></div>
                     </div>
-                  ) : (
-                    <div className="channel-item-avatar-icon">
-                      <span className="channel-item-avatar-icon-text">#</span>
-                    </div>
-                  )}
                   
                   <div className="channel-item-text">
                     <div className="channel-item-header">
@@ -66,7 +63,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                   </div>
                 </div>
               </button>
-            ))
+            )})
           )}
         </div>
       </div>

@@ -25,19 +25,35 @@ export default async function handler(req: Request) {
     await server.upsertUser({ id: me });
     await server.upsertUsers(SAMPLE_USERS);
 
-    // @ts-ignore-next-line
-    const general = server.channel("messaging", "general", { name: "General", members: [me] });
+    const general = server.channel("messaging", "general", {
+        // @ts-ignore-next-line
+        name: "General",
+        members: [me, ...SAMPLE_USERS.map(u => u.id)],
+        created_by_id: me,
+    });
     await general.create();
 
     for (const u of SAMPLE_USERS) {
-      // @ts-ignore-next-line
-      const dm = server.channel("messaging", { 
-        members: [me, u.id],
-        image: u.image,
-        name: u.name
-      });
-      await dm.create();
-    }
+        // @ts-ignore-next-line
+        const dm = server.channel("messaging", {
+          members: [me, u.id],
+          name: u.name,
+          image: u.image,
+          created_by_id: me,
+        });
+      
+        await dm.create(); // returns existing if already there
+      
+        // @ts-ignore-next-line
+        const currentName  = (dm.data?.name  as string | undefined) ?? "";
+        // @ts-ignore-next-line
+        const currentImage = (dm.data?.image as string | undefined) ?? "";
+      
+        if (!currentName || currentName === "General" || !currentImage) {
+          // @ts-ignore-next-line
+          await dm.update({ name: u.name, image: u.image });
+        }
+      }
 
     return json({ ok: true });
   } catch (e: any) {
