@@ -28,6 +28,7 @@ export default async function handler(req: Request) {
     const general = server.channel("messaging", "general", {
         // @ts-ignore-next-line
         name: "General",
+        image: "/general-channel.svg",
         members: [me, ...SAMPLE_USERS.map(u => u.id)],
         created_by_id: me,
     });

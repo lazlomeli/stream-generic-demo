@@ -1,47 +1,90 @@
 import React from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import SendIcon from '../icons/send.svg'
+import HomeIcon from '../icons/home.svg'
+import LogoutIcon from '../icons/logout-2.svg'
 
 interface HeaderProps {
   onChatClick: () => void
+  onHomeClick?: () => void
 }
 
-const Header: React.FC<HeaderProps> = ({ onChatClick }) => {
-  const { isAuthenticated, user } = useAuth0()
+const Header: React.FC<HeaderProps> = ({ onChatClick, onHomeClick }) => {
+  const { isAuthenticated, user, logout } = useAuth0()
+
+  const handleLogout = () => {
+    logout({ logoutParams: { returnTo: window.location.origin } })
+  }
+
+  const handleHomeClick = () => {
+    if (onHomeClick) {
+      onHomeClick()
+    } else {
+      // Fallback to regular navigation if no onHomeClick provided
+      window.location.href = '/'
+    }
+  }
 
   return (
-    <header className="bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="header">
+      <div className="header-container">
+        <div className="header-content">
           
-          {/* Left side - Logo and future icons */}
-          <div className="flex items-center space-x-8">
-            {/* Space for future icons */}
-            <div className="flex items-center space-x-6">
+          {/* Left side - Navigation icons */}
+          <div className="header-left">
+            <div className="header-icons">
+              {/* Home icon - always visible */}
+              <button
+                onClick={handleHomeClick}
+                className="header-nav-button"
+                title="Home"
+              >
+                <img src={HomeIcon} alt="Home" />
+              </button>
+              
+              {/* Chat icon - only when authenticated */}
               {isAuthenticated && (
                 <button
                   onClick={onChatClick}
-                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
+                  className="header-nav-button"
                   title="Stream Chat"
                 >
-                  <img src={SendIcon} alt="Send" className="w-5 h-5" />
+                  <img src={SendIcon} alt="Chat" />
                 </button>
               )}
             </div>
           </div>
           
-          {/* Right side - User info and actions */}
-          <div className="flex items-center space-x-4">
-            {isAuthenticated && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+          {/* Right side - User info and logout */}
+          <div className="header-right">
+            {isAuthenticated ? (
+              <div className="user-section">
+                <div className="user-info">
+                  <div className="user-avatar">
+                    <span>
+                      {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                  <span className="user-name">
+                    {user?.name || user?.email}
                   </span>
                 </div>
-                <span className="text-sm text-gray-700 font-medium">
-                  {user?.name || user?.email}
-                </span>
+                <button
+                  onClick={handleLogout}
+                  className="header-logout-button"
+                  title="Sign out"
+                >
+                  <img src={LogoutIcon} alt="Sign out" />
+                </button>
+              </div>
+            ) : (
+              <div className="auth-section">
+                <button
+                  onClick={() => window.location.href = '/login'}
+                  className="header-auth-button"
+                >
+                  Get started
+                </button>
               </div>
             )}
           </div>

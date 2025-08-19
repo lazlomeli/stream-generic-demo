@@ -1,21 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { StreamChat, Channel as StreamChannel } from 'stream-chat'
+import { useAuth0 } from '@auth0/auth0-react'
 import {
   Chat as ChatComponent,
   Channel,
   ChannelHeader,
-  MessageInput,
   MessageList,
   Thread,
   Window,
-} from "stream-chat-react";
-import { StreamChat } from "stream-chat";
-import "stream-chat-react/dist/css/v2/index.css";
+  useChatContext,
+} from 'stream-chat-react'
+import CustomMessageInput from './CustomMessageInput'
+import CustomAttachment from './CustomAttachment'
+import FallbackAvatar from './FallbackAvatar'
+import 'stream-chat-react/dist/css/v2/index.css'
 
-import SampleChannels from "./SampleChannels";
-import ChannelListComponent from "./ChannelList";
-import CustomMessageInput from "./CustomMessageInput"
-import CustomAttachment from "./CustomAttachment";
 import type { ChannelItem } from "../hooks/listMyChannels"
 import "./Chat.css";
 import "./VoiceRecording.css";
@@ -28,6 +27,116 @@ interface ChatProps {
 const sanitizeUserId = (userId: string) =>
   userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
 
+// Custom Channel List component using Stream Chat SDK
+const CustomChannelList: React.FC<{
+  selectedChannelId: string;
+  onChannelSelect: (channelId: string) => void;
+}> = ({ selectedChannelId, onChannelSelect }) => {
+  const { client } = useChatContext();
+  const [channels, setChannels] = useState<ChannelItem[]>([]);
+
+  const fetchChannels = useCallback(async () => {
+    if (!client) return;
+    
+    try {
+      const filters = { type: "messaging", members: { $in: [client.userID!] } };
+      const channels = await client.queryChannels(filters, { last_message_at: -1 }, { watch: false, state: true });
+      
+      const channelItems = channels.map((c) => {
+        const last = c.state.messages.at(-1);
+        const isDM = (c.state.members?.size ?? 0) === 2;
+
+        // Handle voice messages for channel list preview
+        let lastMessage = last?.text;
+        
+        // If no text but has voice recording attachment, show voice message preview
+        if (!lastMessage && last?.attachments && last.attachments.length > 0) {
+          const voiceAttachment = last.attachments.find(att => att.type === 'voiceRecording');
+          if (voiceAttachment) {
+            // Use custom preview text if available, otherwise show default
+            const customData = last as any; // Type assertion for custom data
+            lastMessage = customData.custom?.previewText || '🎤 Voice Message';
+          }
+        }
+
+        // Type assertion for channel data to access custom properties
+        const channelData = c.data as any;
+        const channelName = channelData?.name;
+        const channelImage = channelData?.image;
+
+        return {
+          id: c.id!,
+          name: isDM ? (channelName as string) || 'Direct Message' : (channelName as string) || "General",
+          type: isDM ? "dm" as const : "group" as const,
+          image: channelImage || (channelName === 'General' ? '/general-channel.svg' : undefined),
+          lastMessage: lastMessage,
+          lastMessageTime: last?.created_at ? new Date(last.created_at).toLocaleTimeString() : undefined,
+        };
+      });
+      
+      setChannels(channelItems);
+    } catch (error) {
+      console.error('Error fetching channels:', error);
+    }
+  }, [client]);
+
+  useEffect(() => {
+    fetchChannels();
+  }, [fetchChannels]);
+
+  // Refresh channels when messages change
+  useEffect(() => {
+    if (client) {
+      const handleMessageNew = () => {
+        fetchChannels();
+      };
+
+      client.on('message.new', handleMessageNew);
+      
+      return () => {
+        client.off('message.new', handleMessageNew);
+      };
+    }
+  }, [client, fetchChannels]);
+
+  return (
+    <div className="custom-channel-list">
+      <div className="channel-list-header">
+        <h3>Channels</h3>
+      </div>
+      <div className="channel-list-items">
+        {channels.map((channelItem) => (
+          <button
+            key={channelItem.id}
+            onClick={() => onChannelSelect(channelItem.id)}
+            className={`channel-item-button ${
+              selectedChannelId === channelItem.id ? 'selected' : ''
+            }`}
+          >
+            <div className="channel-item-content">
+              <div className="channel-item-avatar">
+                <FallbackAvatar
+                  src={channelItem.image}
+                  alt={channelItem.name || 'Channel'}
+                  className="channel-item-avatar-image"
+                  size={24}
+                />
+              </div>
+              <div className="channel-item-text">
+                <div className="channel-item-header">
+                  <h4 className="channel-item-name">{channelItem.name}</h4>
+                  <span className="channel-item-time">{channelItem.lastMessageTime}</span>
+                </div>
+                <p className="channel-item-message">{channelItem.lastMessage || 'No messages yet'}</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
 
@@ -35,8 +144,7 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
 
   const [clientReady, setClientReady] = useState(false);
   const [channel, setChannel] = useState<any>(null);
-  const [channels, setChannels] = useState<ChannelItem[]>([]);
-  const [selectedChannel, setSelectedChannel] = useState("general");
+  const [selectedChannelId, setSelectedChannelId] = useState<string>("general");
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -89,32 +197,34 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
     [getAccessTokenSilently]
   );
 
-  const switchChannel = useCallback(
-    async (channelId: string) => {
-      const client = clientRef.current;
-      if (!client) return;
-      try {
-        let newChannel;
-        if (channelId === "general") {
-          newChannel = client.channel("messaging", "general", {
-            members: [sanitizedUserId],
-          });
-        } else {
-          newChannel = client.channel("messaging", channelId);
-        }
-        await newChannel.watch();
-        setChannel(newChannel);
-        setSelectedChannel(channelId);
-      } catch (e) {
-        console.error("Error switching channel:", e);
+  // Handle channel switching
+  const handleChannelSwitch = useCallback(async (channelId: string) => {
+    if (!clientRef.current) return;
+    
+    try {
+      console.log('Switching to channel:', channelId);
+      let newChannel;
+      
+      if (channelId === "general") {
+        newChannel = clientRef.current.channel("messaging", "general", {
+          members: [sanitizedUserId],
+          // @ts-ignore-next-line
+          name: "General",
+          // @ts-ignore-next-line
+          image: "/general-channel.svg",
+        });
+      } else {
+        newChannel = clientRef.current.channel("messaging", channelId);
       }
-    },
-    [sanitizedUserId]
-  );
-
-  const handleChannelsCreated = useCallback((newChannels: ChannelItem[]) => {
-    setChannels(newChannels);
-  }, []);
+      
+      await newChannel.watch();
+      setChannel(newChannel);
+      setSelectedChannelId(channelId);
+      console.log('Successfully switched to channel:', channelId);
+    } catch (error) {
+      console.error('Error switching channel:', error);
+    }
+  }, [sanitizedUserId]);
 
   // Handle voice message events
   const handleVoiceMessage = useCallback(async (event: CustomEvent) => {
@@ -130,56 +240,54 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
     try {
       console.log('Processing voice message:', { duration, size });
       
-      // Convert blob to base64 for Stream Chat
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result as string;
-          const dataUrl = base64Data;
+      // Create a file from the blob for Stream Chat upload
+      const file = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
+      
+      console.log('Uploading voice message to Stream Chat:', file.name, file.size);
 
-          console.log('Sending voice message to channel:', currentChannel.id);
+      // Upload the file to Stream Chat
+      const uploadResponse = await client.uploadFile(file, currentChannel);
+      
+      if (!uploadResponse) {
+        throw new Error('File upload failed');
+      }
 
-          // Send the voice message with custom data for channel list preview
-          const response = await currentChannel.sendMessage({
-            text: '', // No text in the channel message
-            attachments: [
-              {
-                type: 'voiceRecording',
-                asset_url: dataUrl,
-                mime_type: 'audio/webm',
-                file_size: size,
-                duration: duration,
-                title: 'Voice Message',
-                waveform_data: Array.from({ length: 50 }, () => Math.random() * 0.8 + 0.2), // Generate mock waveform data
-              }
-            ],
-            // Add custom data for channel list preview
-            custom: {
-              messageType: 'voiceRecording',
-              previewText: '🎤 Voice Message'
-            }
-          });
+      console.log('File uploaded successfully:', uploadResponse);
 
-          console.log('Voice message sent successfully:', response);
-          
-          // Force channel refresh to ensure message appears
-          await currentChannel.watch();
-          
-        } catch (sendError) {
-          console.error('Error sending voice message:', sendError);
-          alert('Failed to send voice message. Please try again.');
+      // Send the voice message with the uploaded file URL
+      const response = await currentChannel.sendMessage({
+        text: '', // No text in the channel message
+        attachments: [
+          {
+            type: 'voiceRecording',
+            asset_url: uploadResponse.file, // Use the uploaded file URL
+            mime_type: 'audio/webm',
+            file_size: size,
+            duration: duration,
+            title: 'Voice Message',
+            waveform_data: Array.from({ length: 50 }, () => Math.random() * 0.8 + 0.2), // Generate mock waveform data
+          }
+        ],
+        // Add custom data for channel list preview
+        custom: {
+          messageType: 'voiceRecording',
+          previewText: '🎤 Voice Message'
         }
-      };
+      });
+
+      console.log('Voice message sent successfully:', response);
       
-      reader.onerror = (error) => {
-        console.error('Error reading audio blob:', error);
-        alert('Failed to process voice message. Please try again.');
-      };
+      // Force channel refresh to ensure message appears
+      await currentChannel.watch();
       
-      reader.readAsDataURL(audioBlob);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing voice message:', error);
-      alert('Failed to process voice message. Please try again.');
+      
+      if (error.message?.includes('max payload size')) {
+        alert('Voice message too large. Please record a shorter message.');
+      } else {
+        alert('Failed to send voice message. Please try again.');
+      }
     }
   }, [channel]);
 
@@ -190,8 +298,7 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
       setChannel(null);
       setError(null);
       setIsConnecting(false);
-      setSelectedChannel("general");
-      setChannels([]);
+      setSelectedChannelId("general");
       // do NOT disconnect here; cleanup runs in main effect's return
     }
   }, [isOpen]);
@@ -237,11 +344,16 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
         // Ensure default channel available and watched
         const general = client.channel("messaging", "general", {
           members: [sanitizedUserId],
+          // @ts-ignore-next-line
+          name: "General",
+          // @ts-ignore-next-line
+          image: "/general-channel.svg",
         });
         await general.watch();
         if (cancelled) return;
 
         setChannel(general);
+        setSelectedChannelId("general");
         setClientReady(true);
       } catch (e: any) {
         console.error("Error connecting to Stream:", e);
@@ -338,30 +450,28 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="chat-container">
-      {/* Chat Header with Back Button */}
+      {/* Chat Header */}
       <div className="chat-header">
         <h1 className="chat-header-title">Messages</h1>
-        <button onClick={onClose} className="chat-header-back-button">
-          ← Back to Home
-        </button>
       </div>
 
-      {/* Layout */}
-      <div className="chat-layout">
-        {/* Left — Channel List */}
-        <ChannelListComponent
-          channels={channels}
-          selectedChannel={selectedChannel}
-          onChannelSelect={switchChannel}
-        />
+      {/* Stream Chat Implementation */}
+      <ChatComponent
+        client={client}
+        theme="str-chat__theme-light"
+        key={`chat-${client.userID || "disconnected"}`}
+      >
+        <div className="chat-layout">
+          {/* Left — Channel List using Stream Chat SDK */}
+          <div className="chat-sidebar">
+            <CustomChannelList 
+              selectedChannelId={selectedChannelId}
+              onChannelSelect={handleChannelSwitch}
+            />
+          </div>
 
-        {/* Right — Chat Area */}
-        <div className="chat-area">
-          <ChatComponent
-            client={client}
-            theme="str-chat__theme-light"
-            key={`chat-${client.userID || "disconnected"}`}
-          >
+          {/* Right — Chat Area using Stream Chat SDK */}
+          <div className="chat-main">
             <Channel channel={channel} Attachment={CustomAttachment}>
               <Window>
                 <ChannelHeader />
@@ -370,16 +480,9 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
               </Window>
               <Thread />
             </Channel>
-          </ChatComponent>
+          </div>
         </div>
-      </div>
-
-      {/* Invisible manager: fills your channels via backend seed + query */}
-      <SampleChannels
-        streamClient={client}
-        currentUserId={sanitizedUserId}
-        onChannelsCreated={handleChannelsCreated}
-      />
+      </ChatComponent>
     </div>
   );
 };

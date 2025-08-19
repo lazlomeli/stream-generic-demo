@@ -1,5 +1,6 @@
 import React from 'react'
 import { ChannelItem } from '../hooks/listMyChannels'
+import FallbackAvatar from './FallbackAvatar'
 import './ChannelList.css'
 
 interface ChannelListProps {
@@ -43,10 +44,11 @@ const ChannelList: React.FC<ChannelListProps> = ({
               >
                 <div className="channel-item-content">
                     <div className="channel-item-avatar">
-                      <img
+                      <FallbackAvatar
                         src={channelItem.image}
-                        alt={channelItem.name}
+                        alt={channelItem.name || 'Channel'}
                         className="channel-item-avatar-image"
+                        size={24}
                       />
                       <div className={`channel-item-status ${
                         channelItem.status === 'online' ? 'online' : 

@@ -6,43 +6,43 @@ const Home: React.FC = () => {
   const { isAuthenticated } = useAuth0()
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+    <div className="home">
       {!isAuthenticated ? (
-        <div className="text-center max-w-2xl mx-auto px-4">
-          <div className="mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <span className="text-white text-3xl font-bold">S</span>
+        <div className="home-content text-center max-w-2xl mx-auto px-4">
+          <div className="home-brand mb-8">
+            <div className="home-logo">
+              <span>S</span>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="home-title mb-4">
               Welcome to StreamApp
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="home-subtitle">
               Build engaging experiences with real-time features and modern design.
             </p>
           </div>
           <Link
             to="/login"
-            className="inline-flex items-center bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="home-cta"
           >
             Get Started
           </Link>
         </div>
       ) : (
-        <div className="text-center max-w-3xl mx-auto px-4">
-          <div className="mb-8">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <span className="text-white text-4xl font-bold">🚀</span>
+        <div className="home-content home-content-authenticated text-center max-w-3xl mx-auto px-4">
+          <div className="home-brand mb-8">
+            <div className="home-logo home-logo-authenticated">
+              <span>🚀</span>
             </div>
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="home-title home-title-authenticated mb-6">
               Welcome to StreamApp!
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
+            <p className="home-subtitle home-subtitle-authenticated">
               Your real-time chat application is ready. Click the chat button in the header to start messaging!
             </p>
-            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <div className="home-status space-x-4">
+              <div className="status-dot status-dot-blue"></div>
               <span>Ready to chat</span>
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <div className="status-dot status-dot-purple"></div>
             </div>
           </div>
         </div>
