@@ -1,6 +1,6 @@
 /* Channel List Container */
 .channel-list {
-  width: 16rem; /* w-64 */
+  width: 24rem; /* w-64 */
   border-right: 1px solid #e5e7eb; /* border-r border-gray-200 */
   background-color: white;
 }

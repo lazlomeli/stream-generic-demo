@@ -1,0 +1,526 @@
+/* Voice Recording Styles */
+
+/* Custom Message Input Voice Recording Controls */
+.custom-message-input {
+  position: relative;
+}
+
+/* Integrated Voice Recording Controls - Positioned next to the + button */
+.voice-recording-controls-integrated {
+  position: absolute;
+  right: 60px; /* Position to the left of the send button */
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.voice-record-button-integrated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.voice-record-button-integrated:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+.voice-record-button-integrated:active {
+  transform: scale(0.95);
+}
+
+.recording-controls-integrated {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.recording-timer-integrated {
+  font-size: 12px;
+  font-weight: 500;
+  color: #dc3545;
+  min-width: 30px;
+  text-align: center;
+}
+
+.stop-recording-button-integrated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #dc3545;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stop-recording-button-integrated:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+.voice-preview-controls-integrated {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.voice-preview-info-integrated {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: center;
+}
+
+.voice-duration-integrated {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+.voice-size-integrated {
+  font-size: 10px;
+  color: #999;
+}
+
+.send-voice-button-integrated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.send-voice-button-integrated:hover {
+  background: #218838;
+  transform: scale(1.05);
+}
+
+.cancel-voice-button-integrated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: #6c757d;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.cancel-voice-button-integrated:hover {
+  background: #5a6268;
+}
+
+/* Legacy voice recording controls (keeping for backward compatibility) */
+.voice-recording-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+.voice-record-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-record-button:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+.voice-record-button:active {
+  transform: scale(0.95);
+}
+
+.recording-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recording-timer {
+  font-size: 14px;
+  font-weight: 500;
+  color: #dc3545;
+  min-width: 40px;
+}
+
+.stop-recording-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: #dc3545;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stop-recording-button:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+.voice-preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.voice-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.voice-duration {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.voice-size {
+  font-size: 11px;
+  color: #adb5bd;
+}
+
+.send-voice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.send-voice-button:hover {
+  background: #218838;
+  transform: scale(1.05);
+}
+
+.cancel-voice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #6c757d;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.cancel-voice-button:hover {
+  background: #5a6268;
+}
+
+/* Voice Recording Player Styles - Focus on progress bar and avatar integration */
+.voice-recording-player {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  position: relative;
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px !important;
+}
+
+.voice-recording-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #666;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.play-button:hover {
+  background: #555;
+  transform: scale(1.05);
+}
+
+.play-button.playing {
+  background: #666;
+}
+
+.voice-recording-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.voice-recording-title {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voice-recording-duration {
+  font-size: 12px;
+  color: #666;
+}
+
+.playback-rate-button {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #666;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.playback-rate-button:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+/* Thin Progress Bar - Like in the screenshot */
+.waveform-container {
+  position: relative;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  margin: 8px 0;
+  cursor: pointer;
+  overflow: hidden;
+  width: 100%;
+  min-width: 120px;
+}
+
+.waveform-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #007bff;
+  z-index: 1;
+  transition: width 0.1s ease;
+  border-radius: 2px;
+}
+
+.waveform-bar {
+  display: none; /* Hide the waveform bars, focus on thin progress bar */
+}
+
+.voice-recording-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #666;
+  width: 100%;
+}
+
+/* Quoted Voice Recording Styles */
+.quoted-voice-recording {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  border: none;
+  max-width: 200px;
+}
+
+.quoted-voice-icon {
+  font-size: 14px;
+  color: #666;
+}
+
+.quoted-voice-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.quoted-voice-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quoted-voice-duration {
+  font-size: 11px;
+  color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .voice-recording-controls-integrated {
+    right: 50px; /* Adjust position for mobile */
+  }
+  
+  .voice-recording-controls {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  
+  .voice-record-button,
+  .stop-recording-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .voice-recording-player {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .play-button {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .waveform-container {
+    height: 3px;
+    min-width: 100px;
+  }
+}
+
+/* Animation for recording state */
+@keyframes recording-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.recording-timer-integrated,
+.recording-timer {
+  animation: recording-pulse 1.5s ease-in-out infinite;
+}
+
+/* Hover effects for interactive elements */
+.waveform-container:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Message bubble specific styles for Stream Chat integration */
+.str-chat__message .voice-recording-player {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
+}
+
+/* Ensure the voice recording fits within the message bubble */
+.str-chat__message-attachment {
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
+}
+
+.str-chat__message-attachment__voice-recording-widget {
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
+}
+
+/* Avatar integration - ensure it's visible and properly positioned */
+.str-chat__message .str-chat__avatar {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* Ensure proper message bubble containment */
+.str-chat__message {
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+.str-chat__message-text {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}

@@ -14,8 +14,11 @@ import "stream-chat-react/dist/css/v2/index.css";
 
 import SampleChannels from "./SampleChannels";
 import ChannelListComponent from "./ChannelList";
+import CustomMessageInput from "./CustomMessageInput"
+import CustomAttachment from "./CustomAttachment";
 import type { ChannelItem } from "../hooks/listMyChannels"
 import "./Chat.css";
+import "./VoiceRecording.css";
 
 interface ChatProps {
   isOpen: boolean;
@@ -113,6 +116,73 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
     setChannels(newChannels);
   }, []);
 
+  // Handle voice message events
+  const handleVoiceMessage = useCallback(async (event: CustomEvent) => {
+    const { audioBlob, duration, size } = event.detail;
+    const client = clientRef.current;
+    const currentChannel = channel;
+
+    if (!client || !currentChannel) {
+      console.error('Client or channel not ready for voice message');
+      return;
+    }
+
+    try {
+      console.log('Processing voice message:', { duration, size });
+      
+      // Convert blob to base64 for Stream Chat
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result as string;
+          const dataUrl = base64Data;
+
+          console.log('Sending voice message to channel:', currentChannel.id);
+
+          // Send the voice message with custom data for channel list preview
+          const response = await currentChannel.sendMessage({
+            text: '', // No text in the channel message
+            attachments: [
+              {
+                type: 'voiceRecording',
+                asset_url: dataUrl,
+                mime_type: 'audio/webm',
+                file_size: size,
+                duration: duration,
+                title: 'Voice Message',
+                waveform_data: Array.from({ length: 50 }, () => Math.random() * 0.8 + 0.2), // Generate mock waveform data
+              }
+            ],
+            // Add custom data for channel list preview
+            custom: {
+              messageType: 'voiceRecording',
+              previewText: '🎤 Voice Message'
+            }
+          });
+
+          console.log('Voice message sent successfully:', response);
+          
+          // Force channel refresh to ensure message appears
+          await currentChannel.watch();
+          
+        } catch (sendError) {
+          console.error('Error sending voice message:', sendError);
+          alert('Failed to send voice message. Please try again.');
+        }
+      };
+      
+      reader.onerror = (error) => {
+        console.error('Error reading audio blob:', error);
+        alert('Failed to process voice message. Please try again.');
+      };
+      
+      reader.readAsDataURL(audioBlob);
+    } catch (error) {
+      console.error('Error processing voice message:', error);
+      alert('Failed to process voice message. Please try again.');
+    }
+  }, [channel]);
+
   // Reset state when drawer closes
   useEffect(() => {
     if (!isOpen) {
@@ -122,7 +192,7 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
       setIsConnecting(false);
       setSelectedChannel("general");
       setChannels([]);
-      // do NOT disconnect here; cleanup runs in main effect’s return
+      // do NOT disconnect here; cleanup runs in main effect's return
     }
   }, [isOpen]);
 
@@ -205,6 +275,21 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
     sanitizedUserId,
   ]);
 
+  // Listen for voice message events
+  useEffect(() => {
+    const handleVoiceMessageEvent = (event: Event) => {
+      if (event instanceof CustomEvent && event.type === 'voiceMessageReady') {
+        handleVoiceMessage(event);
+      }
+    };
+
+    window.addEventListener('voiceMessageReady', handleVoiceMessageEvent);
+    
+    return () => {
+      window.removeEventListener('voiceMessageReady', handleVoiceMessageEvent);
+    };
+  }, [handleVoiceMessage]);
+
   // --- render states ---
   if (!isOpen) return null;
 
@@ -277,11 +362,11 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
             theme="str-chat__theme-light"
             key={`chat-${client.userID || "disconnected"}`}
           >
-            <Channel channel={channel}>
+            <Channel channel={channel} Attachment={CustomAttachment}>
               <Window>
                 <ChannelHeader />
                 <MessageList />
-                <MessageInput />
+                <CustomMessageInput />
               </Window>
               <Thread />
             </Channel>
