@@ -51,6 +51,9 @@ const Feeds = () => {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
+  const [showComments, setShowComments] = useState<string | null>(null);
+  const [postComments, setPostComments] = useState<{ [postId: string]: any[] }>({});
+  const [loadingComments, setLoadingComments] = useState<string | null>(null);
 
   useEffect(() => {
     const initFeedsClient = async () => {
@@ -407,6 +410,46 @@ const Feeds = () => {
     }
   };
 
+  const fetchComments = async (postId: string) => {
+    if (!feedsClient?.userId) return;
+
+    setLoadingComments(postId);
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/feed-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action: 'get_comments',
+          userId: feedsClient.userId,
+          postId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+      }
+
+      const result = await response.json();
+      
+      // Update comments state
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: result.comments || []
+      }));
+      
+    } catch (err: any) {
+      console.error('Error fetching comments:', err);
+      alert('Failed to load comments. Please try again.');
+    } finally {
+      setLoadingComments(null);
+    }
+  };
+
   const addComment = async (postId: string) => {
     if (!commentText.trim() || !feedsClient?.userId) return;
 
@@ -449,6 +492,11 @@ const Feeds = () => {
           return post;
         })
       );
+
+      // If comments are currently shown, refresh them
+      if (showComments === postId) {
+        await fetchComments(postId);
+      }
 
       setCommentText('');
       setShowCommentInput(null);
@@ -664,6 +712,52 @@ const Feeds = () => {
                     >
                       Cancel
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* View Comments Button */}
+              {(post.custom?.comments || 0) > 0 && (
+                <div className="view-comments-section">
+                  <button 
+                    className="view-comments-button"
+                    onClick={() => {
+                      if (showComments === post.id) {
+                        setShowComments(null);
+                      } else {
+                        setShowComments(post.id);
+                        if (!postComments[post.id]) {
+                          fetchComments(post.id);
+                        }
+                      }
+                    }}
+                    disabled={loadingComments === post.id}
+                  >
+                    {loadingComments === post.id ? 'Loading...' : 
+                     showComments === post.id ? 'Hide Comments' : 
+                     `View Comments (${post.custom?.comments || 0})`}
+                  </button>
+                </div>
+              )}
+
+              {/* Comments Display */}
+              {showComments === post.id && postComments[post.id] && (
+                <div className="comments-section">
+                  <div className="comments-list">
+                    {postComments[post.id].map((comment: any, index: number) => (
+                      <div key={comment.id || index} className="comment-item">
+                        <div className="comment-author">
+                          <strong>
+                            {comment.user_id === feedsClient?.userId ? 'You' : 
+                             comment.user_id.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                          </strong>
+                        </div>
+                        <div className="comment-text">{comment.data?.text || comment.text}</div>
+                        <div className="comment-time">
+                          {formatRelativeTime(comment.created_at || new Date())}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

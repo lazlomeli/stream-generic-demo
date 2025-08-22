@@ -252,6 +252,100 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           message: 'Post deleted successfully'
         });
 
+      case 'like_post':
+        if (!postId) {
+          return res.status(400).json({ error: 'postId is required' });
+        }
+
+        console.log('❤️ Liking post:', postId);
+        // Create a user-specific client for reactions
+        const likeUserToken = streamFeedsClient.createUserToken(userId);
+        const likeUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, likeUserToken, process.env.STREAM_API_SECRET);
+        
+        // Add reaction to the post using user client
+        await likeUserClient.reactions.add('like', postId);
+
+        return res.json({
+          success: true,
+          message: 'Post liked successfully'
+        });
+
+      case 'unlike_post':
+        if (!postId) {
+          return res.status(400).json({ error: 'postId is required' });
+        }
+
+        console.log('💔 Unliking post:', postId);
+        // Create a user-specific client for reactions
+        const unlikeUserToken = streamFeedsClient.createUserToken(userId);
+        const unlikeUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, unlikeUserToken, process.env.STREAM_API_SECRET);
+        
+        // Get the user's reactions to find the like reaction ID
+        const userReactions = await unlikeUserClient.reactions.filter({
+          activity_id: postId,
+          kind: 'like'
+        });
+
+        if (userReactions.results && userReactions.results.length > 0) {
+          // Delete the specific like reaction using user client
+          await unlikeUserClient.reactions.delete(userReactions.results[0].id);
+        }
+
+        return res.json({
+          success: true,
+          message: 'Post unliked successfully'
+        });
+
+      case 'add_comment':
+        if (!postId || !postData?.text) {
+          return res.status(400).json({ error: 'postId and comment text are required' });
+        }
+
+        console.log('💬 Adding comment to post:', postId);
+        // Create a user-specific client for reactions
+        const commentUserToken = streamFeedsClient.createUserToken(userId);
+        const commentUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, commentUserToken, process.env.STREAM_API_SECRET);
+        
+        // Add comment to the post using user client
+        const comment = await commentUserClient.reactions.add('comment', postId, {
+          text: postData.text
+        });
+
+        return res.json({
+          success: true,
+          message: 'Comment added successfully',
+          comment
+        });
+
+      case 'get_comments':
+        if (!postId) {
+          return res.status(400).json({ error: 'postId is required' });
+        }
+
+        console.log('📄 Getting comments for post:', postId);
+        // Create a user-specific client for reactions
+        const getCommentsUserToken = streamFeedsClient.createUserToken(userId);
+        const getCommentsUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, getCommentsUserToken, process.env.STREAM_API_SECRET);
+        
+        // Get all comments for the post
+        const comments = await getCommentsUserClient.reactions.filter({
+          activity_id: postId,
+          kind: 'comment'
+        });
+
+        return res.json({
+          success: true,
+          comments: comments.results || []
+        });
+
+      case 'bookmark_post':
+      case 'remove_bookmark':
+        console.log('🔖 Bookmark action:', action, 'for post:', postId);
+        return res.json({
+          success: true,
+          message: `Bookmark action '${action}' completed`
+        });
+
       default:
         console.log('⚠️ Unhandled action:', action);
         return res.json({

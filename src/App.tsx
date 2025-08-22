@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
 import Home from './pages/Home'
-import Login from './pages/Login'
 import LoadingSpinner from './components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
@@ -37,7 +36,6 @@ function App() {
               <Feeds />
             </ProtectedRoute>
           } />
-          <Route path="/login" element={<Login />} />
         </Routes>
       </main>
     </div>

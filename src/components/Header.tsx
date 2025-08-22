@@ -74,7 +74,7 @@ const Header: React.FC<HeaderProps> = () => {
           </div>
           {/* Right side - User info and logout */}
           <div className="header-right">
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <div className="user-section">
                 <div className="user-info">
                   <div className="user-avatar">
@@ -92,15 +92,6 @@ const Header: React.FC<HeaderProps> = () => {
                   title="Sign out"
                 >
                   <img src={LogoutIcon} alt="Sign out" />
-                </button>
-              </div>
-            ) : (
-              <div className="auth-section">
-                <button
-                  onClick={handleLoginClick}
-                  className="header-auth-button"
-                >
-                  Get started
                 </button>
               </div>
             )}
