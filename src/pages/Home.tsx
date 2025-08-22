@@ -49,16 +49,87 @@ const Home: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="home-content home-content-authenticated text-center max-w-3xl mx-auto px-4">
+        <div className="home-content home-content-authenticated text-center max-w-6xl mx-auto px-4">
           <div className="home-brand mb-8">
-            <img src={StreamLogo} alt="Stream Logo" />
-            <h1 className="home-title home-title-authenticated mb-6">
+            <img src={StreamLogo} alt="Stream Logo" className="mx-auto mb-4 h-12" />
+            <h1 className="home-title home-title-authenticated mb-4">
               Welcome to Stream All-in-One Demo
             </h1>
-            <p className="home-subtitle home-subtitle-authenticated">
-              Showcase of Stream Chat, Activity Feeds & Video.
+            <p className="home-subtitle home-subtitle-authenticated mb-6">
+              Explore Stream's powerful real-time communication products
             </p>
           </div>
+
+          {/* Stream Products Showcase */}
+          <div className="stream-products-grid">
+            <div className="product-card">
+              <div className="product-icon product-icon-chat">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <h3 className="product-title">Stream Chat</h3>
+              <p className="product-description">
+                Build scalable in-app messaging with real-time chat, threads, reactions, and moderation tools.
+              </p>
+              <div className="product-links">
+                <a 
+                  href="https://getstream.io/chat/docs/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="product-doc-link-small"
+                >
+                  Docs <span className="arrow">›</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="product-card">
+              <div className="product-icon product-icon-feeds">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 13H11V21H3M13 3H21V11H13M3 3H11V11H3M15 13H23V15H15M15 17H21V19H15" fill="currentColor"/>
+                </svg>
+              </div>
+              <h3 className="product-title">Activity Feeds</h3>
+              <p className="product-description">
+                Create engaging social experiences with activity feeds, notifications, and personalized timelines.
+              </p>
+              <div className="product-links">
+                <a 
+                  href="https://getstream.io/activity-feeds/docs/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="product-doc-link-small"
+                >
+                  Docs <span className="arrow">›</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="product-card">
+              <div className="product-icon product-icon-video">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 10.5V7C17 6.45 16.55 6 16 6H4C3.45 6 3 6.45 3 7V17C3 17.55 3.45 18 4 18H16C16.55 18 17 17.55 17 17V13.5L21 17.5V6.5L17 10.5Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <h3 className="product-title">Video & Audio</h3>
+              <p className="product-description">
+                Add video calling, livestreaming, and audio rooms with ultra-low latency and global infrastructure.
+              </p>
+              <div className="product-links">
+                <a 
+                  href="https://getstream.io/video/docs/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="product-doc-link-small"
+                >
+                  Docs <span className="arrow">›</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+
         </div>
       )}
     </div>
