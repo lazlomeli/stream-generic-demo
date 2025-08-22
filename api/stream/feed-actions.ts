@@ -90,16 +90,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Create user-specific client using JWT token for reactions
-
-        const userToken = jwt.sign(
-          { user_id: userId },
-          apiSecret,
-          { algorithm: 'HS256' }
-        );
-        
-        const userClient = connect(apiKey, userToken, apiSecret);
-        const reaction = await userClient.reactions.add('like', postId);
+        // Add reaction using server client with user impersonation
+        const reaction = await streamFeedsClient.reactions.add('like', postId, {}, userId);
 
         return res.json({
           success: true,
@@ -111,25 +103,16 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Create user-specific client using JWT token for reactions
-
-        const userToken = jwt.sign(
-          { user_id: userId },
-          apiSecret,
-          { algorithm: 'HS256' }
-        );
-        
-        const userClient = connect(apiKey, userToken, apiSecret);
-        
-        // Get the user's reactions to find the like reaction ID
-        const userReactions = await userClient.reactions.filter({
+        // Get the user's reactions to find the like reaction ID using server client
+        const userReactions = await streamFeedsClient.reactions.filter({
           activity_id: postId,
-          kind: 'like'
+          kind: 'like',
+          user_id: userId
         });
 
         if (userReactions.results && userReactions.results.length > 0) {
-          // Delete the specific like reaction using user client
-          await userClient.reactions.delete(userReactions.results[0].id);
+          // Delete the specific like reaction
+          await streamFeedsClient.reactions.delete(userReactions.results[0].id);
         }
 
         return res.json({
@@ -142,18 +125,10 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        // Create user-specific client using JWT token for reactions
-
-        const userToken = jwt.sign(
-          { user_id: userId },
-          apiSecret,
-          { algorithm: 'HS256' }
-        );
-        
-        const userClient = connect(apiKey, userToken, apiSecret);
-        const comment = await userClient.reactions.add('comment', postId, {
+        // Add comment using server client with user impersonation
+        const comment = await streamFeedsClient.reactions.add('comment', postId, {
           text: postData.text
-        });
+        }, userId);
 
         return res.json({
           success: true,
@@ -198,18 +173,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Create user-specific client using JWT token for reactions
-
-        const userToken = jwt.sign(
-          { user_id: userId },
-          apiSecret,
-          { algorithm: 'HS256' }
-        );
-        
-        const userClient = connect(apiKey, userToken, apiSecret);
-        
-        // Get all comments for the post
-        const comments = await userClient.reactions.filter({
+        // Get all comments for the post using server client
+        const comments = await streamFeedsClient.reactions.filter({
           activity_id: postId,
           kind: 'comment'
         });
