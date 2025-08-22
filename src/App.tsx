@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
@@ -11,15 +11,6 @@ import './App.css'
 
 function App() {
   const { isLoading, error } = useAuth0()
-  const [currentView, setCurrentView] = useState<'home' | 'chat'>('home')
-
-  const openChat = () => {
-    setCurrentView('chat')
-  }
-
-  const closeChat = () => {
-    setCurrentView('home')
-  }
 
   if (error) {
     return <div>Authentication Error: {error.message}</div>
@@ -31,25 +22,16 @@ function App() {
 
   return (
     <div className="app">
-      <Header onChatClick={openChat} onHomeClick={closeChat} />
+      <Header />
       <main className="app-main">
         <Routes>
-          <Route path="/" element={
-            currentView === 'chat' ? (
-              <Chat isOpen={true} onClose={closeChat} />
-            ) : (
-              <Home />
-            )
+          <Route path="/" element={<Home />} />
+          <Route path="/chat" element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
           } />
           <Route path="/login" element={<Login />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <p>hey</p>
-              </ProtectedRoute>
-            } 
-          />
         </Routes>
       </main>
     </div>

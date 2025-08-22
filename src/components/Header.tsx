@@ -1,28 +1,30 @@
 import React from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
+import { useNavigate } from 'react-router-dom'
 import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import LogoutIcon from '../icons/logout-2.svg'
 
-interface HeaderProps {
-  onChatClick: () => void
-  onHomeClick?: () => void
-}
+interface HeaderProps {}
 
-const Header: React.FC<HeaderProps> = ({ onChatClick, onHomeClick }) => {
+const Header: React.FC<HeaderProps> = () => {
   const { isAuthenticated, user, logout } = useAuth0()
+  const navigate = useNavigate()
 
   const handleLogout = () => {
     logout({ logoutParams: { returnTo: window.location.origin } })
   }
 
   const handleHomeClick = () => {
-    if (onHomeClick) {
-      onHomeClick()
-    } else {
-      // Fallback to regular navigation if no onHomeClick provided
-      window.location.href = '/'
-    }
+    navigate('/')
+  }
+
+  const handleChatClick = () => {
+    navigate('/chat')
+  }
+
+  const handleLoginClick = () => {
+    navigate('/login')
   }
 
   return (
@@ -41,11 +43,11 @@ const Header: React.FC<HeaderProps> = ({ onChatClick, onHomeClick }) => {
               >
                 <img src={HomeIcon} alt="Home" />
               </button>
-              
+            
               {/* Chat icon - only when authenticated */}
               {isAuthenticated && (
                 <button
-                  onClick={onChatClick}
+                  onClick={handleChatClick}
                   className="header-nav-button"
                   title="Stream Chat"
                 >
@@ -80,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ onChatClick, onHomeClick }) => {
             ) : (
               <div className="auth-section">
                 <button
-                  onClick={() => window.location.href = '/login'}
+                  onClick={handleLoginClick}
                   className="header-auth-button"
                 >
                   Get started

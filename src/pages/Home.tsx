@@ -37,11 +37,32 @@ const Home: React.FC = () => {
               Welcome to StreamApp!
             </h1>
             <p className="home-subtitle home-subtitle-authenticated">
-              Your real-time chat application is ready. Click the chat button in the header to start messaging!
+              Your real-time application is ready with both chat and activity feeds!
             </p>
+            
+            <div className="features-overview mb-8">
+              <div className="feature-item">
+                <div className="feature-icon">💬</div>
+                <div className="feature-text">
+                  <h3>Stream Chat</h3>
+                  <p>Real-time messaging with the chat button in the header</p>
+                </div>
+              </div>
+              
+              <div className="feature-item">
+                <div className="feature-icon">📱</div>
+                <div className="feature-text">
+                  <h3>Activity Feeds</h3>
+                  <p>Share and view real-time activities with the feeds button</p>
+                </div>
+              </div>
+            </div>
+            
             <div className="home-status space-x-4">
               <div className="status-dot status-dot-blue"></div>
-              <span>Ready to chat</span>
+              <span>Chat ready</span>
+              <div className="status-dot status-dot-green"></div>
+              <span>Feeds ready</span>
               <div className="status-dot status-dot-purple"></div>
             </div>
           </div>

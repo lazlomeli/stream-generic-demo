@@ -3,7 +3,6 @@ import { StreamChat } from "stream-chat";
 
 // Load .env and .env.local
 dotenv.config();
-dotenv.config({ path: ".env.local" });
 
 // Init Stream client with server API key/secret
 const client = new StreamChat(

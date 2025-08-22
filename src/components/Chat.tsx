@@ -13,16 +13,14 @@ import {
 import CustomMessageInput from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
 import FallbackAvatar from './FallbackAvatar'
+import LoadingSpinner from './LoadingSpinner'
 import 'stream-chat-react/dist/css/v2/index.css'
 
 import type { ChannelItem } from "../hooks/listMyChannels"
 import "./Chat.css";
 import "./VoiceRecording.css";
 
-interface ChatProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+interface ChatProps {}
 
 const sanitizeUserId = (userId: string) =>
   userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
@@ -137,7 +135,7 @@ const CustomChannelList: React.FC<{
   );
 };
 
-const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
+const Chat: React.FC<ChatProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
 
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
@@ -293,19 +291,19 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
 
   // Reset state when drawer closes
   useEffect(() => {
-    if (!isOpen) {
-      setClientReady(false);
-      setChannel(null);
-      setError(null);
-      setIsConnecting(false);
-      setSelectedChannelId("general");
-      // do NOT disconnect here; cleanup runs in main effect's return
-    }
-  }, [isOpen]);
+    // This effect is no longer needed as Chat is rendered directly
+    // if (!isOpen) {
+    //   setClientReady(false);
+    //   setChannel(null);
+    //   setError(null);
+    //   setIsConnecting(false);
+    //   setSelectedChannelId("general");
+    //   // do NOT disconnect here; cleanup runs in main effect's return
+    // }
+  }, []);
 
   // Main connect effect
   useEffect(() => {
-    if (!isOpen) return;
     if (!isAuthenticated || !user) return;
 
     if (!apiKey) {
@@ -316,7 +314,8 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
     }
 
     let cancelled = false;
-    const client = clientRef.current ?? StreamChat.getInstance(apiKey);
+
+    const client = new StreamChat(apiKey);
     clientRef.current = client;
 
     const run = async () => {
@@ -378,7 +377,6 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
       clientRef.current = null;
     };
   }, [
-    isOpen,
     isAuthenticated,
     user,
     apiKey,
@@ -403,44 +401,37 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
   }, [handleVoiceMessage]);
 
   // --- render states ---
-  if (!isOpen) return null;
-
   if (error) {
     return (
       <div className="chat-error">
         <div className="chat-error-content">
-          <div className="text-center">
-            <div className="chat-error-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-            </div>
-            <h3 className="chat-error-title">Connection Error</h3>
-            <p className="chat-error-message">{error}</p>
-            <button onClick={onClose} className="chat-error-button">
-              Go Back
-            </button>
-          </div>
+          <h3 className="chat-error-title">Connection Error</h3>
+          <p className="chat-error-message">{error}</p>
+          <button onClick={() => window.history.back()} className="chat-error-button">
+            Go Back
+          </button>
         </div>
       </div>
     );
   }
 
-  if (!clientReady || !clientRef.current || !channel) {
+  if (isConnecting) {
     return (
       <div className="chat-loading">
         <div className="chat-loading-content">
-          <div className="text-center">
-            <div className="chat-loading-spinner"></div>
-            <p className="chat-loading-text">
-              {isConnecting ? "Reconnecting to chat..." : "Connecting to chat..."}
-            </p>
-          </div>
+          <LoadingSpinner />
+          <p>Connecting to chat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!clientReady || !clientRef.current) {
+    return (
+      <div className="chat-loading">
+        <div className="chat-loading-content">
+          <LoadingSpinner />
+          <p>Initializing chat...</p>
         </div>
       </div>
     );
