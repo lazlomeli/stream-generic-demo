@@ -60,8 +60,6 @@ const Header: React.FC<HeaderProps> = () => {
                   <img src={HomeIcon} alt="Feeds" />
                 </button>
               )}
-            </div>
-
               {/* Chat icon - only when authenticated */}
               {isAuthenticated && (
                 <button
@@ -72,6 +70,7 @@ const Header: React.FC<HeaderProps> = () => {
                   <img src={SendIcon} alt="Chat" />
                 </button>
               )}
+            </div>
           </div>
           {/* Right side - User info and logout */}
           <div className="header-right">

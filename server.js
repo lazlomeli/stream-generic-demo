@@ -218,6 +218,7 @@ app.listen(PORT, () => {
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log(`💬 Chat tokens: http://localhost:${PORT}/api/stream/chat-token`);
   console.log(`📰 Feed tokens: http://localhost:${PORT}/api/stream/feed-token`);
+  console.log(`🌱 Unified seeding: http://localhost:${PORT}/api/stream/seed`);
   console.log('');
   console.log('🔧 Environment Variables Debug:');
   console.log(`   PORT: ${process.env.PORT || '5000 (default)'}`);
