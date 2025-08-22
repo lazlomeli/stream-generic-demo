@@ -103,6 +103,14 @@ const Feeds = () => {
     initFeedsClient();
   }, [user, isAuthenticated, getAccessTokenSilently]);
 
+  // Fetch posts when feedsClient is ready
+  useEffect(() => {
+    if (feedsClient?.userId) {
+      console.log('🔄 FeedsClient ready, fetching initial posts...');
+      fetchPosts(feedsClient.userId);
+    }
+  }, [feedsClient]);
+
   // Function to fetch real posts from Stream feeds
   const fetchPosts = async (userId?: string) => {
     const userIdToUse = userId || feedsClient?.userId;
