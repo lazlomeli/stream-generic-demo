@@ -5,6 +5,7 @@ import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import LogoutIcon from '../icons/logout-2.svg'
 import StreamLogo from '../assets/stream-logo.png'
+import VideoIcon from '../icons/video.svg'
 
 interface HeaderProps {}
 
@@ -68,6 +69,16 @@ const Header: React.FC<HeaderProps> = () => {
                   title="Stream Chat"
                 >
                   <img src={SendIcon} alt="Chat" />
+                </button>
+              )}
+
+              {isAuthenticated && (
+                <button
+                  onClick={() => {}}
+                  className="header-nav-button"
+                  title="Stream Video"
+                >
+                  <img src={VideoIcon} alt="Video" />
                 </button>
               )}
             </div>
