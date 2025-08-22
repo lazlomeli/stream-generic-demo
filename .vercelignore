@@ -1,0 +1,27 @@
+# Source files (only ship built files)
+src/
+public/
+
+# Development files
+node_modules/
+.env
+.env.local
+*.log
+
+# Build artifacts we don't need to upload
+tsconfig.json
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+
+# Documentation
+*.md
+VOICE_RECORDING_README.md
+
+# Development server
+server.js
+
+# Only keep what's needed for production
+# dist/ - this is our built app
+# api/ - this contains our serverless functions
+# vercel.json - deployment configuration
