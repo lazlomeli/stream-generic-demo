@@ -123,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log("   3. Enable 'Feeds' and create feed groups: user, timeline, flat");
       console.log("   4. Run this seed script again");
       
-      return json({ 
+      return res.status(400).json({ 
         ok: false, 
         message: "Feeds not enabled. Please configure feed groups in Stream Dashboard.",
         feedsEnabled: false,
@@ -327,7 +327,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const existingActivities = await feedsServer.feed(primaryFeedGroup, 'global').get({ limit: 100 });
         
         // More robust duplicate detection using multiple criteria
-        const activityExists = existingActivities.results.some(existing => 
+        const activityExists = existingActivities.results.some((existing: any) => 
           existing.actor === activity.actor && 
           existing.verb === activity.verb &&
           (existing.text === activity.text || 
@@ -377,7 +377,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const relationship of followRelationships) {
       try {
-        await feedsServer.follow(relationship.follower, relationship.following);
+        // Create follow relationships using Stream's feed following API
+        const userFeed = feedsServer.feed('user', relationship.follower);
+        await userFeed.follow('user', relationship.following);
       } catch (error) {
         console.log(`Follow relationship already exists or error:`, error);
       }
@@ -386,8 +388,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("✅ Stream Feeds data seeded successfully");
     
     // Count created activities by category for demo showcase
-    const activitiesByCategory = {};
-    const activitiesByActor = {};
+    const activitiesByCategory: { [key: string]: number } = {};
+    const activitiesByActor: { [key: string]: number } = {};
     let totalActivities = 0;
     
     for (const activity of sampleActivities) {
