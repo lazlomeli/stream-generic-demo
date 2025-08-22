@@ -89,12 +89,12 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Create a user-specific client for reactions
-        const userToken = streamFeedsClient.createUserToken(userId);
-        const userClient = connect(apiKey, userToken, apiSecret);
-        
-        // Add reaction to the post using user client
-        const reaction = await userClient.reactions.add('like', postId);
+        // Add reaction to the post using server client
+        const reaction = await streamFeedsClient.reactions.add(
+          'like', 
+          postId, 
+          { user_id: userId }
+        );
 
         return res.json({
           success: true,
@@ -106,19 +106,16 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Create a user-specific client for reactions
-        const userToken = streamFeedsClient.createUserToken(userId);
-        const userClient = connect(apiKey, userToken, apiSecret);
-        
         // Get the user's reactions to find the like reaction ID
-        const userReactions = await userClient.reactions.filter({
+        const userReactions = await streamFeedsClient.reactions.filter({
           activity_id: postId,
-          kind: 'like'
+          kind: 'like',
+          user_id: userId
         });
 
         if (userReactions.results && userReactions.results.length > 0) {
-          // Delete the specific like reaction using user client
-          await userClient.reactions.delete(userReactions.results[0].id);
+          // Delete the specific like reaction
+          await streamFeedsClient.reactions.delete(userReactions.results[0].id);
         }
 
         return res.json({
@@ -131,13 +128,10 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        // Create a user-specific client for reactions
-        const userToken = streamFeedsClient.createUserToken(userId);
-        const userClient = connect(apiKey, userToken, apiSecret);
-        
-        // Add comment to the post using user client
-        const comment = await userClient.reactions.add('comment', postId, {
-          text: postData.text
+        // Add comment to the post using server client
+        const comment = await streamFeedsClient.reactions.add('comment', postId, {
+          text: postData.text,
+          user_id: userId
         });
 
         return res.json({
@@ -183,12 +177,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Create a user-specific client for reactions
-        const userToken = streamFeedsClient.createUserToken(userId);
-        const userClient = connect(apiKey, userToken, apiSecret);
-        
         // Get all comments for the post
-        const comments = await userClient.reactions.filter({
+        const comments = await streamFeedsClient.reactions.filter({
           activity_id: postId,
           kind: 'comment'
         });
@@ -204,9 +194,12 @@ export default async function handler(
 
   } catch (error: any) {
     console.error('Error in feed actions:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Action:', req.body?.action, 'UserId:', req.body?.userId, 'PostId:', req.body?.postId);
     res.status(500).json({ 
       error: 'Failed to process feed action',
-      details: error.message 
+      details: error.message,
+      action: req.body?.action
     });
   }
 }

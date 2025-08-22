@@ -29,7 +29,10 @@ export default async function handler(
 
     // Fetch activities from the specified feed
     const feed = streamFeedsClient.feed(feedGroup, feedId);
+    console.log(`Fetching from feed: ${feedGroup}:${feedId} for user: ${userId}`);
+    
     const result = await feed.get({ limit, withReactionCounts: true });
+    console.log(`Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
 
     return res.json({
       success: true,
