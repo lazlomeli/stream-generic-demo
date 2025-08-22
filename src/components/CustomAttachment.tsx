@@ -203,18 +203,12 @@ const CustomVoiceRecording: React.FC<{ attachment: VoiceRecordingAttachment; isQ
 };
 
 const CustomAttachment: React.FC<AttachmentProps> = (props) => {
-  console.log('CustomAttachment props:', props);
-  console.log('Attachments:', props.attachments);
-  
   // Check if any of the attachments are voice recordings
   const voiceRecordingAttachment = props.attachments?.find(att => 
     'type' in att && att.type === 'voiceRecording'
   );
   
-  console.log('Voice recording attachment found:', voiceRecordingAttachment);
-  
   if (voiceRecordingAttachment && 'type' in voiceRecordingAttachment) {
-    console.log('Rendering CustomVoiceRecording component');
     return (
       <CustomVoiceRecording 
         attachment={voiceRecordingAttachment as VoiceRecordingAttachment}
@@ -223,7 +217,6 @@ const CustomAttachment: React.FC<AttachmentProps> = (props) => {
     );
   }
 
-  console.log('Using default Attachment component');
   // For all other attachment types, use the default Attachment component
   return <Attachment {...props} />;
 };

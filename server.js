@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { StreamChat } from 'stream-chat';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import jwt from 'jsonwebtoken';
 
 // Load environment variables from both .env and .env.local
 dotenv.config(); // Loads .env
@@ -103,6 +104,51 @@ app.post('/api/stream/chat-token', async (req, res) => {
   }
 });
 
+// Stream Feeds Token endpoint
+app.post('/api/stream/feed-token', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    console.log('🔐 Generating Stream Feeds token for userId:', userId);
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    // Check if we have Stream credentials
+    if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
+      console.error('❌ Missing Stream API credentials');
+      return res.status(500).json({ 
+        error: 'Stream API credentials not configured. Check your .env file.' 
+      });
+    }
+
+    // Generate a Feeds V3-compatible JWT token
+    const token = jwt.sign(
+      {
+        user_id: userId,
+      },
+      process.env.STREAM_API_SECRET,
+      {
+        algorithm: 'HS256',
+        expiresIn: '24h', // or shorter if needed
+      }
+    );
+    
+    console.log('✅ Stream Feeds token generated successfully');
+    
+    res.json({
+      token: token,
+      apiKey: process.env.STREAM_API_KEY,
+      userId: userId
+    });
+    
+  } catch (error) {
+    console.error('💥 Error generating feeds token:', error);
+    res.status(500).json({ error: 'Failed to generate feeds token' });
+  }
+});
+
 // --- NEW: Seed sample users and channels ---
 app.post("/api/stream/seed", async (req, res) => {
   try {
@@ -171,6 +217,7 @@ app.listen(PORT, () => {
   console.log(`📍 URL: http://localhost:${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log(`💬 Chat tokens: http://localhost:${PORT}/api/stream/chat-token`);
+  console.log(`📰 Feed tokens: http://localhost:${PORT}/api/stream/feed-token`);
   console.log('');
   console.log('🔧 Environment Variables Debug:');
   console.log(`   PORT: ${process.env.PORT || '5000 (default)'}`);

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import LogoutIcon from '../icons/logout-2.svg'
+import StreamLogo from '../assets/stream-logo.png'
 
 interface HeaderProps {}
 
@@ -21,6 +22,10 @@ const Header: React.FC<HeaderProps> = () => {
 
   const handleChatClick = () => {
     navigate('/chat')
+  }
+
+  const handleFeedsClick = () => {
+    navigate('/feeds')
   }
 
   const handleLoginClick = () => {
@@ -41,9 +46,22 @@ const Header: React.FC<HeaderProps> = () => {
                 className="header-nav-button"
                 title="Home"
               >
-                <img src={HomeIcon} alt="Home" />
+                {/* <img src={HomeIcon} alt="Home" /> */}
+                <img src={StreamLogo} alt="Stream Logo" />
               </button>
-            
+
+              {/* Feeds icon - only when authenticated */}
+              {isAuthenticated && (
+                <button
+                  onClick={handleFeedsClick}
+                  className="header-nav-button"
+                  title="Activity Feeds"
+                >
+                  <img src={HomeIcon} alt="Feeds" />
+                </button>
+              )}
+            </div>
+
               {/* Chat icon - only when authenticated */}
               {isAuthenticated && (
                 <button
@@ -54,9 +72,7 @@ const Header: React.FC<HeaderProps> = () => {
                   <img src={SendIcon} alt="Chat" />
                 </button>
               )}
-            </div>
           </div>
-          
           {/* Right side - User info and logout */}
           <div className="header-right">
             {isAuthenticated ? (

@@ -14,6 +14,7 @@ import CustomMessageInput from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingSpinner from './LoadingSpinner'
+import { getSanitizedUserId } from '../utils/userUtils'
 import 'stream-chat-react/dist/css/v2/index.css'
 
 import type { ChannelItem } from "../hooks/listMyChannels"
@@ -21,9 +22,6 @@ import "./Chat.css";
 import "./VoiceRecording.css";
 
 interface ChatProps {}
-
-const sanitizeUserId = (userId: string) =>
-  userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
 
 // Custom Channel List component using Stream Chat SDK
 const CustomChannelList: React.FC<{
@@ -149,9 +147,8 @@ const Chat: React.FC<ChatProps> = () => {
   // Keep a single client instance per tab
   const clientRef = useRef<StreamChat | null>(null);
 
-  // Memoize current user id once
-  const rawUserId = user?.sub || user?.email || "anonymous";
-  const sanitizedUserId = useMemo(() => sanitizeUserId(rawUserId), [rawUserId]);
+  // Memoize current user id once using shared utility
+  const sanitizedUserId = useMemo(() => getSanitizedUserId(user), [user]);
 
   // --- helpers ---
   const getStreamToken = useCallback(

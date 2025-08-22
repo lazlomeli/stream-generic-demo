@@ -8,6 +8,7 @@ import LoadingSpinner from './components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
 import './App.css'
+import Feeds from './components/Feeds'
 
 function App() {
   const { isLoading, error } = useAuth0()
@@ -29,6 +30,11 @@ function App() {
           <Route path="/chat" element={
             <ProtectedRoute>
               <Chat />
+            </ProtectedRoute>
+          } />
+          <Route path="/feeds" element={
+            <ProtectedRoute>
+              <Feeds />
             </ProtectedRoute>
           } />
           <Route path="/login" element={<Login />} />
