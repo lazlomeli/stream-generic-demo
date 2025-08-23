@@ -102,7 +102,7 @@ export default async function handler(req: Request) {
     // Check if Feeds is enabled by testing for feed groups
     console.log("🔍 Checking if Feeds is enabled...");
     const testFeedGroups = ['user', 'timeline', 'flat'];
-    let availableFeedGroups = [];
+    let availableFeedGroups: string[] = [];
     
     for (const feedGroup of testFeedGroups) {
       try {
@@ -375,7 +375,9 @@ export default async function handler(req: Request) {
 
     for (const relationship of followRelationships) {
       try {
-        await feedsServer.follow(relationship.follower, relationship.following);
+        // Create follow relationship: follower's timeline follows following's user feed
+        await feedsServer.feed('timeline', relationship.follower).follow('user', relationship.following);
+        console.log(`✅ ${relationship.follower} now follows ${relationship.following}`);
       } catch (error) {
         console.log(`Follow relationship already exists or error:`, error);
       }
