@@ -109,8 +109,9 @@ const Feeds = () => {
   // Fetch posts when feedsClient is ready
   useEffect(() => {
     if (feedsClient?.userId) {
-      console.log('🔄 FeedsClient ready, fetching initial posts...');
+      console.log('🔄 FeedsClient ready, fetching initial posts and bookmark state...');
       fetchPosts(feedsClient.userId);
+      fetchBookmarkedPosts(feedsClient.userId);
     }
   }, [feedsClient]);
 
@@ -127,6 +128,68 @@ const Feeds = () => {
       }, 100);
     }
   }, [searchParams, posts]);
+
+  // Refresh bookmark state when user returns to the page (e.g., from bookmarked page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && feedsClient?.userId) {
+        console.log('🔄 Page became visible, refreshing bookmark state...');
+        fetchBookmarkedPosts(feedsClient.userId);
+      }
+    };
+
+    const handleFocus = () => {
+      if (feedsClient?.userId) {
+        console.log('🔄 Page focused, refreshing bookmark state...');
+        fetchBookmarkedPosts(feedsClient.userId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [feedsClient]);
+
+  // Function to fetch bookmarked posts to sync bookmark state
+  const fetchBookmarkedPosts = async (userId?: string) => {
+    const userIdToUse = userId || feedsClient?.userId;
+    if (!userIdToUse) return;
+
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/feed-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          action: 'get_bookmarked_posts',
+          userId: userIdToUse
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookmarked posts');
+      }
+
+      const data = await response.json();
+      if (data.success && data.bookmarkedPosts) {
+        // Extract post IDs and update bookmarked posts state
+        const bookmarkedPostIds = new Set<string>(data.bookmarkedPosts.map((post: any) => post.id as string));
+        setBookmarkedPosts(bookmarkedPostIds);
+        console.log('📖 Synced bookmark state:', bookmarkedPostIds.size, 'bookmarked posts');
+      }
+    } catch (error) {
+      console.error('Error fetching bookmarked posts:', error);
+      // Don't show error to user as this is background sync
+    }
+  };
 
   // Function to fetch real posts from Stream feeds
   const fetchPosts = async (userId?: string) => {
