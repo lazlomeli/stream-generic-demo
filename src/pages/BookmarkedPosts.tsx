@@ -42,38 +42,44 @@ const BookmarkedPosts = () => {
   const [feedsClient, setFeedsClient] = useState<any>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    const initFeedsClient = async () => {
+      if (!user || !isAuthenticated) return;
 
-    const initializeFeedsClient = async () => {
       try {
-        const { FeedsClient } = await import('@stream-io/feeds-react-sdk');
+        setError(null);
+        
+        // Get Auth0 access token for backend authentication
         const accessToken = await getAccessTokenSilently();
         
-        const response = await fetch('/api/stream/chat-token', {
+        // Use shared utility to get sanitized userId
+        const sanitizedUserId = getSanitizedUserId(user);
+        
+        // Call your local server endpoint to get the feed token
+        const response = await fetch('/api/stream/feed-token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ userId: getSanitizedUserId(user) })
+          body: JSON.stringify({ userId: sanitizedUserId }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to get Stream token');
+          const errorText = await response.text();
+          throw new Error(`Failed to get feed token: ${response.status} ${errorText}`);
         }
 
         const { token, apiKey } = await response.json();
-        const client = new FeedsClient(apiKey);
-        await client.connectUser({ id: getSanitizedUserId(user) }, token);
-        
-        setFeedsClient(client);
+
+        // Store the token and API key (same pattern as Feeds component)
+        setFeedsClient({ token, apiKey, userId: sanitizedUserId });
       } catch (err: any) {
         console.error('Error initializing feeds client:', err);
         setError(err.message);
       }
     };
 
-    initializeFeedsClient();
+    initFeedsClient();
   }, [isAuthenticated, user, getAccessTokenSilently]);
 
   useEffect(() => {
