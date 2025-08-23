@@ -108,21 +108,37 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Get and delete the user's like reaction
-        const userReactions = await serverClient.reactions.filter({
-          activity_id: postId,
-          kind: 'like',
-          user_id: userId
-        });
+        console.log('💔 Unliking post:', postId, 'for user:', userId);
+        
+        try {
+          // Get and delete the user's like reaction
+          const userReactions = await serverClient.reactions.filter({
+            activity_id: postId,
+            kind: 'like',
+            user_id: userId
+          });
 
-        if (userReactions.results && userReactions.results.length > 0) {
-          await userClient.reactions.delete(userReactions.results[0].id);
+          console.log('💔 Found like reactions:', userReactions.results?.length || 0);
+
+          if (userReactions.results && userReactions.results.length > 0) {
+            console.log('💔 Deleting like reaction:', userReactions.results[0].id);
+            await userClient.reactions.delete(userReactions.results[0].id);
+            console.log('💔 Like reaction deleted successfully');
+          } else {
+            console.log('💔 No like reaction found to delete');
+          }
+
+          return res.json({
+            success: true,
+            message: 'Post unliked successfully'
+          });
+        } catch (error) {
+          console.error('💔 Error unliking post:', error);
+          return res.status(500).json({ 
+            error: 'Failed to unlike post',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
-
-        return res.json({
-          success: true,
-          message: 'Post unliked successfully'
-        });
 
       case 'add_comment':
         if (!postId || !postData?.text) {
@@ -158,21 +174,37 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Get and delete the user's bookmark reaction
-        const userBookmarkReactions = await serverClient.reactions.filter({
-          activity_id: postId,
-          kind: 'bookmark',
-          user_id: userId
-        });
+        console.log('🔖 Removing bookmark for post:', postId, 'for user:', userId);
+        
+        try {
+          // Get and delete the user's bookmark reaction
+          const userBookmarkReactions = await serverClient.reactions.filter({
+            activity_id: postId,
+            kind: 'bookmark',
+            user_id: userId
+          });
 
-        if (userBookmarkReactions.results && userBookmarkReactions.results.length > 0) {
-          await userClient.reactions.delete(userBookmarkReactions.results[0].id);
+          console.log('🔖 Found bookmark reactions:', userBookmarkReactions.results?.length || 0);
+
+          if (userBookmarkReactions.results && userBookmarkReactions.results.length > 0) {
+            console.log('🔖 Deleting bookmark reaction:', userBookmarkReactions.results[0].id);
+            await userClient.reactions.delete(userBookmarkReactions.results[0].id);
+            console.log('🔖 Bookmark reaction deleted successfully');
+          } else {
+            console.log('🔖 No bookmark reaction found to delete');
+          }
+
+          return res.json({
+            success: true,
+            message: 'Bookmark removed successfully'
+          });
+        } catch (error) {
+          console.error('🔖 Error removing bookmark:', error);
+          return res.status(500).json({ 
+            error: 'Failed to remove bookmark',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
-
-        return res.json({
-          success: true,
-          message: 'Bookmark removed successfully'
-        });
 
       case 'get_comments':
         if (!postId) {

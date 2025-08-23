@@ -57,6 +57,7 @@ const Feeds = () => {
   const [postComments, setPostComments] = useState<{ [postId: string]: any[] }>({});
   const [loadingComments, setLoadingComments] = useState<string | null>(null);
   const highlightedPostRef = useRef<HTMLDivElement>(null);
+  const lastScrolledHighlight = useRef<string | null>(null);
 
   useEffect(() => {
     const initFeedsClient = async () => {
@@ -115,15 +116,18 @@ const Feeds = () => {
     }
   }, [feedsClient]);
 
-  // Auto-scroll to highlighted post when highlight parameter changes
+  // Auto-scroll to highlighted post when highlight parameter changes (not on post updates)
   useEffect(() => {
     const highlightPostId = searchParams.get('highlight');
-    if (highlightPostId && posts.length > 0) {
+    
+    // Only scroll if we have a highlight ID and haven't already scrolled to it
+    if (highlightPostId && highlightPostId !== lastScrolledHighlight.current && posts.length > 0) {
       // Check if the highlighted post exists in the current posts
       const highlightedPost = posts.find(post => post.id === highlightPostId);
       
       if (highlightedPost) {
         console.log('🎯 Scrolling to highlighted post:', highlightPostId, 'in', posts.length, 'posts');
+        lastScrolledHighlight.current = highlightPostId; // Mark as scrolled
         
         // Use a longer delay and retry mechanism to ensure proper scrolling
         const scrollToPost = (attempt = 1) => {
@@ -161,13 +165,18 @@ const Feeds = () => {
         console.log('⚠️ Highlighted post not found in current posts:', highlightPostId, 'Available posts:', posts.map(p => p.id));
       }
     }
+    
+    // Clear the scroll tracking when highlight parameter is removed
+    if (!highlightPostId) {
+      lastScrolledHighlight.current = null;
+    }
   }, [searchParams, posts]);
 
   // Additional scroll trigger when posts are loaded and there's a highlight parameter
   useEffect(() => {
     const highlightPostId = searchParams.get('highlight');
-    if (highlightPostId && posts.length > 0) {
-      // Small delay to ensure this runs after the main scroll effect
+    if (highlightPostId && posts.length > 0 && highlightPostId === lastScrolledHighlight.current) {
+      // Only run this secondary check if we've already attempted to scroll to this highlight
       setTimeout(() => {
         const element = document.querySelector('.highlighted-post') as HTMLDivElement;
         if (element) {
