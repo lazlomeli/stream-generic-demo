@@ -112,6 +112,8 @@ const BookmarkedPosts = () => {
       }
 
       const data = await response.json();
+      console.log('📖 Received bookmarked posts data:', data);
+      console.log('📖 Bookmarked posts array:', data.bookmarkedPosts);
       setBookmarkedPosts(data.bookmarkedPosts || []);
     } catch (err: any) {
       console.error('Error fetching bookmarked posts:', err);

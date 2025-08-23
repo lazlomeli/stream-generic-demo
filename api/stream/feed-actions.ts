@@ -191,11 +191,15 @@ export default async function handler(
         });
 
       case 'get_bookmarked_posts':
-        // Get all bookmark reactions for the user
+        // Get all bookmark reactions for the user with activity data
         const bookmarkReactions = await serverClient.reactions.filter({
           kind: 'bookmark',
-          user_id: userId
+          user_id: userId,
+          withActivityData: true
         });
+
+        console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
+        console.log('📖 First reaction sample:', bookmarkReactions.results?.[0]);
 
         // Extract the bookmarked posts with activity details
         const bookmarkedPosts = bookmarkReactions.results?.map((reaction: any) => ({
