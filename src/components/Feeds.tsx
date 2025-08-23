@@ -118,16 +118,74 @@ const Feeds = () => {
   // Auto-scroll to highlighted post when highlight parameter changes
   useEffect(() => {
     const highlightPostId = searchParams.get('highlight');
-    if (highlightPostId && highlightedPostRef.current) {
-      // Small delay to ensure the post is rendered
-      setTimeout(() => {
-        highlightedPostRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }, 100);
+    if (highlightPostId && posts.length > 0) {
+      // Check if the highlighted post exists in the current posts
+      const highlightedPost = posts.find(post => post.id === highlightPostId);
+      
+      if (highlightedPost) {
+        console.log('🎯 Scrolling to highlighted post:', highlightPostId, 'in', posts.length, 'posts');
+        
+        // Use a longer delay and retry mechanism to ensure proper scrolling
+        const scrollToPost = (attempt = 1) => {
+          let element = highlightedPostRef.current;
+          
+          // Fallback: try to find the highlighted post by class if ref fails
+          if (!element) {
+            element = document.querySelector('.highlighted-post') as HTMLDivElement;
+            console.log('📍 Using fallback querySelector for highlighted post');
+          }
+          
+          if (element) {
+            console.log('📍 Scrolling to element, attempt:', attempt);
+            
+            // Ensure the element is fully rendered before scrolling
+            requestAnimationFrame(() => {
+              element?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+              });
+            });
+          } else if (attempt < 8) {
+            // Retry up to 8 times with increasing delay
+            console.log('⏳ Retrying scroll, attempt:', attempt + 1);
+            setTimeout(() => scrollToPost(attempt + 1), attempt * 300);
+          } else {
+            console.warn('⚠️ Could not scroll to highlighted post after 8 attempts');
+          }
+        };
+        
+        // Initial scroll attempt with delay to ensure DOM is ready
+        setTimeout(() => scrollToPost(), 500);
+      } else {
+        console.log('⚠️ Highlighted post not found in current posts:', highlightPostId, 'Available posts:', posts.map(p => p.id));
+      }
     }
   }, [searchParams, posts]);
+
+  // Additional scroll trigger when posts are loaded and there's a highlight parameter
+  useEffect(() => {
+    const highlightPostId = searchParams.get('highlight');
+    if (highlightPostId && posts.length > 0) {
+      // Small delay to ensure this runs after the main scroll effect
+      setTimeout(() => {
+        const element = document.querySelector('.highlighted-post') as HTMLDivElement;
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+          
+          if (!isVisible) {
+            console.log('🔄 Post not visible, scrolling again...');
+            element.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            });
+          }
+        }
+      }, 1000); // Check after 1 second
+    }
+  }, [posts.length, searchParams]);
 
   // Refresh bookmark state when user returns to the page (e.g., from bookmarked page)
   useEffect(() => {
