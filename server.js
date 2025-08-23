@@ -340,7 +340,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         const bookmarkReactions = await serverClient.reactions.filter({
           kind: 'bookmark',
           user_id: userId,
-          withActivityData: true
+          with_activity_data: true
         });
 
         console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);

@@ -159,14 +159,14 @@ export default async function handler(
         }
 
         // Get and delete the user's bookmark reaction
-        const bookmarkReactions = await serverClient.reactions.filter({
+        const userBookmarkReactions = await serverClient.reactions.filter({
           activity_id: postId,
           kind: 'bookmark',
           user_id: userId
         });
 
-        if (bookmarkReactions.results && bookmarkReactions.results.length > 0) {
-          await userClient.reactions.delete(bookmarkReactions.results[0].id);
+        if (userBookmarkReactions.results && userBookmarkReactions.results.length > 0) {
+          await userClient.reactions.delete(userBookmarkReactions.results[0].id);
         }
 
         return res.json({
@@ -195,7 +195,7 @@ export default async function handler(
         const bookmarkReactions = await serverClient.reactions.filter({
           kind: 'bookmark',
           user_id: userId,
-          withActivityData: true
+          with_activity_data: true
         });
 
         console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
