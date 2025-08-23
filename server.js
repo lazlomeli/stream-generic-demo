@@ -354,14 +354,14 @@ app.post('/api/stream/feed-actions', async (req, res) => {
 
       case 'get_bookmarked_posts':
         console.log('📖 Getting bookmarked posts for user:', userId);
-        // Get all bookmark reactions for the user
-        const bookmarkReactions = await (client as any).reactions.filter({
+        // Get all bookmark reactions for the user using new FeedsClient
+        const bookmarkReactions = await client.queryReactions({
           kind: 'bookmark',
           user_id: userId
         });
 
         // Extract the bookmarked posts with activity details
-        const bookmarkedPosts = bookmarkReactions.results?.map((reaction: any) => ({
+        const bookmarkedPosts = bookmarkReactions.results?.map(reaction => ({
           id: reaction.id,
           activity_id: reaction.activity_id,
           actor: reaction.activity?.actor || 'Unknown',
