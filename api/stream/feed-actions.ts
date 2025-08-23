@@ -1,4 +1,4 @@
-import { connect } from 'getstream';
+import { FeedsClient } from '@stream-io/feeds-client';
 import jwt from 'jsonwebtoken';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -25,8 +25,18 @@ export default async function handler(
       return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
 
-    // Initialize Stream Feeds client
-    const streamFeedsClient = connect(apiKey, apiSecret);
+    // Initialize Stream Feeds client with new FeedsClient
+    const client = new FeedsClient(apiKey);
+    
+    // Create user token for authentication
+    const userToken = jwt.sign(
+      { user_id: userId },
+      apiSecret,
+      { algorithm: 'HS256' }
+    );
+    
+    // Connect user to the client
+    await client.connectUser({ id: userId }, userToken);
 
     switch (action) {
       case 'create_post':
@@ -34,7 +44,7 @@ export default async function handler(
           return res.status(400).json({ error: 'Post text is required' });
         }
 
-        const newActivity = await streamFeedsClient.feed('flat', 'global').addActivity({
+        const newActivity = await (client as any).feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
           object: 'post',
@@ -49,7 +59,7 @@ export default async function handler(
         });
 
         // Also add to user's personal flat feed
-        await streamFeedsClient.feed('flat', userId).addActivity({
+        await (client as any).feed('flat', userId).addActivity({
           actor: userId,
           verb: 'post',
           object: 'post',
@@ -75,10 +85,10 @@ export default async function handler(
         }
 
         // Remove from global flat feed
-        await streamFeedsClient.feed('flat', 'global').removeActivity(postId);
+        await (client as any).feed('flat', 'global').removeActivity(postId);
         
         // Remove from user's personal flat feed
-        await streamFeedsClient.feed('flat', userId).removeActivity(postId);
+        await (client as any).feed('flat', userId).removeActivity(postId);
 
         return res.json({
           success: true,
@@ -90,11 +100,10 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add reaction using correct server-side format from Stream docs
-        await streamFeedsClient.feeds.addReaction({
+        // Add reaction using new FeedsClient
+        await client.addReaction({
           activity_id: postId,
-          type: 'like',
-          user_id: userId
+          type: 'like'
         });
 
         return res.json({
@@ -107,17 +116,11 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Get the user's reactions to find the like reaction ID using server client
-        const userReactions = await streamFeedsClient.reactions.filter({
+        // Delete reaction using new FeedsClient
+        await client.deleteActivityReaction({
           activity_id: postId,
-          kind: 'like',
-          user_id: userId
+          type: 'like'
         });
-
-        if (userReactions.results && userReactions.results.length > 0) {
-          // Delete the specific like reaction
-          await streamFeedsClient.reactions.delete(userReactions.results[0].id);
-        }
 
         return res.json({
           success: true,
@@ -129,14 +132,13 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        // Add comment using correct server-side format from Stream docs
-        const comment = await streamFeedsClient.feeds.addReaction({
+        // Add comment using new FeedsClient
+        const comment = await client.addReaction({
           activity_id: postId,
           type: 'comment',
           custom: {
             text: postData.text
-          },
-          user_id: userId
+          }
         });
 
         return res.json({
@@ -150,9 +152,10 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add bookmark reaction
-        await streamFeedsClient.reactions.add('bookmark', postId, {
-          user_id: userId
+        // Add bookmark reaction using new FeedsClient
+        await client.addReaction({
+          activity_id: postId,
+          type: 'bookmark'
         });
 
         return res.json({
@@ -165,12 +168,11 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Remove bookmark reaction (note: this may need to be adapted based on actual getstream API)
-        try {
-          await streamFeedsClient.reactions.delete(postId);
-        } catch (error) {
-          console.log('Note: bookmark delete may need specific implementation');
-        }
+        // Remove bookmark reaction using new FeedsClient
+        await client.deleteActivityReaction({
+          activity_id: postId,
+          type: 'bookmark'
+        });
 
         return res.json({
           success: true,
@@ -182,8 +184,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Get all comments for the post using server client
-        const comments = await streamFeedsClient.reactions.filter({
+        // Get all comments for the post using new FeedsClient
+        const comments = await (client as any).queryActivityReactions({
           activity_id: postId,
           kind: 'comment'
         });

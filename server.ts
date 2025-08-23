@@ -160,12 +160,22 @@ app.post('/api/stream/get-posts', async (req, res) => {
       return res.status(400).json({ error: 'userId is required' });
     }
 
-    // Import getstream for local development
-    const { connect } = await import('getstream');
-    const streamFeedsClient = connect(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+    // Import @stream-io/feeds-client for local development
+    const { FeedsClient } = await import('@stream-io/feeds-client');
+    const client = new FeedsClient(process.env.STREAM_API_KEY);
+    
+    // Create user token for server-side operations
+    const userToken = jwt.sign(
+      { user_id: userId },
+      process.env.STREAM_API_SECRET,
+      { algorithm: 'HS256' }
+    );
+    
+    // Connect user to the client
+    await client.connectUser({ id: userId }, userToken);
 
     // Fetch activities from the specified feed
-    const feed = streamFeedsClient.feed(feedGroup, feedId);
+    const feed = (client as any).feed(feedGroup, feedId)
     const result = await feed.get({ limit, withReactionCounts: true });
 
     console.log(`✅ Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
@@ -206,9 +216,19 @@ app.post('/api/stream/feed-actions', async (req, res) => {
       });
     }
 
-    // Import getstream for local development
-    const { connect } = await import('getstream');
-    const streamFeedsClient = connect(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+    // Import @stream-io/feeds-client for local development
+    const { FeedsClient } = await import('@stream-io/feeds-client');
+    const client = new FeedsClient(process.env.STREAM_API_KEY);
+    
+    // Create user token for server-side operations
+    const userToken = jwt.sign(
+      { user_id: userId },
+      process.env.STREAM_API_SECRET,
+      { algorithm: 'HS256' }
+    );
+    
+    // Connect user to the client
+    await client.connectUser({ id: userId }, userToken);
 
     switch (action) {
       case 'create_post':
@@ -217,7 +237,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('📝 Creating post:', postData.text.substring(0, 50) + '...');
-        const newActivity = await streamFeedsClient.feed('flat', 'global').addActivity({
+        const newActivity = await (client as any).feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
           object: 'post',
@@ -244,7 +264,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('🗑️ Deleting post:', postId);
-        await streamFeedsClient.feed('flat', 'global').removeActivity(postId);
+        await (client as any).feed('flat', 'global').removeActivity(postId);
         
         console.log('✅ Post deleted');
         return res.json({
@@ -258,11 +278,10 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('❤️ Liking post:', postId);
-        // Add reaction using correct server-side format from Stream docs
-        await streamFeedsClient.feeds.addReaction({
+        // Add reaction using new FeedsClient
+        await client.addReaction({
           activity_id: postId,
-          type: 'like',
-          user_id: userId
+          type: 'like'
         });
 
         return res.json({
@@ -276,17 +295,11 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('💔 Unliking post:', postId);
-        // Get the user's reactions to find the like reaction ID using server client
-        const userReactions = await streamFeedsClient.reactions.filter({
+        // Delete reaction using new FeedsClient
+        await client.deleteActivityReaction({
           activity_id: postId,
-          kind: 'like',
-          user_id: userId
+          type: 'like'
         });
-
-        if (userReactions.results && userReactions.results.length > 0) {
-          // Delete the specific like reaction
-          await streamFeedsClient.reactions.delete(userReactions.results[0].id);
-        }
 
         return res.json({
           success: true,
@@ -299,14 +312,13 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('💬 Adding comment to post:', postId);
-        // Add comment using correct server-side format from Stream docs
-        const comment = await streamFeedsClient.feeds.addReaction({
+        // Add comment using new FeedsClient
+        const comment = await client.addReaction({
           activity_id: postId,
           type: 'comment',
           custom: {
             text: postData.text
-          },
-          user_id: userId
+          }
         });
 
         return res.json({
@@ -321,10 +333,10 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('📄 Getting comments for post:', postId);
-        // Get all comments for the post using server client
-        const comments = await streamFeedsClient.reactions.filter({
+        // Get all comments for the post using new FeedsClient
+        const comments = await client.queryActivityReactions({
           activity_id: postId,
-          kind: 'comment'
+          type: 'comment'
         });
 
         return res.json({
@@ -406,8 +418,17 @@ app.post("/api/stream/seed", async (req, res) => {
     console.log('✅ Chat seeding completed');
 
     // === FEEDS SEEDING ===
-    const { connect } = await import('getstream');
-    const feedsServer = connect(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+    const { FeedsClient } = await import('@stream-io/feeds-client');
+    const feedsServer = new FeedsClient(process.env.STREAM_API_KEY);
+    
+    // For seeding, we'll use a system user
+    const systemUserToken = jwt.sign(
+      { user_id: 'system' },
+      process.env.STREAM_API_SECRET,
+      { algorithm: 'HS256' }
+    );
+    
+    await feedsServer.connectUser({ id: 'system' }, systemUserToken);
 
     // Enhanced demo activities showcasing Stream Feeds features
     const sampleActivities = [
