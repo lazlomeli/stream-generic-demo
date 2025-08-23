@@ -56,6 +56,7 @@ const Feeds = () => {
   const [showComments, setShowComments] = useState<string | null>(null);
   const [postComments, setPostComments] = useState<{ [postId: string]: any[] }>({});
   const [loadingComments, setLoadingComments] = useState<string | null>(null);
+  const highlightedPostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initFeedsClient = async () => {
@@ -112,6 +113,20 @@ const Feeds = () => {
       fetchPosts(feedsClient.userId);
     }
   }, [feedsClient]);
+
+  // Auto-scroll to highlighted post when highlight parameter changes
+  useEffect(() => {
+    const highlightPostId = searchParams.get('highlight');
+    if (highlightPostId && highlightedPostRef.current) {
+      // Small delay to ensure the post is rendered
+      setTimeout(() => {
+        highlightedPostRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+    }
+  }, [searchParams, posts]);
 
   // Function to fetch real posts from Stream feeds
   const fetchPosts = async (userId?: string) => {
@@ -603,7 +618,11 @@ const Feeds = () => {
             const isHighlighted = highlightPostId === post.id;
             
             return (
-            <div key={post.id} className={`feed-post ${isHighlighted ? 'highlighted-post' : ''}`}>
+            <div 
+              key={post.id} 
+              className={`feed-post ${isHighlighted ? 'highlighted-post' : ''}`}
+              ref={isHighlighted ? highlightedPostRef : null}
+            >
               <div className="post-header">
                 <div className="post-author">
                 <div className="post-author-info">

@@ -191,6 +191,8 @@ export default async function handler(
         });
 
       case 'get_bookmarked_posts':
+        console.log('📖 Getting bookmarked posts for user:', userId);
+        
         // Get all bookmark reactions for the user with activity data
         const bookmarkReactions = await serverClient.reactions.filter({
           kind: 'bookmark',
@@ -199,24 +201,53 @@ export default async function handler(
         });
 
         console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
-        console.log('📖 First reaction sample:', bookmarkReactions.results?.[0]);
-        console.log('📖 Activity IDs:', bookmarkReactions.results?.map(r => r.activity_id));
-        console.log('📖 First reaction activity data:', JSON.stringify(bookmarkReactions.results?.[0]?.activity, null, 2));
+        
+        if (!bookmarkReactions.results || bookmarkReactions.results.length === 0) {
+          return res.json({
+            success: true,
+            bookmarkedPosts: []
+          });
+        }
 
-        // Extract the bookmarked posts with activity details
-        const bookmarkedPosts = bookmarkReactions.results?.map((reaction: any) => ({
-          id: reaction.activity_id, // Use activity_id as the main id for highlighting
-          activity_id: reaction.activity_id,
-          actor: reaction.activity?.actor || 'Unknown',
-          verb: reaction.activity?.verb || 'post',
-          object: reaction.activity?.object || 'post',
-          text: reaction.activity?.text || 'No content',
-          attachments: reaction.activity?.attachments || [],
-          custom: reaction.activity?.custom || {},
-          created_at: reaction.activity?.created_at || reaction.created_at,
-          time: reaction.activity?.created_at || reaction.created_at,
-          reaction_id: reaction.id // Keep the reaction ID for removal
-        })) || [];
+        // Get activity IDs to fetch fresh data with reaction counts
+        const activityIds = bookmarkReactions.results.map(r => r.activity_id);
+        console.log('📖 Activity IDs:', activityIds);
+
+        // Fetch activities with current reaction counts from the global feed
+        const feed = serverClient.feed('flat', 'global');
+        const feedData = await feed.get({ 
+          limit: 100, 
+          withReactionCounts: true,
+          withOwnReactions: true
+        });
+
+        console.log('📖 Feed activities found:', feedData.results?.length || 0);
+
+        // Filter feed activities to only bookmarked ones and merge data
+        const bookmarkedPosts = feedData.results
+          ?.filter(activity => activityIds.includes(activity.id))
+          .map((activity: any) => {
+            const bookmarkReaction = bookmarkReactions.results?.find(r => r.activity_id === activity.id);
+            
+            return {
+              id: activity.id, // Use activity id for highlighting
+              activity_id: activity.id,
+              actor: activity.actor || 'Unknown',
+              verb: activity.verb || 'post',
+              object: activity.object || 'post',
+              text: activity.text || 'No content',
+              attachments: activity.attachments || [],
+              custom: activity.custom || {},
+              created_at: activity.created_at || activity.time,
+              time: activity.created_at || activity.time,
+              reaction_counts: activity.reaction_counts || {},
+              own_reactions: activity.own_reactions || {},
+              reaction_id: bookmarkReaction?.id // Keep the reaction ID for removal
+            };
+          }) || [];
+
+        console.log('📖 Final bookmarked posts:', bookmarkedPosts.length);
+        console.log('📖 First post sample:', JSON.stringify(bookmarkedPosts[0], null, 2));
 
         return res.json({
           success: true,

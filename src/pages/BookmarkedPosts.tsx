@@ -28,9 +28,20 @@ interface BookmarkedPost {
     comments: number;
     category: string;
   };
+  reaction_counts?: {
+    like?: number;
+    comment?: number;
+    share?: number;
+  };
+  own_reactions?: {
+    like?: any[];
+    comment?: any[];
+    share?: any[];
+  };
   created_at?: string;
   time?: string;
   activity_id: string; // The original post ID to navigate back to
+  reaction_id?: string; // The bookmark reaction ID for removal
 }
 
 const BookmarkedPosts = () => {
@@ -248,9 +259,9 @@ const BookmarkedPosts = () => {
 
               <div className="post-actions">
                 <div className="action-stats">
-                  <span>{post.custom?.likes || 0} likes</span>
-                  <span>{post.custom?.comments || 0} comments</span>
-                  <span>{post.custom?.shares || 0} shares</span>
+                  <span>{post.reaction_counts?.like || post.custom?.likes || 0} likes</span>
+                  <span>{post.reaction_counts?.comment || post.custom?.comments || 0} comments</span>
+                  <span>{post.reaction_counts?.share || post.custom?.shares || 0} shares</span>
                 </div>
                 
                 <div className="action-buttons">
