@@ -258,12 +258,10 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('❤️ Liking post:', postId);
-        // Create a user-specific client for reactions
-        const likeUserToken = streamFeedsClient.createUserToken(userId);
-        const likeUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, likeUserToken, process.env.STREAM_API_SECRET);
-        
-        // Add reaction to the post using user client
-        await likeUserClient.reactions.add('like', postId);
+        // Add reaction using server client with user_id in data
+        await streamFeedsClient.reactions.add('like', postId, {
+          user_id: userId
+        });
 
         return res.json({
           success: true,
@@ -276,19 +274,16 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('💔 Unliking post:', postId);
-        // Create a user-specific client for reactions
-        const unlikeUserToken = streamFeedsClient.createUserToken(userId);
-        const unlikeUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, unlikeUserToken, process.env.STREAM_API_SECRET);
-        
-        // Get the user's reactions to find the like reaction ID
-        const userReactions = await unlikeUserClient.reactions.filter({
+        // Get the user's reactions to find the like reaction ID using server client
+        const userReactions = await streamFeedsClient.reactions.filter({
           activity_id: postId,
-          kind: 'like'
+          kind: 'like',
+          user_id: userId
         });
 
         if (userReactions.results && userReactions.results.length > 0) {
-          // Delete the specific like reaction using user client
-          await unlikeUserClient.reactions.delete(userReactions.results[0].id);
+          // Delete the specific like reaction
+          await streamFeedsClient.reactions.delete(userReactions.results[0].id);
         }
 
         return res.json({
@@ -302,13 +297,10 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('💬 Adding comment to post:', postId);
-        // Create a user-specific client for reactions
-        const commentUserToken = streamFeedsClient.createUserToken(userId);
-        const commentUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, commentUserToken, process.env.STREAM_API_SECRET);
-        
-        // Add comment to the post using user client
-        const comment = await commentUserClient.reactions.add('comment', postId, {
-          text: postData.text
+        // Add comment using server client with user_id in data
+        const comment = await streamFeedsClient.reactions.add('comment', postId, {
+          text: postData.text,
+          user_id: userId
         });
 
         return res.json({
@@ -323,12 +315,8 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('📄 Getting comments for post:', postId);
-        // Create a user-specific client for reactions
-        const getCommentsUserToken = streamFeedsClient.createUserToken(userId);
-        const getCommentsUserClient = (await import('getstream')).connect(process.env.STREAM_API_KEY, getCommentsUserToken, process.env.STREAM_API_SECRET);
-        
-        // Get all comments for the post
-        const comments = await getCommentsUserClient.reactions.filter({
+        // Get all comments for the post using server client
+        const comments = await streamFeedsClient.reactions.filter({
           activity_id: postId,
           kind: 'comment'
         });
