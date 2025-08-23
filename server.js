@@ -414,9 +414,12 @@ app.post('/api/stream/feed-actions', async (req, res) => {
               time: activity.created_at || activity.time,
               reaction_counts: activity.reaction_counts || {},
               own_reactions: activity.own_reactions || {},
-              reaction_id: bookmarkReaction?.id // Keep the reaction ID for removal
+              reaction_id: bookmarkReaction?.id, // Keep the reaction ID for removal
+              bookmarked_at: bookmarkReaction?.created_at // When user bookmarked this post
             };
-          }) || [];
+          })
+          // Sort by bookmark date (newest bookmarks first)
+          .sort((a, b) => new Date(b.bookmarked_at).getTime() - new Date(a.bookmarked_at).getTime()) || [];
 
         console.log('📖 Final bookmarked posts:', bookmarkedPosts.length);
         console.log('📖 First post sample:', JSON.stringify(bookmarkedPosts[0], null, 2));

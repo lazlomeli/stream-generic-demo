@@ -42,6 +42,7 @@ interface BookmarkedPost {
   time?: string;
   activity_id: string; // The original post ID to navigate back to
   reaction_id?: string; // The bookmark reaction ID for removal
+  bookmarked_at?: string; // When user bookmarked this post
 }
 
 const BookmarkedPosts = () => {
@@ -139,6 +140,37 @@ const BookmarkedPosts = () => {
     navigate(`/feeds?highlight=${activityId}`);
   };
 
+  // Function to get user avatar or create fallback
+  const getUserAvatar = (actorId: string) => {
+    // If it's the current user, use Auth0 profile picture or create initial avatar
+    if (actorId === feedsClient?.userId) {
+      if (user?.picture) {
+        return user.picture;
+      } else {
+        // Create fallback avatar with user's initial
+        const initial = user?.name?.[0] || user?.email?.[0] || 'U';
+        return `data:image/svg+xml,${encodeURIComponent(`
+          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="20" fill="#3b82f6"/>
+            <text x="20" y="26" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white">${initial.toUpperCase()}</text>
+          </svg>
+        `)}`;
+      }
+    }
+    
+    // For demo users, use Unsplash images
+    const demoImages = {
+      'alice_smith': '1580489944761-15a19d654956',
+      'bob_johnson': '1507003211169-0a1dd7228f2d',
+      'carol_williams': '1438761681033-6461ffad8d80',
+      'david_brown': '1472099645785-5658abf4ff4e',
+      'emma_davis': '1544005313-94ddf0286df2'
+    };
+    
+    const imageId = demoImages[actorId as keyof typeof demoImages];
+    return imageId ? `https://images.unsplash.com/photo-${imageId}?w=40&h=40&fit=crop&crop=face` : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face';
+  };
+
   const handleRemoveBookmark = async (postId: string) => {
     if (!feedsClient?.userId) return;
 
@@ -212,39 +244,57 @@ const BookmarkedPosts = () => {
           </div>
         </div>
       ) : (
-        <div className="posts-container">
+        <div className="feeds-timeline">
           {bookmarkedPosts.map((post) => (
-            <article 
+            <div 
               key={post.id} 
-              className="post bookmarked-post"
+              className="feed-post"
               onClick={() => handlePostClick(post.id)}
+              style={{ cursor: 'pointer' }}
             >
               <div className="post-header">
                 <div className="post-author">
-                  <div className="author-avatar">
-                    <span>{post.actor.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <div className="author-info">
-                    <span className="author-name">{post.actor}</span>
-                    <span className="post-time">
-                      {post.created_at ? formatRelativeTime(post.created_at) : post.time || 'Unknown time'}
-                    </span>
+                  <div className="post-author-info">
+                    <div className="author-avatar">
+                      <img 
+                        src={getUserAvatar(post.actor)}
+                        alt={post.actor}
+                        onError={(e) => {
+                          // Fallback to initials avatar if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          const initial = post.actor.replace('_', ' ').split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+                          target.src = `data:image/svg+xml,${encodeURIComponent(`
+                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="20" cy="20" r="20" fill="#6b7280"/>
+                              <text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
+                            </svg>
+                          `)}`;
+                        }}
+                      />
+                    </div>
+                    <div className="author-info">
+                      <span className="author-name">
+                        {post.actor === feedsClient?.userId ? 'You' : post.actor.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                      <span className="post-time">
+                        {formatRelativeTime(post.time || post.created_at || new Date())}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="post-content">
-                <p>{post.text}</p>
+                <p className="post-text">{post.text}</p>
                 
                 {post.attachments && post.attachments.length > 0 && (
                   <div className="post-attachments">
                     {post.attachments.map((attachment, index) => (
-                      <div key={index} className="attachment">
+                      <div key={index} className="post-image">
                         {attachment.type === 'image' ? (
                           <img 
                             src={attachment.asset_url} 
                             alt={attachment.title || 'Attachment'} 
-                            className="attachment-image"
                           />
                         ) : (
                           <div className="attachment-file">
@@ -258,34 +308,29 @@ const BookmarkedPosts = () => {
               </div>
 
               <div className="post-actions">
-                <div className="action-stats">
-                  <span>{post.reaction_counts?.like || post.custom?.likes || 0} likes</span>
-                  <span>{post.reaction_counts?.comment || post.custom?.comments || 0} comments</span>
-                  <span>{post.reaction_counts?.share || post.custom?.shares || 0} shares</span>
-                </div>
-                
-                <div className="action-buttons">
-                  <button className="action-button like-button">
-                    <img src={HeartIcon} alt="Like" className="action-icon" />
-                  </button>
-                  <button className="action-button comment-button">
-                    <img src={MessageIcon} alt="Comment" className="action-icon" />
-                  </button>
-                  <button className="action-button share-button">
-                    <img src={ShareIcon} alt="Share" className="action-icon" />
-                  </button>
-                  <button 
-                    className="action-button bookmark-button bookmarked"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent post click navigation
-                      handleRemoveBookmark(post.id);
-                    }}
-                  >
-                    <img src={BookmarkFilledIcon} alt="Remove Bookmark" className="action-icon" />
-                  </button>
-                </div>
+                <button className="action-button like-button">
+                  <img src={HeartIcon} alt="Like" className="action-icon" />
+                  {post.reaction_counts?.like || post.custom?.likes || 0}
+                </button>
+                <button className="action-button comment-button">
+                  <img src={MessageIcon} alt="Comment" className="action-icon" />
+                  {post.reaction_counts?.comment || post.custom?.comments || 0}
+                </button>
+                <button className="action-button share-button">
+                  <img src={ShareIcon} alt="Share" className="action-icon" />
+                  {post.reaction_counts?.share || post.custom?.shares || 0}
+                </button>
+                <button 
+                  className="action-button bookmark-button bookmarked"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent post click navigation
+                    handleRemoveBookmark(post.id);
+                  }}
+                >
+                  <img src={BookmarkFilledIcon} alt="Remove Bookmark" className="action-icon" />
+                </button>
               </div>
-            </article>
+            </div>
           ))}
         </div>
       )}
