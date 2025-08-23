@@ -374,17 +374,21 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
         console.log('📖 First reaction sample:', bookmarkReactions.results?.[0]);
         console.log('📖 Activity IDs:', bookmarkReactions.results?.map(r => r.activity_id));
+        console.log('📖 First reaction activity data:', JSON.stringify(bookmarkReactions.results?.[0]?.activity, null, 2));
 
         // Extract the bookmarked posts with activity details
         const bookmarkedPosts = bookmarkReactions.results?.map(reaction => ({
-          id: reaction.id,
+          id: reaction.activity_id, // Use activity_id as the main id for highlighting
           activity_id: reaction.activity_id,
           actor: reaction.activity?.actor || 'Unknown',
-          text: reaction.activity?.object?.text || reaction.activity?.text || 'No content',
+          verb: reaction.activity?.verb || 'post',
+          object: reaction.activity?.object || 'post',
+          text: reaction.activity?.text || 'No content',
           attachments: reaction.activity?.attachments || [],
           custom: reaction.activity?.custom || {},
-          created_at: reaction.created_at,
-          time: reaction.created_at
+          created_at: reaction.activity?.created_at || reaction.created_at,
+          time: reaction.activity?.created_at || reaction.created_at,
+          reaction_id: reaction.id // Keep the reaction ID for removal
         })) || [];
 
         return res.json({

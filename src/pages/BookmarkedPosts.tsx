@@ -206,7 +206,7 @@ const BookmarkedPosts = () => {
             <article 
               key={post.id} 
               className="post bookmarked-post"
-              onClick={() => handlePostClick(post.activity_id)}
+              onClick={() => handlePostClick(post.id)}
             >
               <div className="post-header">
                 <div className="post-author">
