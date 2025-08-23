@@ -246,9 +246,11 @@ const Feeds = () => {
       }
 
       const data = await response.json();
+      console.log('📖 Fetch bookmarked posts response:', data);
       if (data.success && data.bookmarkedPosts) {
         // Extract post IDs and update bookmarked posts state
         const bookmarkedPostIds = new Set<string>(data.bookmarkedPosts.map((post: any) => post.id as string));
+        console.log('📖 Extracted bookmark IDs:', Array.from(bookmarkedPostIds));
         setBookmarkedPosts(bookmarkedPostIds);
         console.log('📖 Synced bookmark state:', bookmarkedPostIds.size, 'bookmarked posts');
       }
@@ -527,6 +529,9 @@ const Feeds = () => {
     if (!feedsClient?.userId) return;
 
     const isCurrentlyBookmarked = bookmarkedPosts.has(postId);
+    const action = isCurrentlyBookmarked ? 'remove_bookmark' : 'bookmark_post';
+    
+    console.log('🔖 Bookmark action:', action, 'for post:', postId, 'currently bookmarked:', isCurrentlyBookmarked);
     
     try {
       const accessToken = await getAccessTokenSilently();
@@ -538,24 +543,30 @@ const Feeds = () => {
           'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          action: isCurrentlyBookmarked ? 'remove_bookmark' : 'bookmark_post',
+          action,
           userId: feedsClient.userId,
           postId
         }),
       });
 
+      const responseData = await response.json();
+      console.log('🔖 Bookmark API response:', responseData);
+
       if (!response.ok) {
-        throw new Error('Failed to update bookmark');
+        throw new Error(`Failed to update bookmark: ${responseData.error || response.statusText}`);
       }
 
       // Update local state
       setBookmarkedPosts(prev => {
         const newBookmarked = new Set(prev);
         if (isCurrentlyBookmarked) {
+          console.log('🔖 Removing from local state:', postId);
           newBookmarked.delete(postId);
         } else {
+          console.log('🔖 Adding to local state:', postId);
           newBookmarked.add(postId);
         }
+        console.log('🔖 Updated local bookmarked posts:', Array.from(newBookmarked));
         return newBookmarked;
       });
       
