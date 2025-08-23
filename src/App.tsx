@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
 import './App.css'
 import Feeds from './components/Feeds'
+import BookmarkedPosts from './pages/BookmarkedPosts'
 
 function App() {
   const { isLoading, error } = useAuth0()
@@ -34,6 +35,11 @@ function App() {
           <Route path="/feeds" element={
             <ProtectedRoute>
               <Feeds />
+            </ProtectedRoute>
+          } />
+          <Route path="/bookmarked" element={
+            <ProtectedRoute>
+              <BookmarkedPosts />
             </ProtectedRoute>
           } />
         </Routes>

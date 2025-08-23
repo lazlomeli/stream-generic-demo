@@ -352,6 +352,31 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           message: `Bookmark action '${action}' completed`
         });
 
+      case 'get_bookmarked_posts':
+        console.log('📖 Getting bookmarked posts for user:', userId);
+        // Get all bookmark reactions for the user
+        const bookmarkReactions = await (client as any).reactions.filter({
+          kind: 'bookmark',
+          user_id: userId
+        });
+
+        // Extract the bookmarked posts with activity details
+        const bookmarkedPosts = bookmarkReactions.results?.map((reaction: any) => ({
+          id: reaction.id,
+          activity_id: reaction.activity_id,
+          actor: reaction.activity?.actor || 'Unknown',
+          text: reaction.activity?.object?.text || reaction.activity?.text || 'No content',
+          attachments: reaction.activity?.attachments || [],
+          custom: reaction.activity?.custom || {},
+          created_at: reaction.created_at,
+          time: reaction.created_at
+        })) || [];
+
+        return res.json({
+          success: true,
+          bookmarkedPosts
+        });
+
       default:
         console.log('⚠️ Unhandled action:', action);
         return res.json({

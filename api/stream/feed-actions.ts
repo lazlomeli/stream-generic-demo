@@ -190,6 +190,30 @@ export default async function handler(
           comments: comments.results || []
         });
 
+      case 'get_bookmarked_posts':
+        // Get all bookmark reactions for the user
+        const bookmarkReactions = await serverClient.reactions.filter({
+          kind: 'bookmark',
+          user_id: userId
+        });
+
+        // Extract the bookmarked posts with activity details
+        const bookmarkedPosts = bookmarkReactions.results?.map((reaction: any) => ({
+          id: reaction.id,
+          activity_id: reaction.activity_id,
+          actor: reaction.activity?.actor || 'Unknown',
+          text: reaction.activity?.object?.text || reaction.activity?.text || 'No content',
+          attachments: reaction.activity?.attachments || [],
+          custom: reaction.activity?.custom || {},
+          created_at: reaction.created_at,
+          time: reaction.created_at
+        })) || [];
+
+        return res.json({
+          success: true,
+          bookmarkedPosts
+        });
+
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }

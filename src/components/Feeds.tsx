@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
@@ -35,6 +36,7 @@ interface FeedPost {
 
 const Feeds = () => {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [feedsClient, setFeedsClient] = useState<any>(null);
   const [clientReady, setClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -596,8 +598,12 @@ const Feeds = () => {
         </div>
       ) : (
         <div className="feeds-timeline">
-          {posts.map((post) => (
-            <div key={post.id} className="feed-post">
+          {posts.map((post) => {
+            const highlightPostId = searchParams.get('highlight');
+            const isHighlighted = highlightPostId === post.id;
+            
+            return (
+            <div key={post.id} className={`feed-post ${isHighlighted ? 'highlighted-post' : ''}`}>
               <div className="post-header">
                 <div className="post-author">
                 <div className="post-author-info">
@@ -770,7 +776,8 @@ const Feeds = () => {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
