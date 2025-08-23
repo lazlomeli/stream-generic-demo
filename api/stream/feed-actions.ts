@@ -200,6 +200,7 @@ export default async function handler(
 
         console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
         console.log('📖 First reaction sample:', bookmarkReactions.results?.[0]);
+        console.log('📖 Activity IDs:', bookmarkReactions.results?.map(r => r.activity_id));
 
         // Extract the bookmarked posts with activity details
         const bookmarkedPosts = bookmarkReactions.results?.map((reaction: any) => ({

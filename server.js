@@ -327,11 +327,39 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         });
 
       case 'bookmark_post':
-      case 'remove_bookmark':
-        console.log('🔖 Bookmark action:', action, 'for post:', postId);
+        if (!postId) {
+          return res.status(400).json({ error: 'postId is required' });
+        }
+
+        console.log('🔖 Bookmarking post:', postId);
+        // Add bookmark reaction using user client
+        await userClient.reactions.add('bookmark', postId);
+
         return res.json({
           success: true,
-          message: `Bookmark action '${action}' completed`
+          message: 'Post bookmarked successfully'
+        });
+
+      case 'remove_bookmark':
+        if (!postId) {
+          return res.status(400).json({ error: 'postId is required' });
+        }
+
+        console.log('🔖 Removing bookmark for post:', postId);
+        // Get and delete the user's bookmark reaction
+        const userBookmarkReactions = await serverClient.reactions.filter({
+          activity_id: postId,
+          kind: 'bookmark',
+          user_id: userId
+        });
+
+        if (userBookmarkReactions.results && userBookmarkReactions.results.length > 0) {
+          await userClient.reactions.delete(userBookmarkReactions.results[0].id);
+        }
+
+        return res.json({
+          success: true,
+          message: 'Bookmark removed successfully'
         });
 
       case 'get_bookmarked_posts':
@@ -345,6 +373,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
 
         console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
         console.log('📖 First reaction sample:', bookmarkReactions.results?.[0]);
+        console.log('📖 Activity IDs:', bookmarkReactions.results?.map(r => r.activity_id));
 
         // Extract the bookmarked posts with activity details
         const bookmarkedPosts = bookmarkReactions.results?.map(reaction => ({
