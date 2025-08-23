@@ -4,10 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
-import HeartIcon from '../icons/heart.svg';
-import HeartFilledIcon from '../icons/heart-filled.svg';
-import MessageIcon from '../icons/message-circle.svg';
-import ShareIcon from '../icons/share-3.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import '../components/Feeds.css';
@@ -242,14 +238,8 @@ const BookmarkedPosts = () => {
   return (
     <div className="feeds-container">
       <div className="feeds-header">
-        <h1>📖 Bookmarked Posts</h1>
+        <h1 style={{ marginBottom: '12px'}}>Bookmarked Posts</h1>
         <p>Posts you've saved for later reading</p>
-        <button 
-          className="back-to-feeds-button"
-          onClick={() => navigate('/feeds')}
-        >
-          ← Back to Feeds
-        </button>
       </div>
 
       {loading ? (
@@ -333,24 +323,13 @@ const BookmarkedPosts = () => {
               </div>
 
               <div className="post-actions">
-                <button className="action-button like-button">
-                  <img src={HeartIcon} alt="Like" className="action-icon" />
-                  {post.reaction_counts?.like || post.custom?.likes || 0}
-                </button>
-                <button className="action-button comment-button">
-                  <img src={MessageIcon} alt="Comment" className="action-icon" />
-                  {post.reaction_counts?.comment || post.custom?.comments || 0}
-                </button>
-                <button className="action-button share-button">
-                  <img src={ShareIcon} alt="Share" className="action-icon" />
-                  {post.reaction_counts?.share || post.custom?.shares || 0}
-                </button>
                 <button 
                   className="action-button bookmark-button bookmarked"
                   onClick={(e) => {
                     e.stopPropagation(); // Prevent post click navigation
                     handleRemoveBookmark(post.id);
                   }}
+                  title="Remove from bookmarks"
                 >
                   <img src={BookmarkFilledIcon} alt="Remove Bookmark" className="action-icon" />
                 </button>
