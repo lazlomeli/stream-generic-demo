@@ -111,21 +111,23 @@ export default async function handler(
         console.log('💔 Unliking post:', postId, 'for user:', userId);
         
         try {
-          // Get and delete the user's like reaction
+          // Get user's like reactions for this activity using the correct API approach
           const userReactions = await serverClient.reactions.filter({
-            activity_id: postId,
             kind: 'like',
             user_id: userId
           });
 
-          console.log('💔 Found like reactions:', userReactions.results?.length || 0);
+          console.log('💔 Found total like reactions for user:', userReactions.results?.length || 0);
 
-          if (userReactions.results && userReactions.results.length > 0) {
-            console.log('💔 Deleting like reaction:', userReactions.results[0].id);
-            await userClient.reactions.delete(userReactions.results[0].id);
+          // Filter to find reactions for this specific activity
+          const activityReaction = userReactions.results?.find(reaction => reaction.activity_id === postId);
+
+          if (activityReaction) {
+            console.log('💔 Deleting like reaction:', activityReaction.id);
+            await userClient.reactions.delete(activityReaction.id);
             console.log('💔 Like reaction deleted successfully');
           } else {
-            console.log('💔 No like reaction found to delete');
+            console.log('💔 No like reaction found for this activity');
           }
 
           return res.json({
@@ -177,21 +179,23 @@ export default async function handler(
         console.log('🔖 Removing bookmark for post:', postId, 'for user:', userId);
         
         try {
-          // Get and delete the user's bookmark reaction
+          // Get user's bookmark reactions using the correct API approach
           const userBookmarkReactions = await serverClient.reactions.filter({
-            activity_id: postId,
             kind: 'bookmark',
             user_id: userId
           });
 
-          console.log('🔖 Found bookmark reactions:', userBookmarkReactions.results?.length || 0);
+          console.log('🔖 Found total bookmark reactions for user:', userBookmarkReactions.results?.length || 0);
 
-          if (userBookmarkReactions.results && userBookmarkReactions.results.length > 0) {
-            console.log('🔖 Deleting bookmark reaction:', userBookmarkReactions.results[0].id);
-            await userClient.reactions.delete(userBookmarkReactions.results[0].id);
+          // Filter to find reactions for this specific activity
+          const activityReaction = userBookmarkReactions.results?.find(reaction => reaction.activity_id === postId);
+
+          if (activityReaction) {
+            console.log('🔖 Deleting bookmark reaction:', activityReaction.id);
+            await userClient.reactions.delete(activityReaction.id);
             console.log('🔖 Bookmark reaction deleted successfully');
           } else {
-            console.log('🔖 No bookmark reaction found to delete');
+            console.log('🔖 No bookmark reaction found for this activity');
           }
 
           return res.json({
