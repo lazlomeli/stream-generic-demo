@@ -90,10 +90,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add reaction using server client with user_id in data
-        const reaction = await streamFeedsClient.reactions.add('like', postId, {
-          user_id: userId
-        });
+        // Add reaction using server client with user_id in options
+        await streamFeedsClient.reactions.add('like', postId, {}, { user_id: userId });
 
         return res.json({
           success: true,
@@ -127,11 +125,10 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        // Add comment using server client with user_id in data
+        // Add comment using server client with user_id in options
         const comment = await streamFeedsClient.reactions.add('comment', postId, {
-          text: postData.text,
-          user_id: userId
-        });
+          text: postData.text
+        }, userId);
 
         return res.json({
           success: true,

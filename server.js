@@ -258,10 +258,8 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('❤️ Liking post:', postId);
-        // Add reaction using server client with user_id in data
-        await streamFeedsClient.reactions.add('like', postId, {
-          user_id: userId
-        });
+        // Add reaction using server client with user_id in options
+        await streamFeedsClient.reactions.add('like', postId, {}, { user_id: userId });
 
         return res.json({
           success: true,
@@ -297,11 +295,10 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('💬 Adding comment to post:', postId);
-        // Add comment using server client with user_id in data
+        // Add comment using server client with user_id in options
         const comment = await streamFeedsClient.reactions.add('comment', postId, {
-          text: postData.text,
-          user_id: userId
-        });
+          text: postData.text
+        }, { user_id: userId });
 
         return res.json({
           success: true,
