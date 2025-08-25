@@ -1041,35 +1041,40 @@ const Feeds = () => {
               )}
 
               {/* View Comments Button */}
-              <div className="view-comments-section">
-                <button 
-                  className="view-comments-button"
-                  onClick={() => {
-                    if (showComments === post.id) {
-                      setShowComments(null);
-                    } else {
-                      setShowComments(post.id);
-                      if (!postComments[post.id]) {
-                        fetchComments(post.id);
+              {(post.custom?.comments || 0) > 0 && (
+                <div className="view-comments-section">
+                  <button 
+                    className="view-comments-button"
+                    onClick={() => {
+                      if (showComments === post.id) {
+                        setShowComments(null);
+                      } else {
+                        setShowComments(post.id);
+                        if (!postComments[post.id]) {
+                          fetchComments(post.id);
+                        }
                       }
-                    }
-                  }}
-                  disabled={loadingComments === post.id}
-                >
-                  {loadingComments === post.id ? (
-                    <div className="flex items-center gap-2">
-                      <LoadingIcon size={16} />
-                      <span>Loading...</span>
-                    </div>
-                  ) : showComments === post.id ? 'Hide Comments' : 
-                   `View Comments (${post.custom?.comments || 0})`}
-                </button>
-              </div>
+                    }}
+                    disabled={loadingComments === post.id}
+                  >
+                    {loadingComments === post.id ? (
+                      <div className="flex items-center gap-2">
+                        <LoadingIcon size={16} />
+                        <span>Loading...</span>
+                      </div>
+                    ) : showComments === post.id ? 'Hide Comments' : 
+                     `View Comments (${post.custom?.comments || 0})`}
+                  </button>
+                </div>
+              )}
 
               {/* Debug comment count */}
               {process.env.NODE_ENV === 'development' && (
                 <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                  Debug: comments = {post.custom?.comments || 0}, custom = {JSON.stringify(post.custom)}
+                  Debug: comments = {post.custom?.comments || 0} 
+                  {(post.custom?.comments || 0) === 0 && ' (button hidden)'}
+                  {(post.custom?.comments || 0) > 0 && ' (button visible)'}
+                  , custom = {JSON.stringify(post.custom)}
                 </div>
               )}
 

@@ -44,9 +44,84 @@ const SAMPLE_USERS = [
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const startTime = Date.now();
+  
   try {
     if (req.method !== "POST") {
       return res.status(400).json({ error: "Use POST" });
+    }
+
+    console.log("🌱 Starting Stream data seeding...");
+    console.log("🕐 Timestamp:", new Date().toISOString());
+    console.log("🌍 Environment:", process.env.NODE_ENV || 'development');
+    console.log("🔑 Environment check:");
+    console.log(`   - STREAM_API_KEY: ${process.env.STREAM_API_KEY ? 'Set' : 'NOT SET'}`);
+    console.log(`   - STREAM_API_SECRET: ${process.env.STREAM_API_SECRET ? 'Set' : 'NOT SET'}`);
+    console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+
+    // Validate Stream API credentials
+    if (!apiKey || !apiSecret) {
+      const errorMsg = "Missing Stream API credentials";
+      console.error(`❌ ${errorMsg}`);
+      console.error("   Please check your environment variables:");
+      console.error("   - STREAM_API_KEY");
+      console.error("   - STREAM_API_SECRET");
+      return res.status(500).json({ 
+        error: errorMsg,
+        details: "Missing required environment variables for Stream API",
+        required: ["STREAM_API_KEY", "STREAM_API_SECRET"],
+        received: {
+          apiKey: apiKey ? "Set" : "NOT SET",
+          apiSecret: apiSecret ? "Set" : "NOT SET"
+        }
+      });
+    }
+
+    // Validate API key format (basic check)
+    if (apiKey.length < 10 || apiSecret.length < 10) {
+      const errorMsg = "Invalid Stream API credentials format";
+      console.error(`❌ ${errorMsg}`);
+      console.error(`   API Key length: ${apiKey.length}`);
+      console.error(`   API Secret length: ${apiSecret.length}`);
+      return res.status(500).json({ 
+        error: errorMsg,
+        details: "API credentials appear to be malformed",
+        received: {
+          apiKeyLength: apiKey.length,
+          apiSecretLength: apiSecret.length
+        }
+      });
+    }
+
+    console.log("✅ Stream API credentials validated");
+
+    // Test Stream connection
+    console.log("🔌 Testing Stream connection...");
+    try {
+      const testChatServer = StreamChat.getInstance(apiKey, apiSecret);
+      const testFeedsServer = connect(apiKey, apiSecret);
+      
+      // Test chat connection by trying to get app info
+      const chatAppInfo = await testChatServer.getAppSettings();
+      console.log("✅ Stream Chat connection successful");
+      
+      // Test feeds connection by trying to get user info
+      try {
+        await testFeedsServer.user('test_user').get();
+        console.log("✅ Stream Feeds connection successful");
+      } catch (feedsTestError) {
+        // This might fail if Feeds is not enabled, but that's okay
+        console.log("⚠️  Stream Feeds test failed (might not be enabled):", feedsTestError);
+      }
+      
+    } catch (connectionError) {
+      const errorMsg = "Failed to connect to Stream API";
+      console.error(`❌ ${errorMsg}:`, connectionError);
+      return res.status(500).json({ 
+        error: errorMsg,
+        details: connectionError instanceof Error ? connectionError.message : String(connectionError),
+        suggestion: "Please verify your Stream API credentials and ensure your Stream app is active"
+      });
     }
 
     // For now, use a default user for seeding (in production, you'd want proper auth)
@@ -60,8 +135,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // === CHAT SEEDING ===
     console.log("🌱 Seeding Stream Chat data...");
     
-    await chatServer.upsertUser({ id: me });
-    await chatServer.upsertUsers(SAMPLE_USERS);
+    try {
+      await chatServer.upsertUser({ id: me });
+      console.log(`✅ Created/updated chat user: ${me}`);
+      
+      await chatServer.upsertUsers(SAMPLE_USERS);
+      console.log(`✅ Created/updated ${SAMPLE_USERS.length} sample chat users`);
+    } catch (chatUserError) {
+      console.error("❌ Error creating chat users:", chatUserError);
+      return res.status(500).json({ 
+        error: "Failed to create chat users",
+        details: chatUserError instanceof Error ? chatUserError.message : String(chatUserError)
+      });
+    }
 
     const general = chatServer.channel("messaging", "general", {
         // @ts-ignore-next-line
@@ -73,9 +159,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     try {
       await general.create();
+      console.log("✅ Created general chat channel");
     } catch (error) {
       // Channel might already exist, try to update it
-      console.log('General channel already exists, updating...');
+      console.log('⚠️  General channel already exists, updating...');
       try {
         await general.update({
           // @ts-ignore-next-line
@@ -83,30 +170,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // @ts-ignore-next-line
           image: "/general-channel.svg",
         });
+        console.log("✅ Updated general chat channel");
       } catch (updateError) {
-        console.log('Channel update failed:', updateError);
+        console.error("❌ Channel update failed:", updateError);
+        return res.status(500).json({ 
+          error: "Failed to create or update general channel",
+          details: updateError instanceof Error ? updateError.message : String(updateError)
+        });
       }
     }
 
+    console.log("💬 Creating direct message channels...");
     for (const u of SAMPLE_USERS) {
-        // @ts-ignore-next-line
-        const dm = chatServer.channel("messaging", {
-          members: [me, u.id],
-          name: u.name,
-          image: u.image,
-          created_by_id: me,
-        });
-      
-        await dm.create(); // returns existing if already there
-      
-        // @ts-ignore-next-line
-        const currentName  = (dm.data?.name  as string | undefined) ?? "";
-        // @ts-ignore-next-line
-        const currentImage = (dm.data?.image as string | undefined) ?? "";
-      
-        if (!currentName || currentName === "General" || !currentImage) {
-          // @ts-ignore-next-line
-          await dm.update({ name: u.name, image: u.image });
+        try {
+            // @ts-ignore-next-line
+            const dm = chatServer.channel("messaging", {
+              members: [me, u.id],
+              name: u.name,
+              image: u.image,
+              created_by_id: me,
+            });
+          
+            await dm.create(); // returns existing if already there
+            console.log(`✅ Created/updated DM channel with ${u.name}`);
+          
+            // @ts-ignore-next-line
+            const currentName  = (dm.data?.name  as string | undefined) ?? "";
+            // @ts-ignore-next-line
+            const currentImage = (dm.data?.image as string | undefined) ?? "";
+          
+            if (!currentName || currentName === "General" || !currentImage) {
+              // @ts-ignore-next-line
+              await dm.update({ name: u.name, image: u.image });
+              console.log(`✅ Updated DM channel metadata for ${u.name}`);
+            }
+        } catch (dmError) {
+            console.error(`❌ Error creating DM channel with ${u.name}:`, dmError);
         }
     }
 
@@ -120,46 +219,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Check if Feeds is enabled by testing for feed groups
     console.log("🔍 Checking if Feeds is enabled...");
     const testFeedGroups = ['user', 'timeline', 'flat'];
-    let availableFeedGroups = [];
+    let availableFeedGroups: string[] = [];
     
-    for (const feedGroup of testFeedGroups) {
-      try {
-        await feedsServer.feed(feedGroup, 'test').get({ limit: 1 });
-        availableFeedGroups.push(feedGroup);
-        console.log(`✅ ${feedGroup} feed group is available`);
-      } catch (error) {
-        console.log(`⚠️  ${feedGroup} feed group not available`);
+    try {
+      for (const feedGroup of testFeedGroups) {
+        try {
+          await feedsServer.feed(feedGroup, 'test').get({ limit: 1 });
+          availableFeedGroups.push(feedGroup);
+          console.log(`✅ ${feedGroup} feed group is available`);
+        } catch (error) {
+          console.log(`⚠️  ${feedGroup} feed group not available:`, error);
+        }
       }
-    }
 
-    if (availableFeedGroups.length === 0) {
-      console.log("❌ No feed groups are available. Please enable Feeds in your Stream Dashboard:");
-      console.log("   1. Go to https://dashboard.getstream.io/");
-      console.log("   2. Select your Stream app");
-      console.log("   3. Enable 'Feeds' and create feed groups: user, timeline, flat");
-      console.log("   4. Run this seed script again");
-      
-      return res.status(400).json({ 
-        ok: false, 
-        message: "Feeds not enabled. Please configure feed groups in Stream Dashboard.",
-        feedsEnabled: false,
-        availableFeedGroups: [],
-        instructions: "Enable Feeds in Dashboard and create feed groups: user, timeline, flat"
+      if (availableFeedGroups.length === 0) {
+        console.log("❌ No feed groups are available. Please enable Feeds in your Stream Dashboard:");
+        console.log("   1. Go to https://dashboard.getstream.io/");
+        console.log("   2. Select your Stream app");
+        console.log("   3. Enable 'Feeds' and create feed groups: user, timeline, flat");
+        console.log("   4. Run this seed script again");
+        
+        return res.status(400).json({ 
+          ok: false, 
+          message: "Feeds not enabled. Please configure feed groups in Stream Dashboard.",
+          feedsEnabled: false,
+          availableFeedGroups: [],
+          instructions: "Enable Feeds in Dashboard and create feed groups: user, timeline, flat"
+        });
+      }
+
+      console.log(`✅ Found ${availableFeedGroups.length} available feed groups:`, availableFeedGroups);
+    } catch (feedsInitError) {
+      console.error("❌ Error initializing Feeds:", feedsInitError);
+      return res.status(500).json({ 
+        error: "Failed to initialize Stream Feeds",
+        details: feedsInitError instanceof Error ? feedsInitError.message : String(feedsInitError),
+        feedsEnabled: false
       });
     }
 
-    console.log(`✅ Found ${availableFeedGroups.length} available feed groups:`, availableFeedGroups);
-
     // Create users in Feeds
+    console.log("👥 Creating users in Feeds...");
     for (const user of SAMPLE_USERS) {
       try {
         await feedsServer.user(user.id).create({
           name: user.name,
           profileImage: user.image
         });
+        console.log(`✅ Created/updated Feeds user: ${user.id}`);
       } catch (error) {
         // User might already exist, continue
-        console.log(`Feeds user ${user.id} already exists or error:`, error);
+        console.log(`⚠️  Feeds user ${user.id} already exists or error:`, error);
       }
     }
 
@@ -169,8 +279,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: 'Current User',
         profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
       });
+      console.log(`✅ Created/updated current Feeds user: ${me}`);
     } catch (error) {
-      console.log(`Current feeds user ${me} already exists or error:`, error);
+      console.log(`⚠️  Current feeds user ${me} already exists or error:`, error);
     }
 
     // Enhanced demo activities showcasing Stream Feeds features
@@ -213,7 +324,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       {
         actor: 'alice_smith',
-        verb: 'post',  
+        verb: 'post',
         object: 'post',
         text: '✨ Demo time! This activity feed you\'re looking at is powered by Stream Feeds. Try creating a post, liking, commenting - everything is real-time and scalable. Perfect for social apps, collaboration tools, or any app needing activity streams.',
         attachments: [
@@ -334,28 +445,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     ];
 
-    // Create activities and add them to feeds (only if they don't exist)
+    // Create demo activities in feeds
+    console.log("📝 Creating demo activities in feeds...");
     for (const activity of sampleActivities) {
       try {
-        // Check if activity already exists by looking for similar content
-        // Use the first available feed group for checking
-        const primaryFeedGroup = availableFeedGroups[0];
-        const existingActivities = await feedsServer.feed(primaryFeedGroup, 'global').get({ limit: 100 });
-        
-        // More robust duplicate detection using multiple criteria
-        const activityExists = existingActivities.results.some((existing: any) => 
-          existing.actor === activity.actor && 
-          existing.verb === activity.verb &&
-          (existing.text === activity.text || 
-           (existing.text && activity.text && existing.text.substring(0, 50) === activity.text.substring(0, 50)))
-        );
-        
-        if (activityExists) {
-          console.log(`⏭️  Activity "${activity.text.substring(0, 50)}..." by ${activity.actor} already exists, skipping`);
-          continue;
-        }
-
-        // Create the activity since it doesn't exist
         const activityData = {
           actor: activity.actor,
           verb: activity.verb,
@@ -367,22 +460,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Add to available feed groups
         for (const feedGroup of availableFeedGroups) {
-          if (feedGroup === 'user') {
-            // Add to user's personal feed
-            await feedsServer.feed('user', activity.actor).addActivity(activityData);
-          } else {
-            // Add to global feed (timeline, flat, etc.)
-            await feedsServer.feed(feedGroup, 'global').addActivity(activityData);
+          try {
+            if (feedGroup === 'user') {
+              // Add to user's personal feed
+              await feedsServer.feed('user', activity.actor).addActivity(activityData);
+            } else {
+              // Add to global feed (timeline, flat, etc.)
+              await feedsServer.feed(feedGroup, 'global').addActivity(activityData);
+            }
+          } catch (feedError) {
+            console.error(`❌ Error adding activity to ${feedGroup} feed:`, feedError);
           }
         }
         
         console.log(`✅ Created new activity: "${activity.text.substring(0, 50)}..." by ${activity.actor}`);
       } catch (error) {
-        console.error(`Error creating feeds activity for ${activity.actor}:`, error);
+        console.error(`❌ Error creating feeds activity for ${activity.actor}:`, error);
       }
     }
 
     // Create follow relationships for feeds
+    console.log("👥 Creating follow relationships...");
     const followRelationships = [
       { follower: me, following: 'alice_smith' },
       { follower: me, following: 'bob_johnson' },
@@ -396,8 +494,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Create follow relationships using Stream's feed following API
         const userFeed = feedsServer.feed('user', relationship.follower);
         await userFeed.follow('user', relationship.following);
+        console.log(`✅ Created follow relationship: ${relationship.follower} → ${relationship.following}`);
       } catch (error) {
-        console.log(`Follow relationship already exists or error:`, error);
+        console.log(`⚠️  Follow relationship already exists or error:`, error);
       }
     }
 
@@ -423,23 +522,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`🚀 Perfect for demonstrating Stream Feeds capabilities!`);
 
     // Verify feeds were created by checking feed counts
+    console.log("🔍 Verifying feed creation...");
     try {
       for (const feedGroup of availableFeedGroups) {
-        if (feedGroup === 'user') {
-          const userFeed = await feedsServer.feed('user', 'david_brown').get({ limit: 1 });
-          console.log(`👤 David Brown's ${feedGroup} feed activities count:`, userFeed.results.length);
-        } else {
-          const globalFeed = await feedsServer.feed(feedGroup, 'global').get({ limit: 1 });
-          console.log(`📊 Global ${feedGroup} feed activities count:`, globalFeed.results.length);
+        try {
+          if (feedGroup === 'user') {
+            const userFeed = await feedsServer.feed('user', 'david_brown').get({ limit: 1 });
+            console.log(`👤 David Brown's ${feedGroup} feed activities count:`, userFeed.results.length);
+          } else {
+            const globalFeed = await feedsServer.feed(feedGroup, 'global').get({ limit: 1 });
+            console.log(`📊 Global ${feedGroup} feed activities count:`, globalFeed.results.length);
+          }
+        } catch (feedCheckError) {
+          console.log(`⚠️  Could not check ${feedGroup} feed:`, feedCheckError);
         }
       }
     } catch (error) {
       console.log("⚠️  Could not verify feed counts:", error);
     }
 
+    console.log("\n🎉 Stream data seeding completed successfully!");
+    console.log("📱 Your app is now ready with demo data for both Chat and Feeds!");
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`⏱️  Total seeding time: ${duration}ms`);
+
     return res.status(200).json({ 
       ok: true, 
       message: "Chat and Feeds data seeded successfully",
+      timing: {
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        durationMs: duration
+      },
       chat: {
         users: SAMPLE_USERS.length + 1,
         channels: SAMPLE_USERS.length + 1
@@ -454,7 +570,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (err) {
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
     console.error("❌ Error seeding Stream data:", err);
-    return res.status(500).json({ error: "Failed to seed Stream data" });
+    console.error(`⏱️  Failed after ${duration}ms`);
+    
+    // Provide more specific error information
+    let errorMessage = "Failed to seed Stream data";
+    let errorDetails = {};
+    
+    if (err instanceof Error) {
+      errorMessage = err.message;
+      errorDetails = {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      };
+    } else if (typeof err === 'object' && err !== null) {
+      errorDetails = err;
+    }
+    
+    console.error("❌ Error details:", errorDetails);
+    
+    return res.status(500).json({ 
+      error: errorMessage,
+      details: errorDetails,
+      timing: {
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        durationMs: duration
+      },
+      timestamp: new Date().toISOString()
+    });
   }
 }
