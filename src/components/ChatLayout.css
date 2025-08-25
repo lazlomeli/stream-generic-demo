@@ -1,0 +1,117 @@
+/* Stream Chat Layout Fixes */
+
+/* Ensure the main chat container allows proper modal positioning */
+.str-chat {
+  height: 100% !important;
+  position: relative !important;
+}
+
+/* Fix for ChannelList and Channel layout */
+.str-chat__container {
+  display: flex !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* ChannelList styling - positioned on the left, smaller width */
+.str-chat__channel-list {
+  width: 280px !important;
+  min-width: 250px !important;
+  max-width: 320px !important;
+  border-right: 1px solid #e5e7eb !important;
+  flex-shrink: 0 !important;
+  background-color: #f8f9fa !important;
+}
+
+/* Main chat area - positioned on the right, takes up more space */
+.str-chat__channel {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  background-color: white !important;
+}
+
+/* Ensure MessageList scrolls properly */
+.str-chat__message-list-scroll {
+  flex: 1 !important;
+  overflow-y: auto !important;
+}
+
+/* Keep MessageInput at bottom */
+.str-chat__message-input {
+  flex-shrink: 0 !important;
+}
+
+/* Critical modal positioning fixes */
+.str-chat__message-actions-box,
+.str-chat__message-reactions-selector,
+.str-chat__tooltip {
+  position: absolute !important;
+  z-index: 9999 !important;
+}
+
+/* Ensure modals don't get clipped */
+.str-chat__message-simple {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.str-chat__message-wrapper {
+  overflow: visible !important;
+}
+
+/* Thread positioning */
+.str-chat__thread {
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 100% !important;
+  width: 400px !important;
+  background: white !important;
+  border-left: 1px solid #e5e7eb !important;
+  z-index: 100 !important;
+}
+
+/* Message Actions Modal Positioning Fixes */
+.str-chat__message-actions-box {
+  position: absolute !important;
+  z-index: 9999 !important;
+  /* Ensure the modal is positioned relative to the message */
+  transform: none !important;
+  /* Prevent modal from going to bottom of page */
+  bottom: auto !important;
+}
+
+/* Message container positioning */
+.str-chat__message {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Ensure the message actions button container is properly positioned */
+.str-chat__message-actions-box-button {
+  position: relative !important;
+}
+
+/* Fix for message actions dropdown positioning */
+.str-chat__message-actions-box__dropdown {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  z-index: 10000 !important;
+  transform: none !important;
+  bottom: auto !important;
+}
+
+/* Ensure proper stacking context for modals */
+.str-chat__message-list {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Fix for any floating elements */
+.str-chat__floating {
+  position: absolute !important;
+  z-index: 9999 !important;
+}

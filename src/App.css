@@ -18,12 +18,12 @@ body {
 
 /* ===== APP COMPONENT STYLES ===== */
 .app {
-  min-height: 100vh;
+  /* min-height: 100vh; */
   background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
 }
 
 .app-main {
-  position: relative;
+  /* position: relative; */
 }
 
 /* ===== HEADER COMPONENT STYLES ===== */
