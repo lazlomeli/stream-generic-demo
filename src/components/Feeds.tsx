@@ -804,26 +804,13 @@ const Feeds = () => {
         throw new Error('Failed to add comment');
       }
 
-      // Update post comment count
-      setPosts(prevPosts => 
-        prevPosts.map(post => {
-          if (post.id === postId && post.custom) {
-            return {
-              ...post,
-              custom: {
-                ...post.custom,
-                comments: post.custom.comments + 1
-              }
-            };
-          }
-          return post;
-        })
-      );
-
       // If comments are currently shown, refresh them
       if (showComments === postId) {
         await fetchComments(postId);
       }
+
+      // Refresh posts to get updated comment counts from server
+      await fetchPosts(feedsClient.userId);
 
       setCommentText('');
       setShowCommentInput(null);

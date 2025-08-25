@@ -164,20 +164,23 @@ app.post('/api/stream/get-posts', async (req, res) => {
     const { connect } = await import('getstream');
     const serverClient = connect(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
 
-    // Fetch activities from the specified feed
+    // Fetch activities from the specified feed with reaction counts
     const feed = serverClient.feed(feedGroup, feedId);
     const result = await feed.get({ limit, withReactionCounts: true });
 
     console.log(`✅ Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
+    
+    // Debug: Log the first activity to see its structure
+    if (result.results.length > 0) {
+      console.log('🔍 Sample activity structure:', JSON.stringify(result.results[0], null, 2));
+    }
 
     // Enrich activities with user information
     const enrichedActivities = result.results.map((activity) => {
-      // If this is the current user's post, we can't enrich it here
-      // but the frontend will handle it using Auth0 profile
+      // If this is the current user's post, mark it for frontend handling
       if (activity.actor === userId) {
         return {
           ...activity,
-          // Mark as current user's post for frontend handling
           isCurrentUser: true
         };
       }
@@ -191,12 +194,53 @@ app.post('/api/stream/get-posts', async (req, res) => {
       return activity;
     });
 
+    // Check if we need to manually count comments (if withReactionCounts doesn't provide them)
+    const activitiesWithCommentCounts = await Promise.all(enrichedActivities.map(async (activity) => {
+      // If the activity already has comment counts from withReactionCounts, use them
+      if (activity.reaction_counts && typeof activity.reaction_counts.comment === 'number') {
+        return {
+          ...activity,
+          custom: {
+            ...activity.custom,
+            comments: activity.reaction_counts.comment
+          }
+        };
+      }
+      
+      // Otherwise, manually count comment reactions
+      try {
+        const commentReactions = await serverClient.reactions.filter({
+          activity_id: activity.id,
+          kind: 'comment'
+        });
+        
+        const commentCount = commentReactions.results?.length || 0;
+        
+        return {
+          ...activity,
+          custom: {
+            ...activity.custom,
+            comments: commentCount
+          }
+        };
+      } catch (error) {
+        console.warn(`Could not get comment count for activity ${activity.id}:`, error);
+        return {
+          ...activity,
+          custom: {
+            ...activity.custom,
+            comments: 0
+          }
+        };
+      }
+    }));
+
     res.json({
       success: true,
-      activities: enrichedActivities,
+      activities: activitiesWithCommentCounts,
       feedGroup,
       feedId,
-      count: enrichedActivities.length
+      count: activitiesWithCommentCounts.length
     });
     
   } catch (error) {
