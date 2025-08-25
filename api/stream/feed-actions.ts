@@ -2,6 +2,18 @@ import { connect } from 'getstream';
 import jwt from 'jsonwebtoken';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Define a basic type for the user profile response
+interface UserProfileResponse {
+  [key: string]: {
+    name?: string;
+    username?: string;
+    image?: string;
+    profile_image?: string;
+    role?: string;
+    company?: string;
+  };
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -24,6 +36,11 @@ export default async function handler(
     if (!apiKey || !apiSecret) {
       return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
+
+    console.log(`🔑 Stream API Key configured: ${apiKey ? 'Yes' : 'No'}`);
+    console.log(`🔑 Stream API Secret configured: ${apiSecret ? 'Yes' : 'No'}`);
+    console.log(`🔑 Stream API Key length: ${apiKey?.length || 0}`);
+    console.log(`🔑 Stream API Secret length: ${apiSecret?.length || 0}`);
 
     // Initialize Stream client with proper user impersonation
     // Create server client for admin operations
@@ -284,7 +301,12 @@ export default async function handler(
               const bookmarkReaction = bookmarkReactions.results?.find(r => r.activity_id === activity.id);
               
               // Enrich with user information
-              let userInfo = {
+              let userInfo: {
+                name: string;
+                image: string | undefined;
+                role: string | undefined;
+                company: string | undefined;
+              } = {
                 name: activity.actor,
                 image: undefined,
                 role: undefined,
@@ -293,7 +315,7 @@ export default async function handler(
               
               try {
                 if (serverClient.getUsers) {
-                  const userProfile = await serverClient.getUsers([activity.actor]);
+                  const userProfile = await serverClient.getUsers([activity.actor]) as UserProfileResponse;
                   const userData = userProfile[activity.actor];
                   if (userData) {
                     userInfo = {

@@ -1,6 +1,18 @@
 import { connect } from 'getstream';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Define a basic type for the user profile response
+interface UserProfileResponse {
+  [key: string]: {
+    name?: string;
+    username?: string;
+    image?: string;
+    profile_image?: string;
+    role?: string;
+    company?: string;
+  };
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -24,6 +36,11 @@ export default async function handler(
       return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
 
+    console.log(`🔑 Stream API Key configured: ${apiKey ? 'Yes' : 'No'}`);
+    console.log(`🔑 Stream API Secret configured: ${apiSecret ? 'Yes' : 'No'}`);
+    console.log(`🔑 Stream API Key length: ${apiKey?.length || 0}`);
+    console.log(`🔑 Stream API Secret length: ${apiSecret?.length || 0}`);
+
     // Initialize Stream Feeds client
     const streamFeedsClient = connect(apiKey, apiSecret);
 
@@ -33,6 +50,26 @@ export default async function handler(
     
     const result = await feed.get({ limit, withReactionCounts: true });
     console.log(`Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
+    console.log(`🔍 withReactionCounts enabled: true`);
+    
+    // Debug: Log the first activity to see its structure
+    if (result.results.length > 0) {
+      const firstActivity = result.results[0] as any;
+      console.log('🔍 Sample activity structure:', JSON.stringify(firstActivity, null, 2));
+      console.log('🔍 Sample activity reaction_counts:', firstActivity.reaction_counts);
+      console.log('🔍 Sample activity custom:', firstActivity.custom);
+      
+      // Test if we can get any reactions for the first activity
+      try {
+        const testReactions = await streamFeedsClient.reactions.filter({
+          activity_id: firstActivity.id,
+          limit: 1
+        });
+        console.log(`🔍 Test reactions for first activity:`, testReactions);
+      } catch (error) {
+        console.log(`⚠️ Could not test reactions for first activity:`, error.message);
+      }
+    }
 
     // Enrich activities with user information
     const enrichedActivities = await Promise.all(
@@ -40,7 +77,7 @@ export default async function handler(
         try {
           // Get user profile information
           if (streamFeedsClient.getUsers) {
-            const userProfile = await streamFeedsClient.getUsers([activity.actor]);
+            const userProfile = await streamFeedsClient.getUsers([activity.actor]) as UserProfileResponse;
             const userData = userProfile[activity.actor];
             
             if (userData) {
@@ -83,12 +120,55 @@ export default async function handler(
       })
     );
 
+    // Add comment counts to activities
+    const activitiesWithCommentCounts = await Promise.all(
+      enrichedActivities.map(async (activity: any) => {
+        let commentCount = 0;
+        
+        // First, try to get comment count from withReactionCounts
+        if (activity.reaction_counts && typeof activity.reaction_counts.comment === 'number') {
+          commentCount = activity.reaction_counts.comment;
+          console.log(`✅ Using reaction_counts for activity ${activity.id}: ${commentCount} comments`);
+        } else {
+          // Fallback: manually count comment reactions
+          try {
+            console.log(`🔄 Manually counting comments for activity ${activity.id}...`);
+            const commentReactions = await streamFeedsClient.reactions.filter({
+              activity_id: activity.id,
+              kind: 'comment'
+            });
+            
+            commentCount = commentReactions.results?.length || 0;
+            console.log(`✅ Manual count for activity ${activity.id}: ${commentCount} comments`);
+          } catch (error) {
+            console.warn(`⚠️ Could not get comment count for activity ${activity.id}:`, error);
+            commentCount = 0;
+          }
+        }
+        
+        // Ensure we have a custom object with comment count
+        const customData = activity.custom || {};
+        
+        return {
+          ...activity,
+          custom: {
+            ...customData,
+            comments: commentCount,
+            // Ensure other custom fields exist
+            likes: customData.likes || 0,
+            shares: customData.shares || 0,
+            category: customData.category || 'general'
+          }
+        };
+      })
+    );
+
     return res.json({
       success: true,
-      activities: enrichedActivities,
+      activities: activitiesWithCommentCounts,
       feedGroup,
       feedId,
-      count: enrichedActivities.length
+      count: activitiesWithCommentCounts.length
     });
 
   } catch (error: any) {
