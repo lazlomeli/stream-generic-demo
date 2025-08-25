@@ -2,11 +2,6 @@
 .chat-container {
   min-height: calc(100vh - 4rem);
   background-color: white;
-  position: relative;
-  z-index: auto;
-  transform: none;
-  isolation: auto;
-  overflow: visible;
 }
 
 /* Chat Header */
@@ -30,10 +25,6 @@
 .chat-layout {
   display: flex;
   height: calc(100vh - 8rem);
-  position: relative;
-  z-index: auto;
-  transform: none;
-  isolation: auto;
 }
 
 /* Left Sidebar - Channel List */
@@ -44,8 +35,6 @@
   overflow-y: auto;
   position: relative;
   z-index: 1;
-  transform: none;
-  isolation: auto;
 }
 
 /* Right Main Area - Chat */
@@ -56,8 +45,6 @@
   position: relative;
   z-index: 2;
   overflow: visible;
-  transform: none;
-  isolation: auto;
 }
 
 /* Custom Channel List Styles */
@@ -275,7 +262,7 @@
   }
 }
 
-/* Stream Chat Modal and Tooltip Z-Index Fixes - Enhanced */
+/* Stream Chat Modal and Tooltip Z-Index Fixes */
 .str-chat__tooltip,
 .str-chat__message-actions-box,
 .str-chat__message-reactions-selector,
@@ -290,21 +277,9 @@
 .str-chat__message-options-box,
 .str-chat__emoji-picker,
 .str-chat__giphy-preview,
-.str-chat__attachment-actions,
-.str-chat__message-actions-list,
-.str-chat__message-reactions-list,
-.str-chat__reactions-list,
-.str-chat__reactions-list-container,
-.str-chat__message-bounce,
-.str-chat__message-actions-tooltip,
-.str-chat__modal-inner,
-.str-chat__modal-content,
-.str-chat__popover,
-.str-chat__popover-content,
-.str-chat__message-overlay,
-.str-chat__message-options-overlay {
-  z-index: 999999 !important;
-  position: fixed !important;
+.str-chat__attachment-actions {
+  z-index: 9999 !important;
+  position: relative !important;
 }
 
 /* Ensure message actions container has high z-index */
@@ -359,52 +334,14 @@
 /* Fix overflow issues that can hide modals */
 .str-chat__channel,
 .str-chat__main-panel,
-.str-chat__container,
-.str-chat__thread,
-.str-chat__window,
-.str-chat__message-list-scroll,
-.str-chat__message-list {
+.str-chat__container {
   overflow: visible !important;
-  position: relative !important;
 }
 
 /* Ensure proper positioning for floating elements */
 .str-chat__channel-inner {
   position: relative !important;
   overflow: visible !important;
-}
-
-/* Critical: Ensure modals are rendered at document level */
-.str-chat__modal,
-.str-chat__modal-wrapper,
-.str-chat__overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 999999 !important;
-  pointer-events: none !important;
-}
-
-.str-chat__modal-inner,
-.str-chat__modal-content {
-  pointer-events: auto !important;
-  position: relative !important;
-  z-index: 1000000 !important;
-}
-
-/* Specific fixes for message actions and reactions */
-.str-chat__message-actions-box,
-.str-chat__message-reactions-selector,
-.str-chat__reactions-list {
-  position: absolute !important;
-  z-index: 999999 !important;
-  background: white !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
-  pointer-events: auto !important;
 }
 
 /* Fix for emoji mart picker */
@@ -625,55 +562,4 @@
   .chat-main {
     flex: 1;
   }
-}
-
-/* ===== CRITICAL MODAL FIXES - MUST BE LAST ===== */
-/* Global rule to ensure all Stream Chat modals work properly */
-[class*="str-chat__modal"],
-[class*="str-chat__overlay"],
-[class*="str-chat__dropdown"],
-[class*="str-chat__tooltip"],
-[class*="str-chat__message-actions"],
-[class*="str-chat__reactions"],
-[class*="str-chat__popover"] {
-  z-index: 999999 !important;
-}
-
-/* Ensure body and html don't interfere with modals */
-body, html {
-  overflow-x: visible !important;
-}
-
-/* Force all Stream Chat containers to allow overflow */
-[class*="str-chat__"] {
-  overflow: visible !important;
-}
-
-/* Specific override for problematic containers */
-.str-chat__channel,
-.str-chat__main-panel,
-.str-chat__message-list-scroll,
-.str-chat__virtual-message-list-wrapper,
-.str-chat__virtual-message-list {
-  overflow: visible !important;
-  position: relative !important;
-  z-index: auto !important;
-  contain: none !important;
-}
-
-/* Ensure React portals render above everything */
-.str-chat__modal-root,
-[data-react-modal-body-trap] {
-  z-index: 1000000 !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  pointer-events: none !important;
-}
-
-.str-chat__modal-root > *,
-[data-react-modal-body-trap] > * {
-  pointer-events: auto !important;
 }
