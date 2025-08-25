@@ -170,12 +170,33 @@ app.post('/api/stream/get-posts', async (req, res) => {
 
     console.log(`✅ Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
 
+    // Enrich activities with user information
+    const enrichedActivities = result.results.map((activity) => {
+      // If this is the current user's post, we can't enrich it here
+      // but the frontend will handle it using Auth0 profile
+      if (activity.actor === userId) {
+        return {
+          ...activity,
+          // Mark as current user's post for frontend handling
+          isCurrentUser: true
+        };
+      }
+      
+      // For other users, check if we have user info in the activity
+      if (activity.userInfo) {
+        return activity;
+      }
+      
+      // Return activity as-is, frontend will handle fallback
+      return activity;
+    });
+
     res.json({
       success: true,
-      activities: result.results,
+      activities: enrichedActivities,
       feedGroup,
       feedId,
-      count: result.results.length
+      count: enrichedActivities.length
     });
     
   } catch (error) {
@@ -220,7 +241,12 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           return res.status(400).json({ error: 'Post text is required' });
         }
 
+        // Extract user profile information from request
+        const userProfile = req.body.userProfile || {};
+        
         console.log('📝 Creating post:', postData.text.substring(0, 50) + '...');
+        console.log('👤 User profile data:', JSON.stringify(userProfile, null, 2));
+        
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
@@ -232,6 +258,19 @@ app.post('/api/stream/feed-actions', async (req, res) => {
             shares: 0,
             comments: 0,
             category: postData.category || 'general'
+          },
+          // Store complete user profile information in the post
+          userProfile: {
+            name: userProfile.name || userId,
+            image: userProfile.image || undefined,
+            role: userProfile.role || 'User',
+            company: userProfile.company || undefined,
+            // Store additional Auth0 profile data
+            given_name: userProfile.given_name || undefined,
+            family_name: userProfile.family_name || undefined,
+            nickname: userProfile.nickname || undefined,
+            email: userProfile.email || undefined,
+            sub: userProfile.sub || userId
           }
         });
 

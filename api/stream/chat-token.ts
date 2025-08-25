@@ -11,7 +11,7 @@ export default async function handler(
   }
 
   try {
-    const { userId } = req.body;
+    const { userId, userProfile } = req.body;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
@@ -28,6 +28,22 @@ export default async function handler(
 
     // Initialize Stream Chat client
     const streamClient = new StreamChat(apiKey, apiSecret);
+
+    // Create/update user profile in Stream if profile information is provided
+    if (userProfile) {
+      try {
+        await streamClient.upsertUser({
+          id: userId,
+          name: userProfile.name,
+          image: userProfile.image,
+          role: userProfile.role
+        });
+        console.log(`✅ User profile updated for ${userId}`);
+      } catch (profileError) {
+        console.warn(`Failed to update user profile for ${userId}:`, profileError);
+        // Continue with token generation even if profile update fails
+      }
+    }
 
     // Generate Stream user token
     const streamToken = streamClient.createToken(userId);

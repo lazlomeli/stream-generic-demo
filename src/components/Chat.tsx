@@ -51,7 +51,14 @@ const Chat: React.FC<ChatProps> = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ 
+          userId,
+          userProfile: {
+            name: user?.name || user?.email || 'Anonymous User',
+            image: user?.picture || undefined,
+            role: 'User'
+          }
+        }),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -60,7 +67,7 @@ const Chat: React.FC<ChatProps> = () => {
       const json = await res.json();
       return json.token as string;
     },
-    [getAccessTokenSilently]
+    [getAccessTokenSilently, user]
   );
 
   const seedIfNeeded = useCallback(

@@ -14,6 +14,103 @@ import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import TrashIcon from '../icons/trash.svg';
 import './Feeds.css';
 
+// User mapping for demo users
+const DEMO_USERS = {
+  'alice_smith': {
+    name: 'Alice Smith',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
+    role: 'Frontend Developer',
+    company: 'Stream'
+  },
+  'bob_johnson': {
+    name: 'Bob Johnson',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    role: 'Backend Engineer',
+    company: 'TechCorp'
+  },
+  'carol_williams': {
+    name: 'Carol Williams',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    role: 'Product Designer',
+    company: 'Design Studio'
+  },
+  'david_brown': {
+    name: 'David Brown',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    role: 'DevRel Engineer',
+    company: 'Stream'
+  },
+  'emma_davis': {
+    name: 'Emma Davis',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
+    role: 'Full-stack Developer',
+    company: 'StartupCo'
+  }
+};
+
+// Helper function to get user display name
+const getUserDisplayName = (actorId: string, currentUser: any, userInfo?: any, userProfile?: any) => {
+  // If this is the current user, use their Auth0 profile
+  if (actorId === currentUser?.sub || actorId === getSanitizedUserId(currentUser)) {
+    return currentUser?.name || currentUser?.email || 'You';
+  }
+  
+  // First priority: Use stored userProfile data from the post (most accurate)
+  if (userProfile?.name && userProfile.name !== actorId) {
+    return userProfile.name;
+  }
+  
+  // Second priority: Use userInfo from backend enrichment
+  if (userInfo?.name && userInfo.name !== actorId) {
+    return userInfo.name;
+  }
+  
+  // Fallback to demo users mapping
+  const demoUser = DEMO_USERS[actorId as keyof typeof DEMO_USERS];
+  if (demoUser) {
+    return demoUser.name;
+  }
+  
+  // Last resort: format the actor ID to be more readable
+  // Handle Auth0-style IDs like "Google-Oauth2 113714394737973100008"
+  if (actorId.includes('|') || actorId.includes('oauth2') || actorId.includes('google')) {
+    // Extract provider and ID parts
+    const parts = actorId.split(/[|_]/);
+    if (parts.length >= 2) {
+      const provider = parts[0].replace(/([A-Z])/g, ' $1').trim(); // "Google Oauth2"
+      return `${provider} User`;
+    }
+  }
+  
+  return actorId.replace(/[^a-zA-Z0-9@_-]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()).trim() || 'Unknown User';
+};
+
+// Helper function to get user profile image
+const getUserProfileImage = (actorId: string, currentUser: any, userInfo?: any, userProfile?: any) => {
+  // If this is the current user, use their Auth0 profile picture
+  if (actorId === currentUser?.sub || actorId === getSanitizedUserId(currentUser)) {
+    return currentUser?.picture || undefined;
+  }
+  
+  // First priority: Use stored userProfile data from the post (most accurate)
+  if (userProfile?.image) {
+    return userProfile.image;
+  }
+  
+  // Second priority: Use userInfo from backend enrichment
+  if (userInfo?.image) {
+    return userInfo.image;
+  }
+  
+  // Fallback to demo users mapping
+  const demoUser = DEMO_USERS[actorId as keyof typeof DEMO_USERS];
+  if (demoUser) {
+    return demoUser.image;
+  }
+  
+  return undefined;
+};
+
 interface FeedPost {
   id: string;
   actor: string;
@@ -33,6 +130,25 @@ interface FeedPost {
   created_at?: string;
   time?: string;
   isOwnPost?: boolean;
+  // Add user info fields
+  userInfo?: {
+    name: string;
+    image: string;
+    role?: string;
+    company?: string;
+  };
+  // Add userProfile field for stored Auth0 profile data
+  userProfile?: {
+    name: string;
+    image?: string;
+    role?: string;
+    company?: string;
+    given_name?: string;
+    family_name?: string;
+    nickname?: string;
+    email?: string;
+    sub?: string;
+  };
 }
 
 const Feeds = () => {
@@ -80,7 +196,14 @@ const Feeds = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ userId: sanitizedUserId }), // Use sanitized userId
+          body: JSON.stringify({ 
+            userId: sanitizedUserId,
+            userProfile: {
+              name: user?.name || user?.email || 'Anonymous User',
+              image: user?.picture || undefined,
+              role: 'User'
+            }
+          }),
         });
 
         if (!response.ok) {
@@ -294,21 +417,41 @@ const Feeds = () => {
       const result = await response.json();
       
       // Transform Stream activities to our FeedPost format
-      const streamPosts: FeedPost[] = result.activities.map((activity: any) => ({
-        id: activity.id,
-        actor: activity.actor,
-        text: activity.text || activity.object,
-        attachments: activity.attachments || [],
-        custom: activity.custom || {
-          likes: 0,
-          shares: 0,
-          comments: 0,
-          category: 'general'
-        },
-        time: activity.time,
-        created_at: activity.time,
-        isOwnPost: activity.actor === userIdToUse
-      }));
+      const streamPosts: FeedPost[] = result.activities.map((activity: any) => {
+        const actorId = activity.actor;
+        
+        // Check if this is marked as current user's post from server
+        const isOwnPost = activity.isCurrentUser || actorId === userIdToUse;
+        
+        // Get user display name and profile image
+        const displayName = getUserDisplayName(actorId, user, activity.userInfo, activity.userProfile);
+        const profileImage = getUserProfileImage(actorId, user, activity.userInfo, activity.userProfile);
+        
+        const userInfo = {
+          name: displayName,
+          image: profileImage,
+          role: isOwnPost ? 'Current User' : undefined,
+          company: undefined
+        };
+        
+        return {
+          id: activity.id,
+          actor: actorId,
+          text: activity.text || activity.object,
+          attachments: activity.attachments || [],
+          custom: activity.custom || {
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            category: 'general'
+          },
+          time: activity.time,
+          created_at: activity.time,
+          isOwnPost: isOwnPost,
+          userInfo: userInfo,
+          userProfile: activity.userProfile // Store the full user profile
+        };
+      });
       
       setPosts(streamPosts);
       console.log(`✅ Loaded ${streamPosts.length} posts from Stream feeds`);
@@ -390,6 +533,22 @@ const Feeds = () => {
     try {
       const accessToken = await getAccessTokenSilently();
       
+      // Send complete user profile information for better post display
+      const userProfile = {
+        name: user?.name || user?.email || 'Anonymous User',
+        image: user?.picture || undefined,
+        role: 'User',
+        company: undefined,
+        // Include all Auth0 profile fields
+        given_name: user?.given_name || undefined,
+        family_name: user?.family_name || undefined,
+        nickname: user?.nickname || undefined,
+        email: user?.email || undefined,
+        sub: user?.sub || undefined
+      };
+      
+      console.log('📝 Sending user profile for post creation:', JSON.stringify(userProfile, null, 2));
+      
       const response = await fetch('/api/stream/feed-actions', {
         method: 'POST',
         headers: {
@@ -402,7 +561,8 @@ const Feeds = () => {
           postData: {
             text: newPostText.trim(),
             category: 'general'
-          }
+          },
+          userProfile: userProfile
         }),
       });
 
@@ -678,37 +838,6 @@ const Feeds = () => {
     }
   };
 
-  // Function to get user avatar or create fallback
-  const getUserAvatar = (actorId: string) => {
-    // If it's the current user, use Auth0 profile picture or create initial avatar
-    if (actorId === feedsClient?.userId) {
-      if (user?.picture) {
-        return user.picture;
-      } else {
-        // Create fallback avatar with user's initial
-        const initial = user?.name?.[0] || user?.email?.[0] || 'U';
-        return `data:image/svg+xml,${encodeURIComponent(`
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="20" fill="#3b82f6"/>
-            <text x="20" y="26" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white">${initial.toUpperCase()}</text>
-          </svg>
-        `)}`;
-      }
-    }
-    
-    // For demo users, use Unsplash images
-    const demoImages = {
-      'alice_smith': '1580489944761-15a19d654956',
-      'bob_johnson': '1507003211169-0a1dd7228f2d',
-      'carol_williams': '1438761681033-6461ffad8d80',
-      'david_brown': '1472099645785-5658abf4ff4e',
-      'emma_davis': '1544005313-94ddf0286df2'
-    };
-    
-    const imageId = demoImages[actorId as keyof typeof demoImages];
-    return imageId ? `https://images.unsplash.com/photo-${imageId}?w=40&h=40&fit=crop&crop=face` : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face';
-  };
-
   // Show loading state
   if (isLoading) {
     return (
@@ -770,25 +899,47 @@ const Feeds = () => {
                 <div className="post-author">
                 <div className="post-author-info">
                   <div className="author-avatar">
-                    <img 
-                      src={getUserAvatar(post.actor)}
-                      alt={post.actor}
-                      onError={(e) => {
-                        // Fallback to initials avatar if image fails to load
-                        const target = e.target as HTMLImageElement;
-                        const initial = post.actor.replace('_', ' ').split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-                        target.src = `data:image/svg+xml,${encodeURIComponent(`
-                          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="20" cy="20" r="20" fill="#6b7280"/>
-                            <text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
-                          </svg>
-                        `)}`;
-                      }}
-                    />
+                    {post.userInfo?.image ? (
+                      <img 
+                        src={post.userInfo.image}
+                        alt={post.userInfo.name}
+                        onError={(e) => {
+                          // Fallback to initials avatar if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          const displayName = post.userInfo?.name || 'U';
+                          const initial = displayName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+                          target.src = `data:image/svg+xml,${encodeURIComponent(`
+                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="20" cy="20" r="20" fill="#6b7280"/>
+                              <text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
+                            </svg>
+                          `)}`;
+                        }}
+                      />
+                    ) : (
+                      // Show initials avatar if no profile picture
+                      <div 
+                        className="initials-avatar"
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: '#6b7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '16px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {(post.userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                      </div>
+                    )}
                   </div>
                   <div className="author-info">
                     <span className="author-name">
-                      {post.actor === feedsClient?.userId ? 'You' : post.actor.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {post.userInfo?.name || 'Unknown User'}
                     </span>
                     <span className="post-time">{formatRelativeTime(post.time || post.created_at || new Date())}</span>
                   </div>

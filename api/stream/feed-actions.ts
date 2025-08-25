@@ -39,6 +39,23 @@ export default async function handler(
           return res.status(400).json({ error: 'Post text is required' });
         }
 
+        // First, update the user's profile in Stream with their Auth0 information
+        try {
+          const { userProfile } = req.body;
+          if (userProfile) {
+            await serverClient.setUser({
+              id: userId,
+              name: userProfile.name,
+              image: userProfile.image,
+              role: userProfile.role,
+              company: userProfile.company
+            });
+          }
+        } catch (profileError) {
+          console.warn('Failed to update user profile:', profileError);
+          // Continue with post creation even if profile update fails
+        }
+
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
@@ -260,37 +277,70 @@ export default async function handler(
         console.log('📖 Feed activities found:', feedData.results?.length || 0);
 
         // Filter feed activities to only bookmarked ones and merge data
-        const bookmarkedPosts = feedData.results
-          ?.filter(activity => activityIds.includes(activity.id))
-          .map((activity: any) => {
-            const bookmarkReaction = bookmarkReactions.results?.find(r => r.activity_id === activity.id);
-            
-            return {
-              id: activity.id, // Use activity id for highlighting
-              activity_id: activity.id,
-              actor: activity.actor || 'Unknown',
-              verb: activity.verb || 'post',
-              object: activity.object || 'post',
-              text: activity.text || 'No content',
-              attachments: activity.attachments || [],
-              custom: activity.custom || {},
-              created_at: activity.created_at || activity.time,
-              time: activity.created_at || activity.time,
-              reaction_counts: activity.reaction_counts || {},
-              own_reactions: activity.own_reactions || {},
-              reaction_id: bookmarkReaction?.id, // Keep the reaction ID for removal
-              bookmarked_at: bookmarkReaction?.created_at // When user bookmarked this post
-            };
-          })
-          // Sort by bookmark date (newest bookmarks first)
-          .sort((a, b) => new Date(b.bookmarked_at).getTime() - new Date(a.bookmarked_at).getTime()) || [];
+        const bookmarkedPosts = await Promise.all(
+          feedData.results
+            ?.filter(activity => activityIds.includes(activity.id))
+            .map(async (activity: any) => {
+              const bookmarkReaction = bookmarkReactions.results?.find(r => r.activity_id === activity.id);
+              
+              // Enrich with user information
+              let userInfo = {
+                name: activity.actor,
+                image: undefined,
+                role: undefined,
+                company: undefined
+              };
+              
+              try {
+                if (serverClient.getUsers) {
+                  const userProfile = await serverClient.getUsers([activity.actor]);
+                  const userData = userProfile[activity.actor];
+                  if (userData) {
+                    userInfo = {
+                      name: userData.name || userData.username || activity.actor,
+                      image: userData.image || userData.profile_image || undefined,
+                      role: userData.role || undefined,
+                      company: userData.company || undefined
+                    };
+                  }
+                }
+              } catch (userError) {
+                console.warn(`Failed to fetch user profile for ${activity.actor}:`, userError);
+              }
+              
+              return {
+                id: activity.id, // Use activity id for highlighting
+                activity_id: activity.id,
+                actor: activity.actor || 'Unknown',
+                verb: activity.verb || 'post',
+                object: activity.object || 'post',
+                text: activity.text || 'No content',
+                attachments: activity.attachments || [],
+                custom: activity.custom || {},
+                created_at: activity.created_at || activity.time,
+                time: activity.created_at || activity.time,
+                reaction_counts: activity.reaction_counts || {},
+                own_reactions: activity.own_reactions || {},
+                reaction_id: bookmarkReaction?.id, // Keep the reaction ID for removal
+                bookmarked_at: bookmarkReaction?.created_at, // When user bookmarked this post
+                userInfo: userInfo // Add enriched user information
+              };
+            }) || []
+        );
 
         console.log('📖 Final bookmarked posts:', bookmarkedPosts.length);
         console.log('📖 First post sample:', JSON.stringify(bookmarkedPosts[0], null, 2));
 
+        // Sort by bookmark date (newest bookmarks first)
+        const sortedBookmarkedPosts = bookmarkedPosts.sort((a, b) => {
+          const dateA = a.bookmarked_at ? new Date(a.bookmarked_at).getTime() : 0;
+          const dateB = b.bookmarked_at ? new Date(b.bookmarked_at).getTime() : 0;
+          return dateB - dateA;
+        });
+
         return res.json({
           success: true,
-          bookmarkedPosts
+          bookmarkedPosts: sortedBookmarkedPosts
         });
 
       default:

@@ -34,12 +34,61 @@ export default async function handler(
     const result = await feed.get({ limit, withReactionCounts: true });
     console.log(`Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
 
+    // Enrich activities with user information
+    const enrichedActivities = await Promise.all(
+      result.results.map(async (activity: any) => {
+        try {
+          // Get user profile information
+          if (streamFeedsClient.getUsers) {
+            const userProfile = await streamFeedsClient.getUsers([activity.actor]);
+            const userData = userProfile[activity.actor];
+            
+            if (userData) {
+              // Enrich the activity with user information
+              return {
+                ...activity,
+                userInfo: {
+                  name: userData.name || userData.username || activity.actor,
+                  image: userData.image || userData.profile_image || undefined,
+                  role: userData.role || undefined,
+                  company: userData.company || undefined
+                }
+              };
+            }
+          }
+          
+          // Return activity without user enrichment if user fetch fails or method not available
+          return {
+            ...activity,
+            userInfo: {
+              name: activity.actor,
+              image: undefined,
+              role: undefined,
+              company: undefined
+            }
+          };
+        } catch (userError) {
+          console.warn(`Failed to fetch user profile for ${activity.actor}:`, userError);
+          // Return activity without user enrichment if user fetch fails
+          return {
+            ...activity,
+            userInfo: {
+              name: activity.actor,
+              image: undefined,
+              role: undefined,
+              company: undefined
+            }
+          };
+        }
+      })
+    );
+
     return res.json({
       success: true,
-      activities: result.results,
+      activities: enrichedActivities,
       feedGroup,
       feedId,
-      count: result.results.length
+      count: enrichedActivities.length
     });
 
   } catch (error: any) {
