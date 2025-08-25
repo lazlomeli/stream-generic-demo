@@ -416,6 +416,9 @@ const Feeds = () => {
       
       const result = await response.json();
       
+      console.log('🔍 Raw server response:', result);
+      console.log('🔍 Activities received:', result.activities);
+      
       // Transform Stream activities to our FeedPost format
       const streamPosts: FeedPost[] = result.activities.map((activity: any) => {
         const actorId = activity.actor;
@@ -433,6 +436,13 @@ const Feeds = () => {
           role: isOwnPost ? 'Current User' : undefined,
           company: undefined
         };
+
+        // Debug comment count
+        console.log(`🔍 Post ${activity.id} comment count:`, {
+          custom: activity.custom,
+          comments: activity.custom?.comments,
+          reaction_counts: activity.reaction_counts
+        });
         
         return {
           id: activity.id,
@@ -1031,30 +1041,35 @@ const Feeds = () => {
               )}
 
               {/* View Comments Button */}
-              {(post.custom?.comments || 0) > 0 && (
-                <div className="view-comments-section">
-                  <button 
-                    className="view-comments-button"
-                    onClick={() => {
-                      if (showComments === post.id) {
-                        setShowComments(null);
-                      } else {
-                        setShowComments(post.id);
-                        if (!postComments[post.id]) {
-                          fetchComments(post.id);
-                        }
+              <div className="view-comments-section">
+                <button 
+                  className="view-comments-button"
+                  onClick={() => {
+                    if (showComments === post.id) {
+                      setShowComments(null);
+                    } else {
+                      setShowComments(post.id);
+                      if (!postComments[post.id]) {
+                        fetchComments(post.id);
                       }
-                    }}
-                    disabled={loadingComments === post.id}
-                  >
-                    {loadingComments === post.id ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingIcon size={16} />
-                        <span>Loading...</span>
-                      </div>
-                    ) : showComments === post.id ? 'Hide Comments' : 
-                     `View Comments (${post.custom?.comments || 0})`}
-                  </button>
+                    }
+                  }}
+                  disabled={loadingComments === post.id}
+                >
+                  {loadingComments === post.id ? (
+                    <div className="flex items-center gap-2">
+                      <LoadingIcon size={16} />
+                      <span>Loading...</span>
+                    </div>
+                  ) : showComments === post.id ? 'Hide Comments' : 
+                   `View Comments (${post.custom?.comments || 0})`}
+                </button>
+              </div>
+
+              {/* Debug comment count */}
+              {process.env.NODE_ENV === 'development' && (
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Debug: comments = {post.custom?.comments || 0}, custom = {JSON.stringify(post.custom)}
                 </div>
               )}
 

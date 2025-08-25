@@ -5,7 +5,6 @@ import {
   Chat as ChatComponent,
   Channel,
   ChannelHeader,
-  ChannelList,
   MessageList,
   Thread,
   Window,
@@ -16,6 +15,7 @@ import CustomMessageInput from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
 import LoadingSpinner from './LoadingSpinner'
 import VoiceMessageHandler from './VoiceMessageHandler'
+import CustomChannelList from './CustomChannelList'
 import { getSanitizedUserId } from '../utils/userUtils'
 import 'stream-chat-react/dist/css/v2/index.css'
 
@@ -253,7 +253,7 @@ const Chat: React.FC<ChatProps> = () => {
         theme="str-chat__theme-light"
         key={`chat-${client.userID || "disconnected"}`}
       >
-        <ChannelList 
+        <CustomChannelList 
           filters={filters}
           sort={sort}
           options={options}

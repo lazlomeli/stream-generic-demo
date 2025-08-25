@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { StreamChat } from 'stream-chat';
+import multer from 'multer';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
@@ -52,6 +53,23 @@ const __dirname = path.dirname(__filename);
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Configure multer for handling file uploads
+const upload = multer({
+  storage: multer.memoryStorage(), // Store files in memory for now
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // Initialize Stream Chat
 const streamClient = new StreamChat(
@@ -169,10 +187,24 @@ app.post('/api/stream/get-posts', async (req, res) => {
     const result = await feed.get({ limit, withReactionCounts: true });
 
     console.log(`✅ Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
+    console.log(`🔍 withReactionCounts enabled: true`);
     
     // Debug: Log the first activity to see its structure
     if (result.results.length > 0) {
       console.log('🔍 Sample activity structure:', JSON.stringify(result.results[0], null, 2));
+      console.log('🔍 Sample activity reaction_counts:', result.results[0].reaction_counts);
+      console.log('🔍 Sample activity custom:', result.results[0].custom);
+      
+      // Test if we can get any reactions for the first activity
+      try {
+        const testReactions = await serverClient.reactions.filter({
+          activity_id: result.results[0].id,
+          limit: 1
+        });
+        console.log(`🔍 Test reactions for first activity:`, testReactions);
+      } catch (error) {
+        console.log(`⚠️ Could not test reactions for first activity:`, error.message);
+      }
     }
 
     // Enrich activities with user information
@@ -196,43 +228,43 @@ app.post('/api/stream/get-posts', async (req, res) => {
 
     // Check if we need to manually count comments (if withReactionCounts doesn't provide them)
     const activitiesWithCommentCounts = await Promise.all(enrichedActivities.map(async (activity) => {
-      // If the activity already has comment counts from withReactionCounts, use them
+      let commentCount = 0;
+      
+      // First, try to get comment count from withReactionCounts
       if (activity.reaction_counts && typeof activity.reaction_counts.comment === 'number') {
-        return {
-          ...activity,
-          custom: {
-            ...activity.custom,
-            comments: activity.reaction_counts.comment
-          }
-        };
+        commentCount = activity.reaction_counts.comment;
+        console.log(`✅ Using reaction_counts for activity ${activity.id}: ${commentCount} comments`);
+      } else {
+        // Fallback: manually count comment reactions
+        try {
+          console.log(`🔄 Manually counting comments for activity ${activity.id}...`);
+          const commentReactions = await serverClient.reactions.filter({
+            activity_id: activity.id,
+            kind: 'comment'
+          });
+          
+          commentCount = commentReactions.results?.length || 0;
+          console.log(`✅ Manual count for activity ${activity.id}: ${commentCount} comments`);
+        } catch (error) {
+          console.warn(`⚠️ Could not get comment count for activity ${activity.id}:`, error);
+          commentCount = 0;
+        }
       }
       
-      // Otherwise, manually count comment reactions
-      try {
-        const commentReactions = await serverClient.reactions.filter({
-          activity_id: activity.id,
-          kind: 'comment'
-        });
-        
-        const commentCount = commentReactions.results?.length || 0;
-        
-        return {
-          ...activity,
-          custom: {
-            ...activity.custom,
-            comments: commentCount
-          }
-        };
-      } catch (error) {
-        console.warn(`Could not get comment count for activity ${activity.id}:`, error);
-        return {
-          ...activity,
-          custom: {
-            ...activity.custom,
-            comments: 0
-          }
-        };
-      }
+      // Ensure we have a custom object
+      const customData = activity.custom || {};
+      
+      return {
+        ...activity,
+        custom: {
+          ...customData,
+          comments: commentCount,
+          // Ensure other custom fields exist
+          likes: customData.likes || 0,
+          shares: customData.shares || 0,
+          category: customData.category || 'general'
+        }
+      };
     }));
 
     res.json({
@@ -274,6 +306,11 @@ app.post('/api/stream/feed-actions', async (req, res) => {
     // Import getstream for local development (matches production)
     const { connect } = await import('getstream');
     const serverClient = connect(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+    
+    console.log(`🔑 Stream API Key configured: ${process.env.STREAM_API_KEY ? 'Yes' : 'No'}`);
+    console.log(`🔑 Stream API Secret configured: ${process.env.STREAM_API_SECRET ? 'Yes' : 'No'}`);
+    console.log(`🔑 Stream API Key length: ${process.env.STREAM_API_KEY?.length || 0}`);
+    console.log(`🔑 Stream API Secret length: ${process.env.STREAM_API_SECRET?.length || 0}`);
     
     // Create user token and user client for proper attribution
     const userToken = serverClient.createUserToken(userId);
@@ -561,6 +598,96 @@ app.post('/api/stream/feed-actions', async (req, res) => {
   }
 });
 
+// Stream Chat Create Channel endpoint
+app.post('/api/stream/create-channel', upload.single('channelImage'), async (req, res) => {
+  try {
+    console.log('🏗️ Create channel request body:', req.body);
+    console.log('🏗️ Create channel request files:', req.file);
+    console.log('🏗️ Create channel request headers:', req.headers);
+    console.log('🏗️ Raw request body keys:', Object.keys(req.body));
+    console.log('🏗️ Raw request body values:', Object.values(req.body));
+    
+    const { channelName, selectedUsers, currentUserId } = req.body;
+    
+    console.log('🏗️ Creating new channel:', channelName);
+    console.log('👥 Selected users:', selectedUsers);
+    console.log('👤 Current user ID:', currentUserId);
+    
+    if (!channelName || !selectedUsers || !currentUserId) {
+      return res.status(400).json({ 
+        error: 'Channel name, selected users, and current user ID are required',
+        received: { channelName, selectedUsers, currentUserId }
+      });
+    }
+
+    // Check if we have Stream credentials
+    if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
+      console.error('❌ Missing Stream API credentials');
+      return res.status(500).json({ 
+        error: 'Stream API credentials not configured. Check your .env file.' 
+      });
+    }
+
+    // Parse selected users
+    let userIds;
+    try {
+      userIds = JSON.parse(selectedUsers);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid selected users format' });
+    }
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'At least one user must be selected' });
+    }
+
+    // Add current user to the channel members
+    const allMembers = [currentUserId, ...userIds];
+
+    // Prepare channel data
+    const channelData = {
+      name: channelName,
+      members: allMembers,
+      created_by_id: currentUserId,
+    };
+
+    // Handle channel image if uploaded
+    if (req.file) {
+      console.log('📸 Channel image uploaded:', req.file.originalname);
+      // For now, we'll just log the image info
+      // In a production app, you'd upload this to a file storage service
+      // and store the URL in the channel data
+      channelData.image = `Image uploaded: ${req.file.originalname}`;
+    }
+
+    // Create the channel using Stream Chat
+    const channel = streamClient.channel('messaging', channelData);
+
+    await channel.create();
+
+    console.log('✅ Channel created successfully:', channel.id);
+
+    res.json({
+      success: true,
+      message: 'Channel created successfully',
+      channelId: channel.id,
+      channel: {
+        id: channel.id,
+        name: channelName,
+        members: allMembers,
+        created_by_id: currentUserId,
+        image: channelData.image
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error creating channel:', error);
+    res.status(500).json({ 
+      error: 'Failed to create channel',
+      details: error.message 
+    });
+  }
+});
+
 // --- NEW: Unified seed endpoint for both Chat and Feeds ---
 app.post("/api/stream/seed", async (req, res) => {
   try {
@@ -724,6 +851,7 @@ app.listen(PORT, () => {
   console.log(`📊 Get posts: http://localhost:${PORT}/api/stream/get-posts`);
   console.log(`🌱 Unified seeding: http://localhost:${PORT}/api/stream/seed`);
   console.log(`🎯 Feed actions: http://localhost:${PORT}/api/stream/feed-actions`);
+  console.log(`💬 Create Channel: http://localhost:${PORT}/api/stream/create-channel`);
   console.log('');
   console.log('🔧 Environment Variables Debug:');
   console.log(`   PORT: ${process.env.PORT || '5000 (default)'}`);

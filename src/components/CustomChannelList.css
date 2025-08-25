@@ -1,0 +1,73 @@
+/* CustomChannelList.css */
+
+.custom-channel-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.create-channel-section {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.create-channel-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.create-channel-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.create-channel-button:active {
+  transform: translateY(0);
+}
+
+.create-channel-icon {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.create-channel-text {
+  font-weight: 500;
+}
+
+.stream-channel-list {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Ensure the Stream Chat ChannelList takes full height */
+.stream-channel-list > div {
+  height: 100%;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .create-channel-section {
+    padding: 0.75rem;
+  }
+  
+  .create-channel-button {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+}
