@@ -338,14 +338,24 @@ const Chat: React.FC<ChatProps> = () => {
         );
         if (cancelled) return;
 
-        // Ensure default channel available and watched
-        const general = client.channel("messaging", "general", {
-          members: [sanitizedUserId],
-          // @ts-ignore-next-line
-          name: "General",
-          // @ts-ignore-next-line
-          image: "/general-channel.svg",
-        });
+        // Ensure user is added to general channel before trying to watch
+        try {
+          const accessToken = await getAccessTokenSilently();
+          await fetch("/api/stream/add-user-to-general", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ userId: sanitizedUserId }),
+          });
+        } catch (error) {
+          console.log('Failed to add user to general channel via API:', error);
+          // Continue anyway, maybe the user already has access
+        }
+
+        // Now try to watch the general channel
+        const general = client.channel("messaging", "general");
         await general.watch();
         if (cancelled) return;
 

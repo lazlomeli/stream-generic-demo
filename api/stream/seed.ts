@@ -70,7 +70,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         members: [me, ...SAMPLE_USERS.map(u => u.id)],
         created_by_id: me,
     });
-    await general.create();
+    
+    try {
+      await general.create();
+    } catch (error) {
+      // Channel might already exist, try to update it
+      console.log('General channel already exists, updating...');
+      try {
+        await general.update({
+          // @ts-ignore-next-line
+          name: "General",
+          // @ts-ignore-next-line
+          image: "/general-channel.svg",
+        });
+      } catch (updateError) {
+        console.log('Channel update failed:', updateError);
+      }
+    }
 
     for (const u of SAMPLE_USERS) {
         // @ts-ignore-next-line
