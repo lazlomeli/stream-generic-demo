@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
+import LoadingIcon from './LoadingIcon';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
 import HeartIcon from '../icons/heart.svg';
@@ -713,7 +714,6 @@ const Feeds = () => {
     return (
       <div className="feeds-loading">
         <LoadingSpinner />
-        <p>Loading...</p>
       </div>
     );
   }
@@ -734,7 +734,9 @@ const Feeds = () => {
     return (
       <div className="feeds-loading">
         <LoadingSpinner />
-        <p>{isSeeding ? seedStatus : 'Initializing feeds...'}</p>
+        {(isSeeding || !clientReady) && (
+          <p className="loading-status">{isSeeding ? seedStatus : 'Initializing feeds...'}</p>
+        )}
       </div>
     );
   }
@@ -907,8 +909,12 @@ const Feeds = () => {
                     }}
                     disabled={loadingComments === post.id}
                   >
-                    {loadingComments === post.id ? 'Loading...' : 
-                     showComments === post.id ? 'Hide Comments' : 
+                    {loadingComments === post.id ? (
+                      <div className="flex items-center gap-2">
+                        <LoadingIcon size={16} />
+                        <span>Loading...</span>
+                      </div>
+                    ) : showComments === post.id ? 'Hide Comments' : 
                      `View Comments (${post.custom?.comments || 0})`}
                   </button>
                 </div>

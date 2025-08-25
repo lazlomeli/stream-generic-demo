@@ -1,6 +1,7 @@
 import React from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import StreamLogo from '../assets/stream-logo.png'
+import LoadingIcon from '../components/LoadingIcon'
 
 const Home: React.FC = () => {
   const { isAuthenticated, loginWithRedirect, isLoading } = useAuth0()
@@ -26,7 +27,7 @@ const Home: React.FC = () => {
           </div>
           {isLoading ? (
             <div className="home-cta home-cta-loading">
-              <span>Loading...</span>
+              <LoadingIcon size={24} />
             </div>
           ) : (
             <button

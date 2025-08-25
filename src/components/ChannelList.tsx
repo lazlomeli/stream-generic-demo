@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChannelItem } from '../hooks/listMyChannels'
 import FallbackAvatar from './FallbackAvatar'
+import LoadingIcon from './LoadingIcon'
 import './ChannelList.css'
 
 interface ChannelListProps {
@@ -28,8 +29,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
         <div className="channel-list-items">
           {channels.length === 0 ? (
             <div className="channel-list-loading">
-              <div className="channel-list-loading-spinner"></div>
-              <p className="channel-list-loading-text">Loading...</p>
+              <LoadingIcon size={20} />
             </div>
           ) : (
             channels.map((channelItem) => { 

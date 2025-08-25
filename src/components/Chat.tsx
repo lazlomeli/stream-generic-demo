@@ -14,6 +14,7 @@ import CustomMessageInput from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingSpinner from './LoadingSpinner'
+import LoadingIcon from './LoadingIcon'
 import { getSanitizedUserId } from '../utils/userUtils'
 import 'stream-chat-react/dist/css/v2/index.css'
 
