@@ -642,6 +642,30 @@ app.post('/api/stream/create-channel', upload.single('channelImage'), async (req
 
     // Add current user to the channel members
     const allMembers = [currentUserId, ...userIds];
+    
+    console.log('👥 Channel members:', allMembers);
+    console.log('👤 Current user ID:', currentUserId);
+    console.log('👥 Selected user IDs:', userIds);
+
+    // Ensure all users exist in Stream Chat before creating the channel
+    console.log('👥 Upserting users in Stream Chat...');
+    try {
+      // Upsert the current user
+      await streamClient.upsertUser({ id: currentUserId });
+      console.log('✅ Current user upserted:', currentUserId);
+      
+      // Upsert the selected users
+      for (const userId of userIds) {
+        await streamClient.upsertUser({ id: userId });
+        console.log('✅ User upserted:', userId);
+      }
+    } catch (upsertError) {
+      console.error('❌ Error upserting users:', upsertError);
+      return res.status(500).json({ 
+        error: 'Failed to create users in Stream Chat',
+        details: upsertError.message 
+      });
+    }
 
     // Prepare channel data
     const channelData = {
@@ -649,14 +673,48 @@ app.post('/api/stream/create-channel', upload.single('channelImage'), async (req
       members: allMembers,
       created_by_id: currentUserId,
     };
+    
+    console.log('🏗️ Channel data to be created:', channelData);
 
     // Handle channel image if uploaded
     if (req.file) {
       console.log('📸 Channel image uploaded:', req.file.originalname);
-      // For now, we'll just log the image info
-      // In a production app, you'd upload this to a file storage service
-      // and store the URL in the channel data
-      channelData.image = `Image uploaded: ${req.file.originalname}`;
+      console.log('📸 File size:', req.file.size, 'bytes');
+      console.log('📸 MIME type:', req.file.mimetype);
+      
+      // Validate image file
+      if (!req.file.mimetype.startsWith('image/')) {
+        console.error('❌ Invalid file type:', req.file.mimetype);
+        return res.status(400).json({ 
+          error: 'Invalid file type. Only image files are allowed.',
+          receivedType: req.file.mimetype
+        });
+      }
+      
+      // Check file size (limit to 5MB)
+      if (req.file.size > 5 * 1024 * 1024) {
+        console.error('❌ File too large:', req.file.size, 'bytes');
+        return res.status(400).json({ 
+          error: 'File too large. Maximum size is 5MB.',
+          receivedSize: req.file.size,
+          maxSize: 5 * 1024 * 1024
+        });
+      }
+      
+      try {
+        // Convert the uploaded image to a data URL for immediate display
+        const base64Image = req.file.buffer.toString('base64');
+        const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
+        
+        // Store the data URL in the channel data
+        channelData.image = dataUrl;
+        
+        console.log('✅ Image converted to data URL successfully');
+      } catch (imageError) {
+        console.error('❌ Error processing image:', imageError);
+        // Continue without image if processing fails
+        channelData.image = undefined;
+      }
     }
 
     // Create the channel using Stream Chat
@@ -665,6 +723,24 @@ app.post('/api/stream/create-channel', upload.single('channelImage'), async (req
     await channel.create();
 
     console.log('✅ Channel created successfully:', channel.id);
+    console.log('🔍 Created channel data:', channel.data);
+    console.log('🔍 Channel members after creation:', channel.state?.members);
+    
+    // Verify the channel was created with the correct members
+    try {
+      const createdChannel = streamClient.channel('messaging', channel.id);
+      await createdChannel.watch();
+      console.log('🔍 Retrieved channel data:', createdChannel.data);
+      console.log('🔍 Retrieved channel members:', createdChannel.state?.members);
+      
+      // Also try to get the channel with the current user context
+      const userChannel = streamClient.channel('messaging', channel.id);
+      await userChannel.watch();
+      console.log('🔍 User channel data:', userChannel.data);
+      console.log('🔍 User channel members:', userChannel.state?.members);
+    } catch (retrieveError) {
+      console.error('⚠️ Could not retrieve created channel:', retrieveError);
+    }
 
     res.json({
       success: true,

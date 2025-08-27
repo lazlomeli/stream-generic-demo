@@ -4,7 +4,6 @@ import { useAuth0 } from '@auth0/auth0-react'
 import {
   Chat as ChatComponent,
   Channel,
-  ChannelHeader,
   MessageList,
   Thread,
   Window,
@@ -16,6 +15,7 @@ import CustomAttachment from './CustomAttachment'
 import LoadingSpinner from './LoadingSpinner'
 import VoiceMessageHandler from './VoiceMessageHandler'
 import CustomChannelList from './CustomChannelList'
+import CustomChannelHeader from './CustomChannelHeader'
 import { getSanitizedUserId } from '../utils/userUtils'
 import 'stream-chat-react/dist/css/v2/index.css'
 
@@ -148,7 +148,7 @@ const Chat: React.FC<ChatProps> = () => {
         // Ensure user is added to general channel before trying to watch
         try {
           const accessToken = await getAccessTokenSilently();
-          await fetch("/api/stream/add-user-to-general", {
+          const response = await fetch("/api/stream/add-user-to-general", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -156,9 +156,22 @@ const Chat: React.FC<ChatProps> = () => {
             },
             body: JSON.stringify({ userId: sanitizedUserId }),
           });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            if (response.status === 404) {
+              console.error('❌ General channel does not exist:', errorData.message);
+              console.log('💡 Suggestion:', errorData.suggestion);
+              // You might want to show this error to the user or trigger seeding
+            } else {
+              console.error('❌ Failed to add user to general channel:', errorData);
+            }
+          } else {
+            console.log('✅ User added to general channel successfully');
+          }
         } catch (error) {
-          console.log('Failed to add user to general channel via API:', error);
-          // Continue anyway, maybe the user already has access
+          console.error('❌ Network error adding user to general channel:', error);
+          // Continue anyway - the user can still use chat without the general channel
         }
 
         setClientReady(true);
@@ -209,21 +222,11 @@ const Chat: React.FC<ChatProps> = () => {
   }
 
   if (isConnecting) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <LoadingSpinner />
-        <p>Connecting to chat...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!clientReady || !clientRef.current) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <LoadingSpinner />
-        <p>Initializing chat...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const client = clientRef.current;
@@ -260,7 +263,7 @@ const Chat: React.FC<ChatProps> = () => {
         />
         <Channel Attachment={CustomAttachment}>
           <Window>
-            <ChannelHeader />
+            <CustomChannelHeader />
             <MessageList />
             <CustomMessageInput />
           </Window>

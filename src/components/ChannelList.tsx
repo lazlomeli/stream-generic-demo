@@ -32,9 +32,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
               <LoadingIcon size={20} />
             </div>
           ) : (
-            channels.map((channelItem) => { 
-              console.log('channelItem', channelItem.image);
-              return (
+            channels.map((channelItem) => (
               <button
                 key={channelItem.id}
                 onClick={() => onChannelSelect(channelItem.id)}
@@ -49,6 +47,8 @@ const ChannelList: React.FC<ChannelListProps> = ({
                         alt={channelItem.name || 'Channel'}
                         className="channel-item-avatar-image"
                         size={24}
+                        channelType={channelItem.type}
+                        channelName={channelItem.name}
                       />
                       <div className={`channel-item-status ${
                         channelItem.status === 'online' ? 'online' : 
@@ -65,7 +65,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                   </div>
                 </div>
               </button>
-            )})
+            ))
           )}
         </div>
       </div>

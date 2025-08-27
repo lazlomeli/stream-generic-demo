@@ -1,5 +1,6 @@
 import React from 'react';
 import LoadingCircles from '../icons/loading-circles.svg';
+import './LoadingIcon.css';
 
 interface LoadingIconProps {
   size?: number;
@@ -15,9 +16,9 @@ const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 32, className = '' }) 
         width="100%" 
         height="100%"
         style={{ 
-          filter: 'hue-rotate(200deg) saturate(0.8) brightness(1.2)',
           width: '100%',
-          height: '100%'
+          height: '100%',
+          filter: 'hue-rotate(240deg) saturate(1.2) brightness(1.1)'
         }}
       />
     </div>

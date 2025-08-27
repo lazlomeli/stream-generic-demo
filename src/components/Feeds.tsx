@@ -837,11 +837,7 @@ const Feeds = () => {
 
   // Show loading state
   if (isLoading) {
-    return (
-      <div className="feeds-loading">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // Show error state
@@ -857,14 +853,7 @@ const Feeds = () => {
 
   // Show loading state while client initializes or seeding
   if (!clientReady || !feedsClient || isSeeding) {
-    return (
-      <div className="feeds-loading">
-        <LoadingSpinner />
-        {(isSeeding || !clientReady) && (
-          <p className="loading-status">{isSeeding ? seedStatus : 'Initializing feeds...'}</p>
-        )}
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // Render feeds when client is ready and posts are loaded
@@ -1058,10 +1047,7 @@ const Feeds = () => {
                     disabled={loadingComments === post.id}
                   >
                     {loadingComments === post.id ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingIcon size={16} />
-                        <span>Loading...</span>
-                      </div>
+                      <LoadingIcon size={16} />
                     ) : showComments === post.id ? 'Hide Comments' : 
                      `View Comments (${post.custom?.comments || 0})`}
                   </button>

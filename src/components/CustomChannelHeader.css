@@ -1,0 +1,60 @@
+/* CustomChannelHeader.css */
+
+.str-chat__header-livestream {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: white;
+  min-height: 4rem;
+}
+
+.str-chat__header-livestream-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.str-chat__header-livestream-left-avatar {
+  flex-shrink: 0;
+}
+
+.str-chat__header-livestream-left-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.str-chat__header-livestream-left-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.25;
+}
+
+.str-chat__header-livestream-left-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.25;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .str-chat__header-livestream {
+    padding: 0.75rem 1rem;
+    min-height: 3.5rem;
+  }
+  
+  .str-chat__header-livestream-left {
+    gap: 0.5rem;
+  }
+  
+  .str-chat__header-livestream-left-title {
+    font-size: 1rem;
+  }
+  
+  .str-chat__header-livestream-left-subtitle {
+    font-size: 0.8rem;
+  }
+}

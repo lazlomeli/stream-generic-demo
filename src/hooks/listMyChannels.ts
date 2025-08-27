@@ -9,7 +9,8 @@ export type ChannelItem = {
   image?: string;
   lastMessage?: string;
   lastMessageTime?: string;
-  status?: string;
+  status?: 'online' | 'away' | 'offline';
+  onlineCount?: number;
 };
 
 export async function listMyChannels(client: StreamChat, me: string): Promise<ChannelItem[]> {
@@ -19,7 +20,11 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
 
   return channels.map((c) => {
     const last = c.state.messages.at(-1);
-    const isDM = (c.state.members?.size ?? 0) === 2;
+    // Fix: Use Object.keys to count members instead of relying on size property
+    const memberCount = Object.keys(c.state?.members || {}).length;
+    const isDM = memberCount === 2;
+    
+
 
     // Handle voice messages for channel list preview
     let lastMessage = last?.text;
@@ -33,14 +38,59 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       }
     }
 
-    return {
+    // Calculate online users for status indicator
+    const members = c.state?.members || {};
+    const onlineUsers = Object.values(members).filter(member => 
+      member.user?.online === true
+    );
+    const onlineCount = onlineUsers.length;
+    
+    // Check if other users (not the current user) are online
+    const otherUsersOnline = onlineUsers.filter(member => 
+      member.user?.id !== me
+    );
+    const otherUsersOnlineCount = otherUsersOnline.length;
+    
+    // Determine status based on channel type and online users
+    const getChannelStatus = () => {
+      if (isDM) {
+        // For DM channels (2 users): green if other user is online, gray if not
+        return otherUsersOnlineCount > 0 ? 'online' : 'offline';
+      } else {
+        // For group channels (>2 users)
+        if (otherUsersOnlineCount > 0) {
+          return 'online'; // Green: at least one other user is online
+        } else if (onlineCount === 1) {
+          return 'away'; // Yellow: only the logged user is online
+        } else {
+          return 'offline'; // Gray: no one is online
+        }
+      }
+    };
+
+    // For DM channels, get the other user's image; for groups, use channel image
+    let channelImage = c.data?.image;
+    if (isDM) {
+      // Find the other user (not the current user)
+      const otherUser = Object.values(members).find(member => 
+        member.user?.id !== me
+      );
+      if (otherUser?.user?.image) {
+        channelImage = otherUser.user.image;
+      }
+    }
+
+    const channelItem = {
       id: c.id!,
-      name: isDM ? c.data?.name : c.data?.name ?? "General",
+      name: c.data?.name ?? "Channel",
       type: isDM ? "dm" : "group",
-      image: c.data?.name === 'General' ? 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?&w=150&h=150&fit=crop&crop=faces' : c.data?.image,
+      image: channelImage,
       lastMessage: lastMessage,
       lastMessageTime: last?.created_at ? new Date(last.created_at).toLocaleTimeString() : undefined,
-      // status: c.state.members?.get(me)?.user?.status ?? "offline",
+      status: getChannelStatus(),
+      onlineCount: onlineCount,
     };
+    
+    return channelItem;
   });
 }
