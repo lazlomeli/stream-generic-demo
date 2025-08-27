@@ -25,7 +25,7 @@
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: #007bff;
+  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -33,7 +33,6 @@
 }
 
 .voice-record-button-integrated:hover {
-  background: #0056b3;
   transform: scale(1.05);
 }
 

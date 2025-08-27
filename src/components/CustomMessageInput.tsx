@@ -126,7 +126,13 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
             onClick={startRecording}
             title="Record voice message"
           >
-            <img src={MicrophoneIcon} alt="Microphone" width={20} height={20} />
+            <img 
+              src={MicrophoneIcon} 
+              alt="Microphone" 
+              width={20} 
+              height={20} 
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
           </button>
         )}
 
