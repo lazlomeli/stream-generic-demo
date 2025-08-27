@@ -44,6 +44,7 @@ const CustomChannelHeader: React.FC = () => {
   // Calculate online users
   const currentUserId = client.userID;
   const members = channel.state?.members || {};
+  
   const onlineUsers = Object.values(members).filter(member => 
     member.user?.online === true
   );

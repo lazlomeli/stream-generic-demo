@@ -75,17 +75,31 @@ export default async function handler(
     const enrichedActivities = await Promise.all(
       result.results.map(async (activity: any) => {
         try {
-          // Get user profile information
+          // Priority 1: Use userProfile data stored directly in the activity
+          if (activity.userProfile && activity.userProfile.name) {
+            console.log(`✅ Using stored userProfile for ${activity.actor}:`, activity.userProfile);
+            return {
+              ...activity,
+              userInfo: {
+                name: activity.userProfile.name,
+                image: activity.userProfile.image || undefined,
+                role: activity.userProfile.role || undefined,
+                company: activity.userProfile.company || undefined
+              }
+            };
+          }
+          
+          // Priority 2: Fallback to Stream's user profile system
           if (streamFeedsClient.getUsers) {
             const userProfile = await streamFeedsClient.getUsers([activity.actor]) as UserProfileResponse;
             const userData = userProfile[activity.actor];
             
-            if (userData) {
-              // Enrich the activity with user information
+            if (userData && userData.name) {
+              console.log(`✅ Using Stream user profile for ${activity.actor}:`, userData);
               return {
                 ...activity,
                 userInfo: {
-                  name: userData.name || userData.username || activity.actor,
+                  name: userData.name || userData.username,
                   image: userData.image || userData.profile_image || undefined,
                   role: userData.role || undefined,
                   company: userData.company || undefined
@@ -94,7 +108,8 @@ export default async function handler(
             }
           }
           
-          // Return activity without user enrichment if user fetch fails or method not available
+          // Priority 3: Use actor ID as fallback
+          console.warn(`⚠️ No user profile found for ${activity.actor}, using actor ID as name`);
           return {
             ...activity,
             userInfo: {

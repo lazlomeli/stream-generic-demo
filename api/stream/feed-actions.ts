@@ -84,7 +84,9 @@ export default async function handler(
             shares: 0,
             comments: 0,
             category: postData.category || 'general'
-          }
+          },
+          // Store user profile directly in the activity
+          userProfile: req.body.userProfile
         });
 
         // Also add to user's personal flat feed
@@ -99,7 +101,9 @@ export default async function handler(
             shares: 0,
             comments: 0,
             category: postData.category || 'general'
-          }
+          },
+          // Store user profile directly in the activity
+          userProfile: req.body.userProfile
         });
 
         return res.json({

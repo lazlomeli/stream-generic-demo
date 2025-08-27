@@ -52,18 +52,19 @@ const DEMO_USERS = {
 
 // Helper function to get user display name
 const getUserDisplayName = (actorId: string, currentUser: any, userInfo?: any, userProfile?: any) => {
+
   // If this is the current user, use their Auth0 profile
   if (actorId === currentUser?.sub || actorId === getSanitizedUserId(currentUser)) {
     return currentUser?.name || currentUser?.email || 'You';
   }
   
   // First priority: Use stored userProfile data from the post (most accurate)
-  if (userProfile?.name && userProfile.name !== actorId) {
+  if (userProfile?.name) {
     return userProfile.name;
   }
   
   // Second priority: Use userInfo from backend enrichment
-  if (userInfo?.name && userInfo.name !== actorId) {
+  if (userInfo?.name) {
     return userInfo.name;
   }
   
@@ -175,8 +176,16 @@ const Feeds = () => {
   const [showComments, setShowComments] = useState<string | null>(null);
   const [postComments, setPostComments] = useState<{ [postId: string]: any[] }>({});
   const [loadingComments, setLoadingComments] = useState<string | null>(null);
+  
+  // File attachment state
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const lastScrolledHighlight = useRef<string | null>(null);
+  
+  // File input refs
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const initFeedsClient = async () => {
@@ -347,6 +356,21 @@ const Feeds = () => {
     };
   }, [feedsClient]);
 
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      filePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  // Cleanup object URLs when filePreviewUrls change
+  useEffect(() => {
+    return () => {
+      // This cleanup runs when the effect dependencies change or component unmounts
+      // filePreviewUrls in the dependency array will be the previous value
+    };
+  }, [filePreviewUrls]);
+
   // Function to fetch bookmarked posts to sync bookmark state
   const fetchBookmarkedPosts = async (userId?: string) => {
     const userIdToUse = userId || feedsClient?.userId;
@@ -386,6 +410,8 @@ const Feeds = () => {
     }
   };
 
+
+
   // Function to fetch real posts from Stream feeds
   const fetchPosts = async (userId?: string) => {
     const userIdToUse = userId || feedsClient?.userId;
@@ -418,9 +444,6 @@ const Feeds = () => {
       
       const result = await response.json();
       
-      console.log('🔍 Raw server response:', result);
-      console.log('🔍 Activities received:', result.activities);
-      
       // Transform Stream activities to our FeedPost format
       const streamPosts: FeedPost[] = result.activities.map((activity: any) => {
         const actorId = activity.actor;
@@ -438,13 +461,6 @@ const Feeds = () => {
           role: isOwnPost ? 'Current User' : undefined,
           company: undefined
         };
-
-        // Debug comment count
-        console.log(`🔍 Post ${activity.id} comment count:`, {
-          custom: activity.custom,
-          comments: activity.custom?.comments,
-          reaction_counts: activity.reaction_counts
-        });
         
         return {
           id: activity.id,
@@ -538,8 +554,64 @@ const Feeds = () => {
     console.log(`Sharing post ${postId}`);
   };
 
+  console.log('user', user);
+
+  // File handling functions
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFileSelect(files);
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFileSelect(files);
+  };
+
+  const handleFileSelect = (files: File[]) => {
+    // Validate file sizes (5MB for images, 50MB for videos)
+    const validFiles = files.filter(file => {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      const maxSize = isImage ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB for images, 50MB for videos
+      
+      if (file.size > maxSize) {
+        alert(`File ${file.name} is too large. Maximum size is ${isImage ? '5MB' : '50MB'}.`);
+        return false;
+      }
+      
+      return isImage || isVideo;
+    });
+
+    if (validFiles.length === 0) return;
+
+    // Add to selected files
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+
+    // Create preview URLs
+    const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+    setFilePreviewUrls(prev => [...prev, ...newPreviewUrls]);
+  };
+
+  const handlePhotoButtonClick = () => {
+    photoInputRef.current?.click();
+  };
+
+  const handleVideoButtonClick = () => {
+    videoInputRef.current?.click();
+  };
+
+  const removeFile = (index: number) => {
+    // Revoke the object URL to free memory
+    URL.revokeObjectURL(filePreviewUrls[index]);
+    
+    // Remove from both arrays
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setFilePreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Create a post
   const createPost = async () => {
-    if (!newPostText.trim() || !feedsClient?.userId) return;
+    if ((!newPostText.trim() && selectedFiles.length === 0) || !feedsClient?.userId) return;
 
     setIsCreatingPost(true);
     try {
@@ -561,6 +633,30 @@ const Feeds = () => {
       
       console.log('📝 Sending user profile for post creation:', JSON.stringify(userProfile, null, 2));
       
+      // Convert files to base64 for attachment
+      const attachments = await Promise.all(
+        selectedFiles.map(async (file) => {
+          return new Promise<any>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64 = reader.result as string;
+              resolve({
+                type: file.type.startsWith('image/') ? 'image' : 'video',
+                name: file.name,
+                size: file.size,
+                mimeType: file.type,
+                data: base64.split(',')[1], // Remove data:type;base64, prefix
+                url: filePreviewUrls[selectedFiles.indexOf(file)] // For immediate display
+              });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+      
+      console.log('📎 Attachments prepared:', attachments.length);
+      
       const response = await fetch('/api/stream/feed-actions', {
         method: 'POST',
         headers: {
@@ -572,7 +668,8 @@ const Feeds = () => {
           userId: feedsClient.userId,
           postData: {
             text: newPostText.trim(),
-            category: 'general'
+            category: 'general',
+            attachments: attachments
           },
           userProfile: userProfile
         }),
@@ -587,7 +684,12 @@ const Feeds = () => {
       // Refresh posts from Stream to show the new post
       await fetchPosts(feedsClient.userId);
       
-          setNewPostText('');
+      setNewPostText('');
+      
+      // Clear selected files and preview URLs
+      filePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      setSelectedFiles([]);
+      setFilePreviewUrls([]);
       
       console.log('✅ Post created successfully');
       
@@ -864,6 +966,24 @@ const Feeds = () => {
         <h1>Activity Feeds</h1>
       </div>
 
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={photoInputRef}
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handlePhotoSelect}
+      />
+      <input
+        type="file"
+        ref={videoInputRef}
+        accept="video/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleVideoSelect}
+      />
+
       {/* Inline Post Creation */}
       <div className="create-post-inline">
         <div className="create-post-author">
@@ -885,13 +1005,54 @@ const Feeds = () => {
             className="create-post-textarea"
             rows={3}
           />
+          
+          {/* File preview section */}
+          {selectedFiles.length > 0 && (
+            <div className="file-preview-container">
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="file-preview-item">
+                  <div className="file-preview-content">
+                    {file.type.startsWith('image/') ? (
+                      <img 
+                        src={filePreviewUrls[index]} 
+                        alt={file.name}
+                        className="file-preview-image"
+                      />
+                    ) : (
+                      <div className="file-preview-video">
+                        <video 
+                          src={filePreviewUrls[index]}
+                          className="file-preview-video-element"
+                          controls
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="file-preview-info">
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">
+                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  </div>
+                  <button 
+                    className="file-remove-button"
+                    onClick={() => removeFile(index)}
+                    title="Remove file"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div className="create-post-actions">
             <div className="create-post-media">
-              <button className="media-button" title="Add photo">
+              <button className="media-button" title="Add photo" onClick={handlePhotoButtonClick}>
                 <img src={CameraIcon} alt="Camera" width={20} height={20} />
                 <span>Photo</span>
               </button>
-              <button className="media-button" title="Add video">
+              <button className="media-button" title="Add video" onClick={handleVideoButtonClick}>
                 <img src={VideoIcon} alt="Video" width={20} height={20} />
                 <span>Video</span>
               </button>
@@ -899,7 +1060,7 @@ const Feeds = () => {
             <button 
               className="create-post-submit"
               onClick={createPost}
-              disabled={!newPostText.trim() || isCreatingPost}
+              disabled={(!newPostText.trim() && selectedFiles.length === 0) || isCreatingPost}
             >
               {isCreatingPost ? <LoadingIcon size={16} /> : 'Post'}
             </button>
@@ -930,7 +1091,7 @@ const Feeds = () => {
                     {post.userInfo?.image ? (
                       <img 
                         src={post.userInfo.image}
-                        alt={post.userInfo.name}
+                        alt={post.userInfo?.name}
                         onError={(e) => {
                           // Fallback to initials avatar if image fails to load
                           const target = e.target as HTMLImageElement;
@@ -944,8 +1105,8 @@ const Feeds = () => {
                           `)}`;
                         }}
                       />
-                    ) : (
-                      // Show initials avatar if no profile picture
+                      ) : (
+                      // Show initials avatar if no profile pictur
                       <div 
                         className="initials-avatar"
                         style={{
@@ -990,8 +1151,25 @@ const Feeds = () => {
                 {post.attachments && post.attachments.length > 0 && (
                   <div className="post-attachments">
                     {post.attachments.map((attachment, index) => (
-                      <div key={index} className="post-image">
-                        <img src={attachment.asset_url} alt={attachment.title} />
+                      <div key={index} className="post-attachment">
+                        {attachment.type === 'image' ? (
+                          <img 
+                            src={(attachment as any).url || `data:${(attachment as any).mimeType || attachment.mime_type};base64,${(attachment as any).data}`} 
+                            alt={(attachment as any).name || attachment.title}
+                            className="post-attachment-image"
+                          />
+                        ) : attachment.type === 'video' ? (
+                          <video 
+                            src={(attachment as any).url || `data:${(attachment as any).mimeType || attachment.mime_type};base64,${(attachment as any).data}`}
+                            controls
+                            className="post-attachment-video"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          // Fallback for legacy attachments
+                          <img src={attachment.asset_url} alt={attachment.title} className="post-attachment-image" />
+                        )}
                       </div>
                     ))}
                   </div>
