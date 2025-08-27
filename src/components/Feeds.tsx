@@ -12,6 +12,8 @@ import ShareIcon from '../icons/share-3.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import TrashIcon from '../icons/trash.svg';
+import CameraIcon from '../icons/camera.svg';
+import VideoIcon from '../icons/video.svg';
 import './Feeds.css';
 
 // User mapping for demo users
@@ -162,7 +164,7 @@ const Feeds = () => {
   const [seedStatus, setSeedStatus] = useState<string>('');
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
-  const [showCreatePost, setShowCreatePost] = useState(false);
+
   const [newPostText, setNewPostText] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState<string | null>(null);
@@ -585,8 +587,7 @@ const Feeds = () => {
       // Refresh posts from Stream to show the new post
       await fetchPosts(feedsClient.userId);
       
-      setNewPostText('');
-      setShowCreatePost(false);
+          setNewPostText('');
       
       console.log('✅ Post created successfully');
       
@@ -863,7 +864,48 @@ const Feeds = () => {
         <h1>Activity Feeds</h1>
       </div>
 
-
+      {/* Inline Post Creation */}
+      <div className="create-post-inline">
+        <div className="create-post-author">
+          <div className="author-avatar">
+            {user?.picture ? (
+              <img src={user.picture} alt={user.name || 'You'} />
+            ) : (
+              <div className="avatar-fallback">
+                {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="create-post-content">
+          <textarea
+            value={newPostText}
+            onChange={(e) => setNewPostText(e.target.value)}
+            placeholder="What's on your mind?"
+            className="create-post-textarea"
+            rows={3}
+          />
+          <div className="create-post-actions">
+            <div className="create-post-media">
+              <button className="media-button" title="Add photo">
+                <img src={CameraIcon} alt="Camera" width={20} height={20} />
+                <span>Photo</span>
+              </button>
+              <button className="media-button" title="Add video">
+                <img src={VideoIcon} alt="Video" width={20} height={20} />
+                <span>Video</span>
+              </button>
+            </div>
+            <button 
+              className="create-post-submit"
+              onClick={createPost}
+              disabled={!newPostText.trim() || isCreatingPost}
+            >
+              {isCreatingPost ? <LoadingIcon size={16} /> : 'Post'}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {posts.length === 0 ? (
         <div className="feeds-empty">
@@ -1091,56 +1133,7 @@ const Feeds = () => {
         </div>
       )}
 
-      {/* Floating Action Button for Create Post */}
-      <button 
-        className="fab-create-post"
-        onClick={() => setShowCreatePost(!showCreatePost)}
-        title="Create new post"
-      >
-        <span className="fab-plus">+</span>
-      </button>
 
-      {/* Create Post Modal */}
-      {showCreatePost && (
-        <div className="create-post-modal-overlay" onClick={() => setShowCreatePost(false)}>
-          <div className="create-post-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Create New Post</h3>
-              <button 
-                className="modal-close-button"
-                onClick={() => setShowCreatePost(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-content">
-              <textarea
-                value={newPostText}
-                onChange={(e) => setNewPostText(e.target.value)}
-                placeholder="What's on your mind?"
-                className="post-textarea"
-                rows={4}
-                autoFocus
-              />
-            </div>
-            <div className="modal-actions">
-              <button 
-                className="modal-cancel-button"
-                onClick={() => setShowCreatePost(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="modal-submit-button"
-                onClick={createPost}
-                disabled={!newPostText.trim() || isCreatingPost}
-              >
-                {isCreatingPost ? 'Creating...' : 'Post'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

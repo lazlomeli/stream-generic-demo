@@ -104,9 +104,13 @@ const Header: React.FC<HeaderProps> = () => {
               <div className="user-section">
                 <div className="user-info">
                   <div className="user-avatar">
-                    <span>
-                      {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                    </span>
+                    {user?.picture ? (
+                      <img src={user.picture} alt={user.name || user.email || 'User'} />
+                    ) : (
+                      <span>
+                        {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </span>
+                    )}
                   </div>
                   <span className="user-name">
                     {user?.name || user?.email}

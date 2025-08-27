@@ -129,7 +129,7 @@
 
 /* Feeds Timeline */
 .feeds-timeline {
-  max-width: 800px;
+  max-width: 700px;
   margin: 0 auto;
 }
 
@@ -421,157 +421,152 @@
   font-weight: 500;
 }
 
-/* Floating Action Button */
-.fab-create-post {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-  transition: all 0.3s ease;
-  z-index: 1000;
+/* Inline Post Creation */
+.create-post-inline {
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.fab-create-post:hover {
-  background-color: #2563eb;
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
-}
-
-.fab-plus {
-  color: white;
-  font-size: 2rem;
-  font-weight: bold;
-  line-height: 1;
-}
-
-/* Create Post Modal */
-.create-post-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.create-post-modal {
-  background-color: white;
-  border-radius: 0.75rem;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.modal-close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #6b7280;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: color 0.2s ease;
-}
-
-.modal-close-button:hover {
-  color: #374151;
-}
-
-.modal-content {
+  gap: 1rem;
   padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.post-textarea {
+.create-post-author {
+  flex-shrink: 0;
+}
+
+.create-post-author .author-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-post-author .author-avatar img {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  height: 100%;
+  object-fit: cover;
+}
+
+.create-post-author .avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.create-post-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.create-post-textarea {
+  border: none;
+  outline: none;
+  resize: none;
   font-size: 1rem;
+  line-height: 1.5;
+  color: #374151;
+  background-color: transparent;
   font-family: inherit;
-  resize: vertical;
   min-height: 80px;
 }
 
-.post-textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.create-post-textarea::placeholder {
+  color: #9ca3af;
+  font-size: 1.125rem;
 }
 
-.modal-actions {
+.create-post-textarea:focus::placeholder {
+  opacity: 0.7;
+}
+
+.create-post-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
 }
 
-.modal-cancel-button {
-  padding: 0.5rem 1rem;
-  background-color: #6b7280;
-  color: white;
+.create-post-media {
+  display: flex;
+  gap: 1rem;
+}
+
+.media-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: 0.375rem;
+  background-color: transparent;
+  color: #6b7280;
+  border-radius: 0.5rem;
+  cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.modal-cancel-button:hover {
-  background-color: #4b5563;
+.media-button:hover {
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
-.modal-submit-button {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
+.media-button img {
+  opacity: 0.7;
+}
+
+.media-button:hover img {
+  opacity: 1;
+}
+
+.create-post-submit {
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   color: white;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 9999px;
+  font-weight: 600;
   font-size: 0.875rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  height: 40px;
 }
 
-.modal-submit-button:hover:not(:disabled) {
-  background-color: #2563eb;
+.create-post-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.modal-submit-button:disabled {
-  background-color: #9ca3af;
+.create-post-submit:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
+
+
 
 /* Delete Modal */
 .delete-modal-overlay {
