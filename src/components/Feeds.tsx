@@ -242,7 +242,7 @@ const Feeds = () => {
         setFeedsClient({ token, apiKey, userId: sanitizedUserId });
         setClientReady(true);
         
-        console.log('✅ Feed token received successfully');
+
         
         // Automatically seed demo feeds after getting the token
         await seedDemoFeeds(sanitizedUserId, accessToken);
@@ -259,7 +259,7 @@ const Feeds = () => {
   // Fetch posts when feedsClient is ready
   useEffect(() => {
     if (feedsClient?.userId) {
-              console.log('🔄 FeedsClient ready, fetching initial posts, bookmark state, and following status...');
+
         fetchPosts(feedsClient.userId);
         fetchBookmarkedPosts(feedsClient.userId);
         fetchFollowingUsers(feedsClient.userId);
@@ -277,7 +277,7 @@ const Feeds = () => {
       )];
       
       if (userIds.length > 0) {
-        console.log('📊 Fetching counts for users:', userIds);
+
         fetchUserCounts(userIds);
       }
     }
@@ -293,7 +293,7 @@ const Feeds = () => {
       const highlightedPost = posts.find(post => post.id === highlightPostId);
       
       if (highlightedPost) {
-        console.log('🎯 Scrolling to highlighted post:', highlightPostId, 'in', posts.length, 'posts');
+
         lastScrolledHighlight.current = highlightPostId; // Mark as scrolled
         
         // Use a longer delay and retry mechanism to ensure proper scrolling
@@ -303,11 +303,11 @@ const Feeds = () => {
           // Fallback: try to find the highlighted post by class if ref fails
           if (!element) {
             element = document.querySelector('.highlighted-post') as HTMLDivElement;
-            console.log('📍 Using fallback querySelector for highlighted post');
+
           }
           
           if (element) {
-            console.log('📍 Scrolling to element, attempt:', attempt);
+
             
             // Ensure the element is fully rendered before scrolling
             requestAnimationFrame(() => {
@@ -319,7 +319,7 @@ const Feeds = () => {
             });
           } else if (attempt < 8) {
             // Retry up to 8 times with increasing delay
-            console.log('⏳ Retrying scroll, attempt:', attempt + 1);
+
             setTimeout(() => scrollToPost(attempt + 1), attempt * 300);
           } else {
             console.warn('⚠️ Could not scroll to highlighted post after 8 attempts');
@@ -329,7 +329,7 @@ const Feeds = () => {
         // Initial scroll attempt with delay to ensure DOM is ready
         setTimeout(() => scrollToPost(), 500);
       } else {
-        console.log('⚠️ Highlighted post not found in current posts:', highlightPostId, 'Available posts:', posts.map(p => p.id));
+
       }
     }
     
@@ -351,7 +351,7 @@ const Feeds = () => {
           const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
           
           if (!isVisible) {
-            console.log('🔄 Post not visible, scrolling again...');
+
             element.scrollIntoView({
               behavior: 'smooth',
               block: 'center',
@@ -367,14 +367,14 @@ const Feeds = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && feedsClient?.userId) {
-        console.log('🔄 Page became visible, refreshing bookmark state...');
+
         fetchBookmarkedPosts(feedsClient.userId);
       }
     };
 
     const handleFocus = () => {
       if (feedsClient?.userId) {
-        console.log('🔄 Page focused, refreshing bookmark state...');
+
         fetchBookmarkedPosts(feedsClient.userId);
       }
     };
@@ -449,13 +449,13 @@ const Feeds = () => {
       }
 
       const data = await response.json();
-      console.log('📖 Fetch bookmarked posts response:', data);
+
       if (data.success && data.bookmarkedPosts) {
         // Extract post IDs and update bookmarked posts state
         const bookmarkedPostIds = new Set<string>(data.bookmarkedPosts.map((post: any) => post.id as string));
-        console.log('📖 Extracted bookmark IDs:', Array.from(bookmarkedPostIds));
+
         setBookmarkedPosts(bookmarkedPostIds);
-        console.log('📖 Synced bookmark state:', bookmarkedPostIds.size, 'bookmarked posts');
+
       }
     } catch (error) {
       console.error('Error fetching bookmarked posts:', error);
@@ -488,7 +488,7 @@ const Feeds = () => {
       }
 
       const data = await response.json();
-      console.log('👥 Fetch following users response:', data);
+
       if (data.success && data.following) {
         // Extract user IDs from following list
         const followingUserIds = new Set<string>(
@@ -496,7 +496,7 @@ const Feeds = () => {
             .map((follow: any) => follow.target_id || follow.target?.split(':')[1])
             .filter((id: string) => id)
         );
-        console.log('👥 Following user IDs:', Array.from(followingUserIds));
+
         setFollowingUsers(followingUserIds);
       }
     } catch (error) {
@@ -574,7 +574,7 @@ const Feeds = () => {
         return newCounts;
       });
 
-      console.log('📊 Updated user counts for:', userIds.length, 'users');
+
     } catch (error) {
       console.error('Error fetching user counts:', error);
     }
@@ -587,7 +587,7 @@ const Feeds = () => {
     const userIdToUse = userId || feedsClient?.userId;
     
     if (!userIdToUse) {
-      console.log('❌ No userId available, skipping fetchPosts');
+
       return;
     }
     
@@ -613,13 +613,13 @@ const Feeds = () => {
       if (timelineResponse.ok) {
         const timelineResult = await timelineResponse.json();
         timelinePosts = timelineResult.activities || [];
-        console.log(`📰 Loaded ${timelinePosts.length} posts from timeline feed`);
+
       }
       
       // If timeline has few posts, supplement with global feed for discovery
       let globalPosts: any[] = [];
       if (timelinePosts.length < 10) {
-        console.log('📰 Timeline has few posts, fetching from global feed for discovery...');
+
         const globalResponse = await fetch('/api/stream/get-posts', {
           method: 'POST',
           headers: {
@@ -637,7 +637,7 @@ const Feeds = () => {
         if (globalResponse.ok) {
           const globalResult = await globalResponse.json();
           globalPosts = globalResult.activities || [];
-          console.log(`🌍 Loaded ${globalPosts.length} posts from global feed`);
+
         }
       }
       
@@ -650,7 +650,7 @@ const Feeds = () => {
       // Sort by creation time (newest first)
       uniquePosts.sort((a, b) => new Date(b.time || b.created_at).getTime() - new Date(a.time || a.created_at).getTime());
       
-      console.log(`📰 Combined ${uniquePosts.length} unique posts (${timelinePosts.length} timeline + ${globalPosts.length} global)`);
+
       
       // Transform Stream activities to our FeedPost format
       const streamPosts: FeedPost[] = uniquePosts.map((activity: any) => {
@@ -690,7 +690,7 @@ const Feeds = () => {
       });
       
       setPosts(streamPosts);
-      console.log(`✅ Final feed contains ${streamPosts.length} posts`);
+
       
     } catch (err: any) {
       console.error('❌ Error fetching posts:', err);
@@ -759,7 +759,7 @@ const Feeds = () => {
     );
     
     // In a real app, this would open a share dialog
-    console.log(`Sharing post ${postId}`);
+
   };
 
   // Demo attachment functions
@@ -772,7 +772,7 @@ const Feeds = () => {
     };
     
     setSelectedAttachments(prev => [...prev, newPhoto]);
-    console.log('📸 Added random photo:', newPhoto.url);
+
   };
 
   const addRandomVideo = () => {
@@ -795,7 +795,7 @@ const Feeds = () => {
     };
     
     setSelectedAttachments(prev => [...prev, newVideo]);
-    console.log('🎥 Added random video:', newVideo.url);
+
   };
 
   const addDemoPoll = () => {
@@ -833,12 +833,12 @@ const Feeds = () => {
     };
     
     setSelectedAttachments(prev => [...prev, newPoll]);
-    console.log('📊 Added demo poll:', question);
+
   };
 
   const removeAttachment = (index: number) => {
     setSelectedAttachments(prev => prev.filter((_, i) => i !== index));
-    console.log(`🗑️ Removed attachment at index ${index}`);
+
   };
 
   // Create a post
@@ -864,7 +864,7 @@ const Feeds = () => {
         sub: user?.sub || undefined
       };
       
-      console.log('📝 Sending user profile for post creation:', JSON.stringify(userProfile, null, 2));
+
       
       // Convert demo attachments to the format expected by the API
       const attachments = selectedAttachments.map(attachment => {
@@ -890,7 +890,7 @@ const Feeds = () => {
         return baseAttachment;
       });
       
-      console.log('📎 Demo attachments prepared:', attachments.length);
+
       
       const payload = {
         action: 'create_post',
@@ -905,7 +905,7 @@ const Feeds = () => {
 
       // Log payload size for debugging
       const payloadSize = new Blob([JSON.stringify(payload)]).size;
-      console.log(`📦 Request payload size: ${(payloadSize / 1024).toFixed(2)}KB`);
+
 
       const response = await fetch('/api/stream/feed-actions', {
         method: 'POST',
@@ -932,7 +932,7 @@ const Feeds = () => {
       // Clear selected attachments
       setSelectedAttachments([]);
       
-      console.log('✅ Post created successfully');
+
       
     } catch (err: any) {
       console.error('❌ Error creating post:', err);
@@ -972,7 +972,7 @@ const Feeds = () => {
       // Close the delete modal
       setShowDeleteModal(null);
       
-      console.log('✅ Post deleted successfully');
+
       
     } catch (err: any) {
       console.error('Error deleting post:', err);
@@ -1046,7 +1046,7 @@ const Feeds = () => {
     const isCurrentlyBookmarked = bookmarkedPosts.has(postId);
     const action = isCurrentlyBookmarked ? 'remove_bookmark' : 'bookmark_post';
     
-    console.log('🔖 Bookmark action:', action, 'for post:', postId, 'currently bookmarked:', isCurrentlyBookmarked);
+
     
     try {
       const accessToken = await getAccessTokenSilently();
@@ -1065,7 +1065,7 @@ const Feeds = () => {
       });
 
       const responseData = await response.json();
-      console.log('🔖 Bookmark API response:', responseData);
+
 
       if (!response.ok) {
         throw new Error(`Failed to update bookmark: ${responseData.error || response.statusText}`);
@@ -1075,13 +1075,13 @@ const Feeds = () => {
       setBookmarkedPosts(prev => {
         const newBookmarked = new Set(prev);
         if (isCurrentlyBookmarked) {
-          console.log('🔖 Removing from local state:', postId);
+
           newBookmarked.delete(postId);
         } else {
-          console.log('🔖 Adding to local state:', postId);
+
           newBookmarked.add(postId);
         }
-        console.log('🔖 Updated local bookmarked posts:', Array.from(newBookmarked));
+
         return newBookmarked;
       });
       
@@ -1097,7 +1097,7 @@ const Feeds = () => {
     const isCurrentlyFollowing = followingUsers.has(targetUserId);
     const action = isCurrentlyFollowing ? 'unfollow_user' : 'follow_user';
     
-    console.log('👥 Follow action:', action, 'for user:', targetUserId);
+
     
     try {
       const accessToken = await getAccessTokenSilently();
@@ -1116,7 +1116,7 @@ const Feeds = () => {
       });
 
       const responseData = await response.json();
-      console.log('👥 Follow API response:', responseData);
+
 
       if (!response.ok) {
         throw new Error(`Failed to ${action}: ${responseData.error || response.statusText}`);
@@ -1126,13 +1126,13 @@ const Feeds = () => {
       setFollowingUsers(prev => {
         const newFollowing = new Set(prev);
         if (isCurrentlyFollowing) {
-          console.log('👥 Removing from following:', targetUserId);
+
           newFollowing.delete(targetUserId);
         } else {
-          console.log('👥 Adding to following:', targetUserId);
+
           newFollowing.add(targetUserId);
         }
-        console.log('👥 Updated following users:', Array.from(newFollowing));
+
         return newFollowing;
       });
 
@@ -1233,7 +1233,7 @@ const Feeds = () => {
       setCommentText('');
       setShowCommentInput(null);
       
-      console.log('✅ Comment added successfully');
+
       
     } catch (err: any) {
       console.error('Error adding comment:', err);

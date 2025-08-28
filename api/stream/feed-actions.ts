@@ -37,11 +37,6 @@ export default async function handler(
       return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
 
-    console.log(`🔑 Stream API Key configured: ${apiKey ? 'Yes' : 'No'}`);
-    console.log(`🔑 Stream API Secret configured: ${apiSecret ? 'Yes' : 'No'}`);
-    console.log(`🔑 Stream API Key length: ${apiKey?.length || 0}`);
-    console.log(`🔑 Stream API Secret length: ${apiSecret?.length || 0}`);
-
     // Initialize Stream client with proper user impersonation
     // Create server client for admin operations
     const serverClient = connect(apiKey, apiSecret);
@@ -166,9 +161,7 @@ export default async function handler(
       case 'unlike_post':
         if (!postId) {
           return res.status(400).json({ error: 'postId is required' });
-        }
-
-        console.log('💔 Unliking post:', postId, 'for user:', userId);
+        }   
         
         try {
           // Get user's like reactions for this activity using the correct API approach
@@ -177,17 +170,15 @@ export default async function handler(
             user_id: userId
           });
 
-          console.log('💔 Found total like reactions for user:', userReactions.results?.length || 0);
-
           // Filter to find reactions for this specific activity
           const activityReaction = userReactions.results?.find(reaction => reaction.activity_id === postId);
 
           if (activityReaction) {
-            console.log('💔 Deleting like reaction:', activityReaction.id);
+            
             await userClient.reactions.delete(activityReaction.id);
-            console.log('💔 Like reaction deleted successfully');
+            
           } else {
-            console.log('💔 No like reaction found for this activity');
+            
           }
 
           return res.json({
@@ -236,7 +227,7 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        console.log('🔖 Removing bookmark for post:', postId, 'for user:', userId);
+        
         
         try {
           // Get user's bookmark reactions using the correct API approach
@@ -245,17 +236,17 @@ export default async function handler(
             user_id: userId
           });
 
-          console.log('🔖 Found total bookmark reactions for user:', userBookmarkReactions.results?.length || 0);
+          
 
           // Filter to find reactions for this specific activity
           const activityReaction = userBookmarkReactions.results?.find(reaction => reaction.activity_id === postId);
 
           if (activityReaction) {
-            console.log('🔖 Deleting bookmark reaction:', activityReaction.id);
+            
             await userClient.reactions.delete(activityReaction.id);
-            console.log('🔖 Bookmark reaction deleted successfully');
+            
           } else {
-            console.log('🔖 No bookmark reaction found for this activity');
+            
           }
 
           return res.json({
@@ -287,7 +278,7 @@ export default async function handler(
         });
 
       case 'get_bookmarked_posts':
-        console.log('📖 Getting bookmarked posts for user:', userId);
+        
         
         // Get all bookmark reactions for the user with activity data
         const bookmarkReactions = await serverClient.reactions.filter({
@@ -296,7 +287,7 @@ export default async function handler(
           with_activity_data: true
         });
 
-        console.log('📖 Bookmark reactions found:', bookmarkReactions.results?.length || 0);
+        
         
         if (!bookmarkReactions.results || bookmarkReactions.results.length === 0) {
           return res.json({
@@ -307,7 +298,7 @@ export default async function handler(
 
         // Get activity IDs to fetch fresh data with reaction counts
         const activityIds = bookmarkReactions.results.map(r => r.activity_id);
-        console.log('📖 Activity IDs:', activityIds);
+        
 
         // Fetch activities with current reaction counts from the global feed
         const feed = serverClient.feed('flat', 'global');
@@ -317,7 +308,7 @@ export default async function handler(
           withOwnReactions: true
         });
 
-        console.log('📖 Feed activities found:', feedData.results?.length || 0);
+        
 
         // Filter feed activities to only bookmarked ones and merge data
         const bookmarkedPosts = await Promise.all(
@@ -376,8 +367,8 @@ export default async function handler(
             }) || []
         );
 
-        console.log('📖 Final bookmarked posts:', bookmarkedPosts.length);
-        console.log('📖 First post sample:', JSON.stringify(bookmarkedPosts[0], null, 2));
+        
+        
 
         // Sort by bookmark date (newest bookmarks first)
         const sortedBookmarkedPosts = bookmarkedPosts.sort((a, b) => {
@@ -403,7 +394,7 @@ export default async function handler(
 
         return res.json({
           success: true,
-          message: 'User followed successfully'
+          
         });
 
       case 'unfollow_user':

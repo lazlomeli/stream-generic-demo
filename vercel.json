@@ -12,5 +12,9 @@
     "api/stream/get-posts.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/api/:match*", "destination": "/api/:match*" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }

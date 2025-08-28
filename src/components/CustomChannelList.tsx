@@ -43,7 +43,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           const channel = client.channel('messaging', firstChannel.id);
           await channel.watch();
           setActiveChannel(channel);
-          console.log(`✅ Auto-selected first channel: ${firstChannel.name}`);
+
         } catch (error) {
           console.error('❌ Error auto-selecting first channel:', error);
         }
@@ -76,7 +76,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       // Set the active channel in Stream Chat context - this will show messages on the right
       setActiveChannel(channel);
       
-      console.log(`✅ Selected channel: ${channelId}`);
+
     } catch (error) {
       console.error('❌ Error selecting channel:', error);
     }
@@ -149,7 +149,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   }, [fetchUsers]);
 
   const handleChannelCreated = useCallback(async (channelId: string) => {
-    console.log('✅ Channel created:', channelId);
+
     setShowCreateGroupModal(false);
     setShowCreateDMModal(false);
     
@@ -157,7 +157,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       // Watch the new channel to ensure the client is aware of it
       const newChannel = client.channel('messaging', channelId);
       await newChannel.watch();
-      console.log('✅ Successfully watching new channel');
+
       
       // Set the new channel as selected and active
       setSelectedChannelId(channelId);

@@ -56,7 +56,7 @@ export default async function handler(req: Request) {
     const feedsServer = connect(apiKey, apiSecret);
 
     // === CHAT SEEDING ===
-    console.log("🌱 Seeding Stream Chat data...");
+    
     
     await chatServer.upsertUser({ id: me });
     await chatServer.upsertUsers(SAMPLE_USERS);
@@ -92,15 +92,15 @@ export default async function handler(req: Request) {
         }
     }
 
-    console.log("✅ Stream Chat data seeded successfully");
+    
 
     // === FEEDS SEEDING ===
-    console.log("🌱 Seeding Stream Feeds data...");
-    console.log("📊 Using API Key:", apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET');
-    console.log("🔑 Using API Secret:", apiSecret ? `${apiSecret.substring(0, 10)}...` : 'NOT SET');
+    
+    
+    
 
     // Check if Feeds is enabled by testing for feed groups
-    console.log("🔍 Checking if Feeds is enabled...");
+    
     const testFeedGroups = ['user', 'timeline', 'flat'];
     let availableFeedGroups: string[] = [];
     
@@ -115,11 +115,6 @@ export default async function handler(req: Request) {
     }
 
     if (availableFeedGroups.length === 0) {
-      console.log("❌ No feed groups are available. Please enable Feeds in your Stream Dashboard:");
-      console.log("   1. Go to https://dashboard.getstream.io/");
-      console.log("   2. Select your Stream app");
-      console.log("   3. Enable 'Feeds' and create feed groups: user, timeline, flat");
-      console.log("   4. Run this seed script again");
       
       return json({ 
         ok: false, 
@@ -383,7 +378,7 @@ export default async function handler(req: Request) {
       }
     }
 
-    console.log("✅ Stream Feeds data seeded successfully");
+    
     
     // Count created activities by category for demo showcase
     const activitiesByCategory = {};
@@ -397,7 +392,7 @@ export default async function handler(req: Request) {
       totalActivities++;
     }
     
-    console.log("\n📊 Demo Feed Summary:");
+    
     console.log(`🎯 Total demo activities: ${totalActivities}`);
     console.log(`📂 Categories: ${Object.keys(activitiesByCategory).join(', ')}`);
     console.log(`👥 Active users: ${Object.keys(activitiesByActor).length}`);
@@ -416,7 +411,7 @@ export default async function handler(req: Request) {
         }
       }
     } catch (error) {
-      console.log("⚠️  Could not verify feed counts:", error);
+      
     }
 
     return json({ 

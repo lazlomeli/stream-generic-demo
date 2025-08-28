@@ -161,13 +161,13 @@ const Chat: React.FC<ChatProps> = () => {
             const errorData = await response.json();
             if (response.status === 404) {
               console.error('❌ General channel does not exist:', errorData.message);
-              console.log('💡 Suggestion:', errorData.suggestion);
+
               // You might want to show this error to the user or trigger seeding
             } else {
               console.error('❌ Failed to add user to general channel:', errorData);
             }
           } else {
-            console.log('✅ User added to general channel successfully');
+
           }
         } catch (error) {
           console.error('❌ Network error adding user to general channel:', error);

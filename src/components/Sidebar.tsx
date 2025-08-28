@@ -22,7 +22,6 @@ const Sidebar: React.FC<SidebarProps> = () => {
 
   const handleVideoClick = () => {
     // Navigate to video page when implemented
-    console.log('Video feature coming soon');
   };
 
   const handleBookmarkedClick = () => {

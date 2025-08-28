@@ -37,15 +37,12 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
   const getOrUploadImageToStream = useCallback(async (attachmentNumber: 1 | 2) => {
     // Check if we already have the URL cached
     if (uploadedImageUrls[attachmentNumber]) {
-      console.log(`Using cached URL for attachment ${attachmentNumber}`);
       return uploadedImageUrls[attachmentNumber]!;
     }
 
     try {
       const imageUrl = attachmentNumber === 1 ? CustomAttachment1 : CustomAttachment2;
       const filename = `custom-attachment-${attachmentNumber}.png`;
-      
-      console.log(`First time uploading attachment ${attachmentNumber} to Stream CDN...`);
       
       // Fetch the image and convert to blob
       const response = await fetch(imageUrl);
@@ -59,7 +56,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
       // Cache the URL for future use
       setUploadedImageUrls(prev => ({ ...prev, [attachmentNumber]: streamUrl }));
       
-      console.log(`Attachment ${attachmentNumber} uploaded and cached successfully!`);
       return streamUrl;
     } catch (error) {
       console.error(`Error uploading attachment ${attachmentNumber} to Stream:`, error);
@@ -73,8 +69,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
       // Determine which attachment to send (never the same as last one)
       const attachmentToSend = lastAttachmentSent === 1 ? 2 : 1;
       const filename = `custom-attachment-${attachmentToSend}.png`;
-
-      console.log(`Sending custom attachment ${attachmentToSend}...`);
 
       if (channel) {
         // Get the Stream URL (cached or upload if first time)
@@ -95,7 +89,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
 
         // Update the last sent attachment
         setLastAttachmentSent(attachmentToSend);
-        console.log(`Custom attachment ${attachmentToSend} sent successfully!`);
       } else {
         console.error('Channel not available for sending custom attachment');
         alert('Unable to send custom attachment. Please try again.');

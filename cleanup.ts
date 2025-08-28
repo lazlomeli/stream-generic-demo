@@ -12,7 +12,7 @@ const client = new StreamChat(
 
 async function cleanup() {
   try {
-    console.log("🚀 Starting cleanup...");
+    
 
     // Fake users to delete
     const usersToDelete = [
@@ -38,7 +38,7 @@ async function cleanup() {
       try {
         const channel = client.channel(ch.type, ch.id);
         await channel.delete();
-        console.log(`✅ Deleted channel: ${ch.type}:${ch.id}`);
+        
       } catch (err: any) {
         console.warn(`⚠️ Could not delete channel ${ch.type}:${ch.id}`, err.message);
       }
@@ -51,13 +51,13 @@ async function cleanup() {
           mark_messages_deleted: true,
           hard_delete: true,
         });
-        console.log(`✅ Deleted user: ${userId}`);
+        
       } catch (err: any) {
         console.warn(`⚠️ Could not delete user ${userId}`, err.message);
       }
     }
 
-    console.log("🎉 Cleanup complete");
+    
   } catch (err) {
     console.error("💥 Cleanup failed:", err);
   }

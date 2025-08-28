@@ -29,8 +29,8 @@ body {
 }
 
 .app-main.with-sidebars {
-  margin-left: 250px;
-  margin-right: 250px;
+  margin-left: 300px;
+  margin-right: 300px;
   display: flex;
   justify-content: center;
   align-items: flex-start;

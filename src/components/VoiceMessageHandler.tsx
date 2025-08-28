@@ -15,12 +15,12 @@ const VoiceMessageHandler: React.FC = () => {
     }
 
     try {
-      console.log('Processing voice message:', { duration, size });
+
       
       // Create a file from the blob for Stream Chat upload
       const file = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
       
-      console.log('Uploading voice message to Stream Chat:', file.name, file.size);
+
 
       // Upload the file to Stream Chat
       const uploadResponse = await channel.sendFile(file, 'voice-message.webm', 'audio/webm');
@@ -29,7 +29,7 @@ const VoiceMessageHandler: React.FC = () => {
         throw new Error('File upload failed');
       }
 
-      console.log('File uploaded successfully:', uploadResponse);
+
 
       // Send the voice message with the uploaded file URL
       const response = await channel.sendMessage({
@@ -47,7 +47,7 @@ const VoiceMessageHandler: React.FC = () => {
         ]
       });
 
-      console.log('Voice message sent successfully:', response);
+
       
       // Force channel refresh to ensure message appears
       await channel.watch();

@@ -223,7 +223,7 @@ const BookmarkedPosts = () => {
   // Refresh bookmarked posts when user returns to the page
   useEffect(() => {
     const handleFocus = () => {
-      console.log('📖 BookmarkedPosts page focused, refreshing data...');
+
       if (feedsClient?.userId) {
         fetchBookmarkedPosts();
       }
@@ -231,7 +231,7 @@ const BookmarkedPosts = () => {
 
     const handleVisibilityChange = () => {
       if (!document.hidden && feedsClient?.userId) {
-        console.log('📖 BookmarkedPosts page became visible, refreshing data...');
+
         fetchBookmarkedPosts();
       }
     };
@@ -270,8 +270,8 @@ const BookmarkedPosts = () => {
       }
 
       const data = await response.json();
-      console.log('📖 Received bookmarked posts data:', data);
-      console.log('📖 Bookmarked posts array:', data.bookmarkedPosts);
+
+
       
       // Transform posts to include user info
       const transformedPosts = (data.bookmarkedPosts || []).map((post: any) => {

@@ -116,8 +116,8 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
       const result = await response.json();
       
-      console.log('✅ Channel creation response:', result);
-      console.log('🆔 Created channel ID:', result.channelId);
+
+
       
       // Show success message
       setSuccess('Channel created successfully!');
