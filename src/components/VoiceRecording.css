@@ -5,6 +5,109 @@
   position: relative;
 }
 
+/* Custom attachment button positioned next to the "+" icon */
+.message-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-attachment-button-external {
+  position: absolute;
+  right: 100px; /* Position it to the left of the voice recording button */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.custom-attachment-button-external:hover {
+  background-color: #f3f4f6;
+  color: #2563eb;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.custom-attachment-button-external:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.custom-attachment-button-external img {
+  flex-shrink: 0;
+  filter: brightness(0) saturate(100%) invert(50%) sepia(10%) saturate(250%) hue-rotate(180deg) brightness(95%) contrast(87%);
+  transition: filter 0.2s ease;
+}
+
+.custom-attachment-button-external:hover img {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(204deg) brightness(97%) contrast(97%);
+}
+
+/* Tooltip for Custom Attachment Button */
+.custom-attachment-button-external::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  
+  background: #333;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.custom-attachment-button-external::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 2px;
+  
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #333;
+  
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.custom-attachment-button-external:hover::before,
+.custom-attachment-button-external:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+
 /* Integrated Voice Recording Controls - Positioned next to the + button */
 .voice-recording-controls-integrated {
   position: absolute;
@@ -483,6 +586,19 @@
 /* Hover effects for interactive elements */
 .waveform-container:hover {
   background: rgba(0, 0, 0, 0.15);
+}
+
+/* Hide download button on image attachments */
+.str-chat__message-attachment-actions,
+.str-chat__attachment-actions,
+.str-chat__image-attachment .str-chat__message-attachment-actions {
+  display: none !important;
+}
+
+/* Hide the download icon specifically */
+.str-chat__message-attachment .str-chat__message-attachment-actions button,
+.str-chat__attachment .str-chat__attachment-actions button {
+  display: none !important;
 }
 
 /* Message bubble specific styles for Stream Chat integration */

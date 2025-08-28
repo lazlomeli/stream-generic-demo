@@ -1,22 +1,110 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { MessageInput, useMessageInputContext } from 'stream-chat-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { MessageInput, useMessageInputContext, AttachmentPreviewList, useChannelStateContext } from 'stream-chat-react';
 import './VoiceRecording.css';
 
 // Import SVG icons
 import MicrophoneIcon from '../icons/microphone.svg';
 import StopIcon from '../icons/stop.svg';
 import SendIcon from '../icons/send.svg';
+import CubePlusIcon from '../icons/cube-plus.svg';
+
+// Import custom attachment images
+import CustomAttachment1 from '../assets/custom-attachment-1.png';
+import CustomAttachment2 from '../assets/custom-attachment-2.png';
 
 interface CustomMessageInputProps {
   // Extend MessageInput props as needed
 }
 
+
+
+
+
 const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [lastAttachmentSent, setLastAttachmentSent] = useState<1 | 2 | null>(null);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<{ 1: string | null; 2: string | null }>({ 1: null, 2: null });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Get channel from channel state context
+  const { channel } = useChannelStateContext();
+
+  // Helper function to get or upload image to Stream (with caching)
+  const getOrUploadImageToStream = useCallback(async (attachmentNumber: 1 | 2) => {
+    // Check if we already have the URL cached
+    if (uploadedImageUrls[attachmentNumber]) {
+      console.log(`Using cached URL for attachment ${attachmentNumber}`);
+      return uploadedImageUrls[attachmentNumber]!;
+    }
+
+    try {
+      const imageUrl = attachmentNumber === 1 ? CustomAttachment1 : CustomAttachment2;
+      const filename = `custom-attachment-${attachmentNumber}.png`;
+      
+      console.log(`First time uploading attachment ${attachmentNumber} to Stream CDN...`);
+      
+      // Fetch the image and convert to blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: 'image/png' });
+      
+      // Upload the file to Stream
+      const uploadResponse = await channel.sendImage(file);
+      const streamUrl = uploadResponse.file;
+      
+      // Cache the URL for future use
+      setUploadedImageUrls(prev => ({ ...prev, [attachmentNumber]: streamUrl }));
+      
+      console.log(`Attachment ${attachmentNumber} uploaded and cached successfully!`);
+      return streamUrl;
+    } catch (error) {
+      console.error(`Error uploading attachment ${attachmentNumber} to Stream:`, error);
+      throw error;
+    }
+  }, [channel, uploadedImageUrls]);
+
+  // Custom attachment handler
+  const handleCustomAttachment = useCallback(async () => {
+    try {
+      // Determine which attachment to send (never the same as last one)
+      const attachmentToSend = lastAttachmentSent === 1 ? 2 : 1;
+      const filename = `custom-attachment-${attachmentToSend}.png`;
+
+      console.log(`Sending custom attachment ${attachmentToSend}...`);
+
+      if (channel) {
+        // Get the Stream URL (cached or upload if first time)
+        const streamImageUrl = await getOrUploadImageToStream(attachmentToSend);
+        
+        // Send the attachment through Stream Chat with proper image data
+        await channel.sendMessage({
+          attachments: [
+            {
+              type: 'image',
+              image_url: streamImageUrl,
+              thumb_url: streamImageUrl,
+              title: filename,
+              fallback: filename,
+            },
+          ],
+        });
+
+        // Update the last sent attachment
+        setLastAttachmentSent(attachmentToSend);
+        console.log(`Custom attachment ${attachmentToSend} sent successfully!`);
+      } else {
+        console.error('Channel not available for sending custom attachment');
+        alert('Unable to send custom attachment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error sending custom attachment:', error);
+      alert('Failed to send custom attachment. Please try again.');
+    }
+  }, [lastAttachmentSent, channel, getOrUploadImageToStream]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -110,13 +198,31 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
   };
 
   return (
-    <div className="custom-message-input">
-      <MessageInput 
-        {...props} 
-        additionalTextareaProps={{
-          placeholder: "Type a message or record voice message..."
-        }}
-      />
+    <div className="custom-message-input" ref={containerRef}>
+      <div className="message-input-wrapper">
+        <MessageInput 
+          {...props} 
+          additionalTextareaProps={{
+            placeholder: "Type a message or record voice message..."
+          }}
+        />
+        
+        {/* Custom Attachment Button - positioned next to the "+" icon */}
+        <button
+          className="custom-attachment-button-external"
+          onClick={handleCustomAttachment}
+          title="Custom Attachment"
+          type="button"
+          data-tooltip="Custom Attachment!"
+        >
+          <img 
+            src={CubePlusIcon} 
+            alt="Custom Attachment" 
+            width={20} 
+            height={20}
+          />
+        </button>
+      </div>
       
       {/* Voice Recording Controls - Integrated into MessageInput */}
       <div className="voice-recording-controls-integrated">
@@ -172,6 +278,7 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
           </div>
         )}
       </div>
+
     </div>
   );
 };
