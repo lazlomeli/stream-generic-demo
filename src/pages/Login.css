@@ -1,0 +1,182 @@
+/* Login Page Styles - Single Column Layout */
+
+.login {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f9f8f3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* Image Section - Top */
+.login-image-section {
+  height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9f8f3;
+  overflow: hidden;
+  position: relative;
+}
+
+.login-background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Form Section - Bottom */
+.login-form-section {
+  height: 30vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #f9f8f3;
+}
+
+.login-content {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Removed brand section styles since logo, title, and subtitle are no longer needed */
+
+/* Auth0 Sign In Button */
+.login-cta {
+  width: 100%;
+  max-width: 320px;
+}
+
+.auth0-signin-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth0-signin-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+}
+
+.auth0-signin-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.auth0-signin-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.auth0-signin-button:hover::before {
+  left: 100%;
+}
+
+.auth0-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+  filter: brightness(0) invert(1); /* Makes the icon white */
+}
+
+/* Loading State */
+.login-cta-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px 24px;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  color: #718096;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-image-section {
+    height: 60vh;
+    min-height: 300px;
+  }
+  
+  .login-form-section {
+    height: 40vh;
+    padding: 1.5rem;
+  }
+  
+  .login-cta {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-image-section {
+    height: 50vh;
+    min-height: 250px;
+  }
+  
+  .login-form-section {
+    height: 50vh;
+    padding: 1rem;
+  }
+  
+  .login-content {
+    max-width: 100%;
+  }
+  
+  .login-cta {
+    max-width: 100%;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .auth0-signin-button {
+    border: 2px solid #3b82f6;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .auth0-signin-button {
+    transition: none;
+  }
+  
+  .auth0-signin-button:hover {
+    transform: none;
+  }
+  
+  .auth0-signin-button::before {
+    transition: none;
+  }
+  
+  .auth0-signin-button:hover::before {
+    left: -100%;
+  }
+}

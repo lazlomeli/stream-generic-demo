@@ -72,7 +72,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header showNavigation={!showSidebars} />
+      {isAuthenticated && <Header showNavigation={!showSidebars} />}
       {showSidebars && <Sidebar />}
       {showSidebars && <RightSidebar />}
       <main className={`app-main ${showSidebars ? 'with-sidebars' : ''}`}>
