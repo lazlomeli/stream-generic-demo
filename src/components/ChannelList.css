@@ -30,7 +30,7 @@
 .channel-list-items {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem; /* space-y-0.5 */
+  gap: 0.375rem; /* Increased from 0.125rem for more spacing between channels */
 }
 
 /* Loading State */
@@ -57,8 +57,8 @@
 /* Channel Item Button */
 .channel-item-button {
   width: 100%;
-  padding: 0.375rem; /* p-1.5 */
-  border-radius: 0.25rem; /* rounded */
+  padding: 0.75rem; /* Increased from 0.375rem for more height */
+  border-radius: 0.375rem; /* Slightly more rounded */
   text-align: left;
   transition: all 0.15s ease-in-out;
   border: none;
@@ -79,7 +79,7 @@
 .channel-item-content {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* space-x-2 */
+  gap: 0.75rem; /* Increased from 0.5rem for better spacing */
 }
 
 /* Avatar Container */
@@ -89,15 +89,15 @@
 }
 
 .channel-item-avatar-image {
-  width: 1.5rem; /* w-6 h-6 */
-  height: 1.5rem;
+  width: 2.25rem; /* Increased from 1.5rem for larger avatars */
+  height: 2.25rem;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .channel-item-avatar-icon {
-  width: 1.5rem; /* w-6 h-6 */
-  height: 1.5rem;
+  width: 2.25rem; /* Increased from 1.5rem for larger avatars */
+  height: 2.25rem;
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); /* from-blue-500 to-purple-600 */
   border-radius: 50%;
   display: flex;
@@ -109,7 +109,7 @@
 .channel-item-avatar-icon-text {
   color: white;
   font-weight: 600; /* font-semibold */
-  font-size: 0.75rem; /* text-xs */
+  font-size: 0.875rem; /* Increased from 0.75rem to match larger avatar */
 }
 
 /* Status Indicator */
@@ -117,8 +117,8 @@
   position: absolute;
   bottom: -0.125rem; /* -bottom-0.5 */
   right: -0.125rem; /* -right-0.5 */
-  width: 0.5rem; /* w-2 h-2 */
-  height: 0.5rem;
+  width: 0.625rem; /* Increased from 0.5rem to match larger avatar */
+  height: 0.625rem;
   border-radius: 50%;
   border: 1px solid white;
 }
@@ -153,7 +153,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.75rem; /* text-xs */
+  font-size: 0.875rem; /* Increased from 0.75rem for better readability */
 }
 
 .channel-item-time {
@@ -163,7 +163,7 @@
 }
 
 .channel-item-message {
-  font-size: 0.75rem; /* text-xs */
+  font-size: 0.8125rem; /* Increased from 0.75rem for better readability */
   color: #6b7280; /* text-gray-500 */
   white-space: nowrap;
   overflow: hidden;
