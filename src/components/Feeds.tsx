@@ -1361,7 +1361,7 @@ const Feeds = () => {
                 onClick={addRandomPhoto}
               >
                 <img src={CameraIcon} alt="Camera" width={20} height={20} />
-                <span>Demo Photo</span>
+                <span>Photo</span>
               </button>
               <button 
                 className="media-button" 
@@ -1369,7 +1369,7 @@ const Feeds = () => {
                 onClick={addRandomVideo}
               >
                 <img src={VideoIcon} alt="Video" width={20} height={20} />
-                <span>Demo Video</span>
+                <span>Video</span>
               </button>
               <button 
                 className="media-button" 
