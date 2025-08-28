@@ -8,9 +8,11 @@ import StreamLogo from '../assets/stream-logo.png'
 import VideoIcon from '../icons/video.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
 
-interface HeaderProps {}
+interface HeaderProps {
+  showNavigation?: boolean;
+}
 
-const Header: React.FC<HeaderProps> = () => {
+const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
   const { isAuthenticated, user, logout } = useAuth0()
   const navigate = useNavigate()
 
@@ -43,60 +45,62 @@ const Header: React.FC<HeaderProps> = () => {
       <div className="header-container">
         <div className="header-content">
           
-          {/* Left side - Navigation icons */}
+          {/* Left side - Logo and conditionally Navigation icons */}
           <div className="header-left">
-            <div className="header-icons">
-              {/* Home icon - always visible */}
-              <button
-                onClick={handleHomeClick}
-                className="header-nav-button"
-                title="Home"
-              >
-                {/* <img src={HomeIcon} alt="Home" /> */}
-                <img src={StreamLogo} alt="Stream Logo" />
-              </button>
+            {/* Stream Logo - always visible */}
+            <button
+              onClick={handleHomeClick}
+              className="header-nav-button header-logo"
+              title="Home"
+            >
+              <img src={StreamLogo} alt="Stream Logo" />
+            </button>
 
-              {/* Feeds icon - only when authenticated */}
-              {isAuthenticated && (
-                <button
-                  onClick={handleFeedsClick}
-                  className="header-nav-button"
-                  title="Activity Feeds"
-                >
-                  <img src={HomeIcon} alt="Feeds" />
-                </button>
-              )}
-              {/* Chat icon - only when authenticated */}
-              {isAuthenticated && (
-                <button
-                  onClick={handleChatClick}
-                  className="header-nav-button"
-                  title="Stream Chat"
-                >
-                  <img src={SendIcon} alt="Chat" />
-                </button>
-              )}
+            {/* Navigation icons - only when showNavigation is true */}
+            {showNavigation && (
+              <div className="header-icons">
+                {/* Feeds icon - only when authenticated */}
+                {isAuthenticated && (
+                  <button
+                    onClick={handleFeedsClick}
+                    className="header-nav-button"
+                    title="Activity Feeds"
+                  >
+                    <img src={HomeIcon} alt="Feeds" />
+                  </button>
+                )}
+                {/* Chat icon - only when authenticated */}
+                {isAuthenticated && (
+                  <button
+                    onClick={handleChatClick}
+                    className="header-nav-button"
+                    title="Stream Chat"
+                  >
+                    <img src={SendIcon} alt="Chat" />
+                  </button>
+                )}
 
-              {isAuthenticated && (
-                <button
-                  onClick={() => {}}
-                  className="header-nav-button"
-                  title="Stream Video"
-                >
-                  <img src={VideoIcon} alt="Video" />
-                </button>
-              )}
-              
-              {isAuthenticated && (
-                <button
-                  onClick={handleBookmarkedClick}
-                  className="header-nav-button"
-                  title="Bookmarked Posts"
-                >
-                  <img src={BookmarkIcon} alt="Bookmarked Posts" />
-                </button>
-              )}
-            </div>
+                {isAuthenticated && (
+                  <button
+                    onClick={() => {}}
+                    className="header-nav-button"
+                    title="Stream Video"
+                  >
+                    <img src={VideoIcon} alt="Video" />
+                  </button>
+                )}
+                
+                {isAuthenticated && (
+                  <button
+                    onClick={handleBookmarkedClick}
+                    className="header-nav-button"
+                    title="Bookmarked Posts"
+                  >
+                    <img src={BookmarkIcon} alt="Bookmarked Posts" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           {/* Right side - User info and logout */}
           <div className="header-right">

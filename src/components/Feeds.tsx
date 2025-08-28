@@ -14,6 +14,7 @@ import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import TrashIcon from '../icons/trash.svg';
 import CameraIcon from '../icons/camera.svg';
 import VideoIcon from '../icons/video.svg';
+import PollIcon from '../icons/poll.svg';
 import './Feeds.css';
 
 // User mapping for demo users
@@ -114,6 +115,12 @@ const getUserProfileImage = (actorId: string, currentUser: any, userInfo?: any, 
   return undefined;
 };
 
+// Helper function to format joined date
+const formatJoinedDate = (actorId: string) => {
+  // Simple hardcoded demo date
+  return '23rd Aug 2024';
+};
+
 interface FeedPost {
   id: string;
   actor: string;
@@ -165,6 +172,11 @@ const Feeds = () => {
   const [seedStatus, setSeedStatus] = useState<string>('');
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
+  const [followingUsers, setFollowingUsers] = useState<Set<string>>(new Set());
+  const [userCounts, setUserCounts] = useState<{ [userId: string]: { followers: number; following: number } }>({});
+  const [hoveredUser, setHoveredUser] = useState<string | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [modalFadingOut, setModalFadingOut] = useState<string | null>(null);
 
   const [newPostText, setNewPostText] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
@@ -177,15 +189,17 @@ const Feeds = () => {
   const [postComments, setPostComments] = useState<{ [postId: string]: any[] }>({});
   const [loadingComments, setLoadingComments] = useState<string | null>(null);
   
-  // File attachment state
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
+  // Demo attachment state
+  const [selectedAttachments, setSelectedAttachments] = useState<Array<{
+    type: 'image' | 'video' | 'poll';
+    url: string;
+    name: string;
+    question?: string;
+    options?: string[];
+    votes?: number[];
+  }>>([]);
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const lastScrolledHighlight = useRef<string | null>(null);
-  
-  // File input refs
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const initFeedsClient = async () => {
@@ -245,11 +259,29 @@ const Feeds = () => {
   // Fetch posts when feedsClient is ready
   useEffect(() => {
     if (feedsClient?.userId) {
-      console.log('🔄 FeedsClient ready, fetching initial posts and bookmark state...');
-      fetchPosts(feedsClient.userId);
-      fetchBookmarkedPosts(feedsClient.userId);
+              console.log('🔄 FeedsClient ready, fetching initial posts, bookmark state, and following status...');
+        fetchPosts(feedsClient.userId);
+        fetchBookmarkedPosts(feedsClient.userId);
+        fetchFollowingUsers(feedsClient.userId);
     }
   }, [feedsClient]);
+
+  // Fetch user counts when posts are loaded
+  useEffect(() => {
+    if (posts.length > 0) {
+      // Get unique user IDs from posts (excluding current user)
+      const userIds = [...new Set(
+        posts
+          .map(post => post.actor)
+          .filter(actorId => actorId && actorId !== feedsClient?.userId)
+      )];
+      
+      if (userIds.length > 0) {
+        console.log('📊 Fetching counts for users:', userIds);
+        fetchUserCounts(userIds);
+      }
+    }
+  }, [posts, feedsClient?.userId]);
 
   // Auto-scroll to highlighted post when highlight parameter changes (not on post updates)
   useEffect(() => {
@@ -356,20 +388,41 @@ const Feeds = () => {
     };
   }, [feedsClient]);
 
-  // Cleanup object URLs when component unmounts
+  // Cleanup hover timeout on unmount
   useEffect(() => {
     return () => {
-      filePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
     };
-  }, []);
+  }, [hoverTimeout]);
 
-  // Cleanup object URLs when filePreviewUrls change
-  useEffect(() => {
-    return () => {
-      // This cleanup runs when the effect dependencies change or component unmounts
-      // filePreviewUrls in the dependency array will be the previous value
-    };
-  }, [filePreviewUrls]);
+  // Hover handlers for user modal
+  const handleUserMouseEnter = (userId: string) => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    setModalFadingOut(null); // Cancel any fade-out
+    setHoveredUser(userId);
+  };
+
+  const handleUserMouseLeave = () => {
+    if (hoveredUser) {
+      // Start fade-out animation
+      setModalFadingOut(hoveredUser);
+      
+      // Remove modal from DOM after animation completes
+      const timeout = setTimeout(() => {
+        setHoveredUser(null);
+        setModalFadingOut(null);
+      }, 200); // Match the animation duration
+      
+      setHoverTimeout(timeout);
+    }
+  };
+
+
 
   // Function to fetch bookmarked posts to sync bookmark state
   const fetchBookmarkedPosts = async (userId?: string) => {
@@ -410,9 +463,126 @@ const Feeds = () => {
     }
   };
 
+  // Function to fetch users that current user is following
+  const fetchFollowingUsers = async (userId?: string) => {
+    const userIdToUse = userId || feedsClient?.userId;
+    if (!userIdToUse) return;
+
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/feed-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          action: 'get_following',
+          userId: userIdToUse
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch following users');
+      }
+
+      const data = await response.json();
+      console.log('👥 Fetch following users response:', data);
+      if (data.success && data.following) {
+        // Extract user IDs from following list
+        const followingUserIds = new Set<string>(
+          data.following
+            .map((follow: any) => follow.target_id || follow.target?.split(':')[1])
+            .filter((id: string) => id)
+        );
+        console.log('👥 Following user IDs:', Array.from(followingUserIds));
+        setFollowingUsers(followingUserIds);
+      }
+    } catch (error) {
+      console.error('Error fetching following users:', error);
+      // Don't show error to user as this is background sync
+    }
+  };
+
+  // Function to fetch follower/following counts for users visible in posts
+  const fetchUserCounts = async (userIds: string[]) => {
+    if (!feedsClient?.userId || userIds.length === 0) return;
+
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      // Fetch counts for each user in parallel
+      const countPromises = userIds.map(async (userId) => {
+        try {
+          const [followersRes, followingRes] = await Promise.all([
+            fetch('/api/stream/feed-actions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+              },
+              body: JSON.stringify({
+                action: 'get_followers',
+                userId: feedsClient.userId, // Current user context
+                targetUserId: userId,
+                limit: 1 // Just for count
+              })
+            }),
+            fetch('/api/stream/feed-actions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+              },
+              body: JSON.stringify({
+                action: 'get_following',
+                userId: userId, // Target user's following
+                limit: 1 // Just for count
+              })
+            })
+          ]);
+
+          const [followersData, followingData] = await Promise.all([
+            followersRes.ok ? followersRes.json() : { count: 0 },
+            followingRes.ok ? followingRes.json() : { count: 0 }
+          ]);
+
+          return {
+            userId,
+            followers: followersData.count || 0,
+            following: followingData.count || 0
+          };
+        } catch (error) {
+          console.warn(`Failed to fetch counts for user ${userId}:`, error);
+          return {
+            userId,
+            followers: 0,
+            following: 0
+          };
+        }
+      });
+
+      const results = await Promise.all(countPromises);
+      
+      // Update state with new counts
+      setUserCounts(prev => {
+        const newCounts = { ...prev };
+        results.forEach(({ userId, followers, following }) => {
+          newCounts[userId] = { followers, following };
+        });
+        return newCounts;
+      });
+
+      console.log('📊 Updated user counts for:', userIds.length, 'users');
+    } catch (error) {
+      console.error('Error fetching user counts:', error);
+    }
+  };
 
 
-  // Function to fetch real posts from Stream feeds
+
+  // Function to fetch real posts from Stream feeds (hybrid approach)
   const fetchPosts = async (userId?: string) => {
     const userIdToUse = userId || feedsClient?.userId;
     
@@ -424,7 +594,8 @@ const Feeds = () => {
     try {
       const accessToken = await getAccessTokenSilently();
       
-      const response = await fetch('/api/stream/get-posts', {
+      // Fetch from timeline feed (posts from followed users + own posts)
+      const timelineResponse = await fetch('/api/stream/get-posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -432,20 +603,57 @@ const Feeds = () => {
         },
         body: JSON.stringify({
           userId: userIdToUse,
-          feedGroup: 'flat',
-          feedId: 'global',
-          limit: 20
+          feedGroup: 'timeline',
+          feedId: userIdToUse,
+          limit: 15
         }),
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
+      let timelinePosts: any[] = [];
+      if (timelineResponse.ok) {
+        const timelineResult = await timelineResponse.json();
+        timelinePosts = timelineResult.activities || [];
+        console.log(`📰 Loaded ${timelinePosts.length} posts from timeline feed`);
       }
       
-      const result = await response.json();
+      // If timeline has few posts, supplement with global feed for discovery
+      let globalPosts: any[] = [];
+      if (timelinePosts.length < 10) {
+        console.log('📰 Timeline has few posts, fetching from global feed for discovery...');
+        const globalResponse = await fetch('/api/stream/get-posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            userId: userIdToUse,
+            feedGroup: 'flat',
+            feedId: 'global',
+            limit: 10
+          }),
+        });
+        
+        if (globalResponse.ok) {
+          const globalResult = await globalResponse.json();
+          globalPosts = globalResult.activities || [];
+          console.log(`🌍 Loaded ${globalPosts.length} posts from global feed`);
+        }
+      }
+      
+      // Combine and deduplicate posts
+      const allPosts = [...timelinePosts, ...globalPosts];
+      const uniquePosts = allPosts.filter((activity, index, self) => 
+        index === self.findIndex(a => a.id === activity.id)
+      );
+      
+      // Sort by creation time (newest first)
+      uniquePosts.sort((a, b) => new Date(b.time || b.created_at).getTime() - new Date(a.time || a.created_at).getTime());
+      
+      console.log(`📰 Combined ${uniquePosts.length} unique posts (${timelinePosts.length} timeline + ${globalPosts.length} global)`);
       
       // Transform Stream activities to our FeedPost format
-      const streamPosts: FeedPost[] = result.activities.map((activity: any) => {
+      const streamPosts: FeedPost[] = uniquePosts.map((activity: any) => {
         const actorId = activity.actor;
         
         // Check if this is marked as current user's post from server
@@ -482,7 +690,7 @@ const Feeds = () => {
       });
       
       setPosts(streamPosts);
-      console.log(`✅ Loaded ${streamPosts.length} posts from Stream feeds`);
+      console.log(`✅ Final feed contains ${streamPosts.length} posts`);
       
     } catch (err: any) {
       console.error('❌ Error fetching posts:', err);
@@ -554,64 +762,89 @@ const Feeds = () => {
     console.log(`Sharing post ${postId}`);
   };
 
-  console.log('user', user);
-
-  // File handling functions
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    handleFileSelect(files);
-  };
-
-  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    handleFileSelect(files);
-  };
-
-  const handleFileSelect = (files: File[]) => {
-    // Validate file sizes (5MB for images, 50MB for videos)
-    const validFiles = files.filter(file => {
-      const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
-      const maxSize = isImage ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB for images, 50MB for videos
-      
-      if (file.size > maxSize) {
-        alert(`File ${file.name} is too large. Maximum size is ${isImage ? '5MB' : '50MB'}.`);
-        return false;
-      }
-      
-      return isImage || isVideo;
-    });
-
-    if (validFiles.length === 0) return;
-
-    // Add to selected files
-    setSelectedFiles(prev => [...prev, ...validFiles]);
-
-    // Create preview URLs
-    const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
-    setFilePreviewUrls(prev => [...prev, ...newPreviewUrls]);
-  };
-
-  const handlePhotoButtonClick = () => {
-    photoInputRef.current?.click();
-  };
-
-  const handleVideoButtonClick = () => {
-    videoInputRef.current?.click();
-  };
-
-  const removeFile = (index: number) => {
-    // Revoke the object URL to free memory
-    URL.revokeObjectURL(filePreviewUrls[index]);
+  // Demo attachment functions
+  const addRandomPhoto = () => {
+    const photoId = Math.floor(Math.random() * 1000) + 1;
+    const newPhoto = {
+      type: 'image' as const,
+      url: `https://picsum.photos/800/600?random=${photoId}`,
+      name: `Random Photo ${photoId}`
+    };
     
-    // Remove from both arrays
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setFilePreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setSelectedAttachments(prev => [...prev, newPhoto]);
+    console.log('📸 Added random photo:', newPhoto.url);
+  };
+
+  const addRandomVideo = () => {
+    // Using sample videos from a CDN or placeholder service
+    const videos = [
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'
+    ];
+    
+    const randomVideo = videos[Math.floor(Math.random() * videos.length)];
+    const videoName = randomVideo.split('/').pop()?.replace('.mp4', '') || 'Sample Video';
+    
+    const newVideo = {
+      type: 'video' as const,
+      url: randomVideo,
+      name: videoName
+    };
+    
+    setSelectedAttachments(prev => [...prev, newVideo]);
+    console.log('🎥 Added random video:', newVideo.url);
+  };
+
+  const addDemoPoll = () => {
+    // Demo poll questions
+    const pollQuestions = [
+      'What\'s your favorite programming language?',
+      'Best time for team meetings?',
+      'Preferred development environment?',
+      'Most useful development tool?',
+      'Favorite project management methodology?'
+    ];
+    
+    const pollOptions = [
+      ['JavaScript', 'Python', 'TypeScript', 'Go'],
+      ['Morning (9-11 AM)', 'Afternoon (1-3 PM)', 'Late afternoon (3-5 PM)', 'Flexible'],
+      ['VS Code', 'IntelliJ', 'Vim/Neovim', 'Sublime Text'],
+      ['Git', 'Docker', 'Postman', 'Chrome DevTools'],
+      ['Agile', 'Scrum', 'Kanban', 'Waterfall']
+    ];
+    
+    const randomIndex = Math.floor(Math.random() * pollQuestions.length);
+    const question = pollQuestions[randomIndex];
+    const options = pollOptions[randomIndex];
+    
+    // Generate some random demo votes to show the voting interface
+    const demoVotes = options.map(() => Math.floor(Math.random() * 25) + 5); // 5-29 votes per option
+    
+    const newPoll = {
+      type: 'poll' as const,
+      url: '', // Polls don't need URLs
+      name: `Poll: ${question}`,
+      question: question,
+      options: options,
+      votes: demoVotes
+    };
+    
+    setSelectedAttachments(prev => [...prev, newPoll]);
+    console.log('📊 Added demo poll:', question);
+  };
+
+  const removeAttachment = (index: number) => {
+    setSelectedAttachments(prev => prev.filter((_, i) => i !== index));
+    console.log(`🗑️ Removed attachment at index ${index}`);
   };
 
   // Create a post
   const createPost = async () => {
-    if ((!newPostText.trim() && selectedFiles.length === 0) || !feedsClient?.userId) return;
+    // Allow posts with either text or attachments (or both)
+    if ((newPostText.trim() === '' && selectedAttachments.length === 0) || !feedsClient?.userId) return;
 
     setIsCreatingPost(true);
     try {
@@ -633,50 +866,60 @@ const Feeds = () => {
       
       console.log('📝 Sending user profile for post creation:', JSON.stringify(userProfile, null, 2));
       
-      // Convert files to base64 for attachment
-      const attachments = await Promise.all(
-        selectedFiles.map(async (file) => {
-          return new Promise<any>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const base64 = reader.result as string;
-              resolve({
-                type: file.type.startsWith('image/') ? 'image' : 'video',
-                name: file.name,
-                size: file.size,
-                mimeType: file.type,
-                data: base64.split(',')[1], // Remove data:type;base64, prefix
-                url: filePreviewUrls[selectedFiles.indexOf(file)] // For immediate display
-              });
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-        })
-      );
+      // Convert demo attachments to the format expected by the API
+      const attachments = selectedAttachments.map(attachment => {
+        const baseAttachment = {
+          type: attachment.type,
+          name: attachment.name,
+          url: attachment.url,
+          asset_url: attachment.url, // For backward compatibility
+          mime_type: attachment.type === 'image' ? 'image/jpeg' : attachment.type === 'video' ? 'video/mp4' : 'application/json',
+          title: attachment.name
+        };
+
+        // Include poll-specific data for poll attachments
+        if (attachment.type === 'poll') {
+          return {
+            ...baseAttachment,
+            question: attachment.question,
+            options: attachment.options,
+            votes: attachment.votes
+          };
+        }
+
+        return baseAttachment;
+      });
       
-      console.log('📎 Attachments prepared:', attachments.length);
+      console.log('📎 Demo attachments prepared:', attachments.length);
       
+      const payload = {
+        action: 'create_post',
+        userId: feedsClient.userId,
+        postData: {
+          text: newPostText.trim(),
+          category: 'general',
+          attachments: attachments
+        },
+        userProfile: userProfile
+      };
+
+      // Log payload size for debugging
+      const payloadSize = new Blob([JSON.stringify(payload)]).size;
+      console.log(`📦 Request payload size: ${(payloadSize / 1024).toFixed(2)}KB`);
+
       const response = await fetch('/api/stream/feed-actions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          action: 'create_post',
-          userId: feedsClient.userId,
-          postData: {
-            text: newPostText.trim(),
-            category: 'general',
-            attachments: attachments
-          },
-          userProfile: userProfile
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create post: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Server response:', errorText);
+        throw new Error(`Failed to create post: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
@@ -686,10 +929,8 @@ const Feeds = () => {
       
       setNewPostText('');
       
-      // Clear selected files and preview URLs
-      filePreviewUrls.forEach(url => URL.revokeObjectURL(url));
-      setSelectedFiles([]);
-      setFilePreviewUrls([]);
+      // Clear selected attachments
+      setSelectedAttachments([]);
       
       console.log('✅ Post created successfully');
       
@@ -850,6 +1091,70 @@ const Feeds = () => {
     }
   };
 
+  const handleFollow = async (targetUserId: string) => {
+    if (!feedsClient?.userId || targetUserId === feedsClient.userId) return;
+
+    const isCurrentlyFollowing = followingUsers.has(targetUserId);
+    const action = isCurrentlyFollowing ? 'unfollow_user' : 'follow_user';
+    
+    console.log('👥 Follow action:', action, 'for user:', targetUserId);
+    
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/feed-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action,
+          userId: feedsClient.userId,
+          targetUserId
+        }),
+      });
+
+      const responseData = await response.json();
+      console.log('👥 Follow API response:', responseData);
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${action}: ${responseData.error || response.statusText}`);
+      }
+
+      // Update local state
+      setFollowingUsers(prev => {
+        const newFollowing = new Set(prev);
+        if (isCurrentlyFollowing) {
+          console.log('👥 Removing from following:', targetUserId);
+          newFollowing.delete(targetUserId);
+        } else {
+          console.log('👥 Adding to following:', targetUserId);
+          newFollowing.add(targetUserId);
+        }
+        console.log('👥 Updated following users:', Array.from(newFollowing));
+        return newFollowing;
+      });
+
+      // Update follower count for the target user
+      setUserCounts(prev => {
+        const newCounts = { ...prev };
+        if (newCounts[targetUserId]) {
+          const currentFollowers = newCounts[targetUserId].followers;
+          newCounts[targetUserId] = {
+            ...newCounts[targetUserId],
+            followers: isCurrentlyFollowing ? currentFollowers - 1 : currentFollowers + 1
+          };
+        }
+        return newCounts;
+      });
+      
+    } catch (err: any) {
+      console.error('Error updating follow status:', err);
+      alert('Failed to update follow status. Please try again.');
+    }
+  };
+
   const fetchComments = async (postId: string) => {
     if (!feedsClient?.userId) return;
 
@@ -966,23 +1271,7 @@ const Feeds = () => {
         <h1>Activity Feeds</h1>
       </div>
 
-      {/* Hidden file inputs */}
-      <input
-        type="file"
-        ref={photoInputRef}
-        accept="image/*"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handlePhotoSelect}
-      />
-      <input
-        type="file"
-        ref={videoInputRef}
-        accept="video/*"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleVideoSelect}
-      />
+
 
       {/* Inline Post Creation */}
       <div className="create-post-inline">
@@ -1006,38 +1295,54 @@ const Feeds = () => {
             rows={3}
           />
           
-          {/* File preview section */}
-          {selectedFiles.length > 0 && (
+          {/* Demo attachment preview section */}
+          {selectedAttachments.length > 0 && (
             <div className="file-preview-container">
-              {selectedFiles.map((file, index) => (
+              {selectedAttachments.map((attachment, index) => (
                 <div key={index} className="file-preview-item">
                   <div className="file-preview-content">
-                    {file.type.startsWith('image/') ? (
+                    {attachment.type === 'image' ? (
                       <img 
-                        src={filePreviewUrls[index]} 
-                        alt={file.name}
+                        src={attachment.url} 
+                        alt={attachment.name}
                         className="file-preview-image"
                       />
-                    ) : (
+                    ) : attachment.type === 'video' ? (
                       <div className="file-preview-video">
                         <video 
-                          src={filePreviewUrls[index]}
+                          src={attachment.url}
                           className="file-preview-video-element"
                           controls
+                          autoPlay
+                          loop
+                          muted
                         />
                       </div>
-                    )}
+                    ) : attachment.type === 'poll' ? (
+                      <div className="file-preview-poll">
+                        <div className="poll-preview-header">
+                          <img src={PollIcon} alt="Poll" width={20} height={20} />
+                          <span>Poll Preview</span>
+                        </div>
+                        <div className="poll-question">{attachment.question}</div>
+                        <div className="poll-options">
+                          {attachment.options?.map((option, optionIndex) => (
+                            <div key={optionIndex} className="poll-option-preview">
+                              {option}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="file-preview-info">
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-size">
-                      {(file.size / (1024 * 1024)).toFixed(2)} MB
-                    </span>
+                    <span className="file-name">{attachment.name}</span>
+                    <span className="file-size">Demo {attachment.type}</span>
                   </div>
                   <button 
                     className="file-remove-button"
-                    onClick={() => removeFile(index)}
-                    title="Remove file"
+                    onClick={() => removeAttachment(index)}
+                    title="Remove attachment"
                   >
                     ×
                   </button>
@@ -1046,21 +1351,39 @@ const Feeds = () => {
             </div>
           )}
           
+
+          
           <div className="create-post-actions">
             <div className="create-post-media">
-              <button className="media-button" title="Add photo" onClick={handlePhotoButtonClick}>
+              <button 
+                className="media-button" 
+                title="Add random demo photo" 
+                onClick={addRandomPhoto}
+              >
                 <img src={CameraIcon} alt="Camera" width={20} height={20} />
-                <span>Photo</span>
+                <span>Demo Photo</span>
               </button>
-              <button className="media-button" title="Add video" onClick={handleVideoButtonClick}>
+              <button 
+                className="media-button" 
+                title="Add random demo video" 
+                onClick={addRandomVideo}
+              >
                 <img src={VideoIcon} alt="Video" width={20} height={20} />
-                <span>Video</span>
+                <span>Demo Video</span>
+              </button>
+              <button 
+                className="media-button" 
+                title="Add demo poll" 
+                onClick={addDemoPoll}
+              >
+                <img src={PollIcon} alt="Poll" width={20} height={20} />
+                <span>Poll</span>
               </button>
             </div>
             <button 
               className="create-post-submit"
               onClick={createPost}
-              disabled={(!newPostText.trim() && selectedFiles.length === 0) || isCreatingPost}
+              disabled={(newPostText.trim() === '' && selectedAttachments.length === 0) || isCreatingPost}
             >
               {isCreatingPost ? <LoadingIcon size={16} /> : 'Post'}
             </button>
@@ -1086,68 +1409,123 @@ const Feeds = () => {
             >
               <div className="post-header">
                 <div className="post-author">
-                <div className="post-author-info">
-                  <div className="author-avatar">
-                    {post.userInfo?.image ? (
-                      <img 
-                        src={post.userInfo.image}
-                        alt={post.userInfo?.name}
-                        onError={(e) => {
-                          // Fallback to initials avatar if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          const displayName = post.userInfo?.name || 'U';
-                          const initial = displayName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-                          target.src = `data:image/svg+xml,${encodeURIComponent(`
-                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="20" cy="20" r="20" fill="#6b7280"/>
-                              <text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
-                            </svg>
-                          `)}`;
-                        }}
-                      />
-                      ) : (
-                      // Show initials avatar if no profile pictur
-                      <div 
-                        className="initials-avatar"
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          backgroundColor: '#6b7280',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontSize: '16px',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {(post.userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                  <div 
+                    className={`post-author-info ${!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? 'user-hover-container' : ''}`}
+                    onMouseEnter={!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? () => handleUserMouseEnter(post.actor) : undefined}
+                    onMouseLeave={!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? handleUserMouseLeave : undefined}
+                  >
+                    <div className="author-avatar">
+                      {post.userInfo?.image ? (
+                        <img 
+                          src={post.userInfo.image}
+                          alt={post.userInfo?.name}
+                          onError={(e) => {
+                            // Fallback to initials avatar if image fails to load
+                            const target = e.target as HTMLImageElement;
+                            const displayName = post.userInfo?.name || 'U';
+                            const initial = displayName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+                            target.src = `data:image/svg+xml,${encodeURIComponent(`
+                              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="20" cy="20" r="20" fill="#6b7280"/>
+                                <text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
+                              </svg>
+                            `)}`;
+                          }}
+                        />
+                        ) : (
+                        // Show initials avatar if no profile picture
+                        <div 
+                          className="initials-avatar"
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            backgroundColor: '#6b7280',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {(post.userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="author-info">
+                      <div className="author-name-row">
+                        <span className="author-name">
+                          {post.userInfo?.name || 'Unknown User'}
+                        </span>
+                      </div>
+                      <span className="post-time">{formatRelativeTime(post.time || post.created_at || new Date())}</span>
+                    </div>
+
+                    {/* User hover modal - now inside the hover container */}
+                    {(hoveredUser === post.actor || modalFadingOut === post.actor) && !post.isOwnPost && userCounts[post.actor] && (
+                      <div className={`user-hover-modal ${modalFadingOut === post.actor ? 'fading-out' : ''}`}>
+                        <div className="user-modal-header">
+                          <div className="user-modal-avatar">
+                            {post.userInfo?.image ? (
+                              <img src={post.userInfo.image} alt={post.userInfo?.name} />
+                            ) : (
+                              <div className="modal-initials-avatar">
+                                {(post.userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="user-modal-info">
+                            <h4 className="user-modal-name">{post.userInfo?.name || 'Unknown User'}</h4>
+                            <div className="user-modal-stats">
+                              <span><strong>{userCounts[post.actor].followers}</strong> followers</span>
+                              <span><strong>{userCounts[post.actor].following}</strong> following</span>
+                            </div>
+                            <div className="user-joined-date">
+                              Joined {formatJoinedDate(post.actor)}
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          className={`modal-follow-button ${followingUsers.has(post.actor) ? 'following' : ''}`}
+                          onClick={() => handleFollow(post.actor)}
+                        >
+                          {followingUsers.has(post.actor) ? 'Following' : 'Follow'}
+                        </button>
                       </div>
                     )}
                   </div>
-                  <div className="author-info">
-                    <span className="author-name">
-                      {post.userInfo?.name || 'Unknown User'}
-                    </span>
-                    <span className="post-time">{formatRelativeTime(post.time || post.created_at || new Date())}</span>
-                  </div>
-                </div>                
-                {/* Delete button for own posts */}
-                {post.isOwnPost && (
-                  <button 
-                    className="delete-post-button"
-                    onClick={() => setShowDeleteModal(post.id)}
-                    title="Delete post"
-                  >
-                    <img src={TrashIcon} alt="Delete" className="delete-icon" />
-                  </button>
-                )}
+                </div>
+
+                {/* Top right buttons */}
+                <div className="post-header-actions">
+                  {/* Follow button for other users' posts */}
+                  {!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId && (
+                    <button 
+                      className={`follow-button ${followingUsers.has(post.actor) ? 'following' : ''}`}
+                      onClick={() => handleFollow(post.actor)}
+                      title={followingUsers.has(post.actor) ? 'Unfollow user' : 'Follow user'}
+                    >
+                      {followingUsers.has(post.actor) ? 'Following' : 'Follow'}
+                    </button>
+                  )}
+                  {/* Delete button for own posts */}
+                  {post.isOwnPost && (
+                    <button 
+                      className="delete-post-button"
+                      onClick={() => setShowDeleteModal(post.id)}
+                      title="Delete post"
+                    >
+                      <img src={TrashIcon} alt="Delete" className="delete-icon" />
+                    </button>
+                  )}
                 </div>
               </div>
               
               <div className="post-content">
-                <p className="post-text">{post.text}</p>
+                {post.text && post.text.trim() && (
+                  <p className="post-text">{post.text}</p>
+                )}
                 {post.attachments && post.attachments.length > 0 && (
                   <div className="post-attachments">
                     {post.attachments.map((attachment, index) => (
@@ -1162,10 +1540,46 @@ const Feeds = () => {
                           <video 
                             src={(attachment as any).url || `data:${(attachment as any).mimeType || attachment.mime_type};base64,${(attachment as any).data}`}
                             controls
+                            autoPlay
+                            loop
+                            muted
                             className="post-attachment-video"
                           >
                             Your browser does not support the video tag.
                           </video>
+                        ) : attachment.type === 'poll' ? (
+                          <div className="post-attachment-poll">
+                            <div className="poll-header">
+                              <img src={PollIcon} alt="Poll" width={20} height={20} />
+                              <span className="poll-title">Poll</span>
+                            </div>
+                            <div className="poll-question">{(attachment as any).question}</div>
+                            <div className="poll-options">
+                              {(attachment as any).options?.map((option: string, optionIndex: number) => {
+                                const votes = (attachment as any).votes?.[optionIndex] || 0;
+                                const totalVotes = (attachment as any).votes?.reduce((sum: number, v: number) => sum + v, 0) || 0;
+                                const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                                
+                                return (
+                                  <div key={optionIndex} className="poll-option">
+                                    <div className="poll-option-text">{option}</div>
+                                    <div className="poll-option-stats">
+                                      <div className="poll-option-bar">
+                                        <div 
+                                          className="poll-option-fill" 
+                                          style={{ width: `${percentage}%` }}
+                                        ></div>
+                                      </div>
+                                      <span className="poll-option-percentage">{percentage}%</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="poll-footer">
+                              Total votes: {(attachment as any).votes?.reduce((sum: number, v: number) => sum + v, 0) || 0}
+                            </div>
+                          </div>
                         ) : (
                           // Fallback for legacy attachments
                           <img src={attachment.asset_url} alt={attachment.title} className="post-attachment-image" />

@@ -52,8 +52,9 @@ export default async function handler(
 
     switch (action) {
       case 'create_post':
-        if (!postData?.text) {
-          return res.status(400).json({ error: 'Post text is required' });
+        // Allow posts with either text or attachments (or both)
+        if (!postData?.text && (!postData?.attachments || postData.attachments.length === 0)) {
+          return res.status(400).json({ error: 'Post must have either text or attachments' });
         }
 
         // First, update the user's profile in Stream with their Auth0 information
@@ -73,11 +74,12 @@ export default async function handler(
           // Continue with post creation even if profile update fails
         }
 
+        // Add to global feed for discovery
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
           object: 'post',
-          text: postData.text,
+          text: postData.text || '', // Allow empty text for media-only posts
           attachments: postData.attachments || [],
           custom: {
             likes: 0,
@@ -89,12 +91,29 @@ export default async function handler(
           userProfile: req.body.userProfile
         });
 
-        // Also add to user's personal flat feed
-        await serverClient.feed('flat', userId).addActivity({
+        // Add to user's personal feed (this is what followers will see)
+        await serverClient.feed('user', userId).addActivity({
           actor: userId,
           verb: 'post',
           object: 'post',
-          text: postData.text,
+          text: postData.text || '', // Allow empty text for media-only posts
+          attachments: postData.attachments || [],
+          custom: {
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            category: postData.category || 'general'
+          },
+          // Store user profile directly in the activity
+          userProfile: req.body.userProfile
+        });
+
+        // Also add to user's own timeline so they see their own posts
+        await serverClient.feed('timeline', userId).addActivity({
+          actor: userId,
+          verb: 'post',
+          object: 'post',
+          text: postData.text || '', // Allow empty text for media-only posts
           attachments: postData.attachments || [],
           custom: {
             likes: 0,
@@ -120,8 +139,11 @@ export default async function handler(
         // Remove from global flat feed
         await serverClient.feed('flat', 'global').removeActivity(postId);
         
-        // Remove from user's personal flat feed
-        await serverClient.feed('flat', userId).removeActivity(postId);
+        // Remove from user's personal feed
+        await serverClient.feed('user', userId).removeActivity(postId);
+        
+        // Remove from user's timeline feed
+        await serverClient.feed('timeline', userId).removeActivity(postId);
 
         return res.json({
           success: true,
@@ -368,6 +390,109 @@ export default async function handler(
           success: true,
           bookmarkedPosts: sortedBookmarkedPosts
         });
+
+      case 'follow_user':
+        const { targetUserId } = req.body;
+        if (!targetUserId) {
+          return res.status(400).json({ error: 'targetUserId is required' });
+        }
+
+        // Following the React docs pattern: timeline feed follows user feed
+        const userTimeline = serverClient.feed('timeline', userId);
+        await userTimeline.follow('user', targetUserId);
+
+        return res.json({
+          success: true,
+          message: 'User followed successfully'
+        });
+
+      case 'unfollow_user':
+        const { targetUserId: unfollowTargetUserId } = req.body;
+        if (!unfollowTargetUserId) {
+          return res.status(400).json({ error: 'targetUserId is required' });
+        }
+
+        // Unfollow using timeline feed
+        const userTimelineUnfollow = serverClient.feed('timeline', userId);
+        await userTimelineUnfollow.unfollow('user', unfollowTargetUserId);
+
+        return res.json({
+          success: true,
+          message: 'User unfollowed successfully'
+        });
+
+      case 'get_followers':
+        // Get followers for a user's feed
+        const targetUser = req.body.targetUserId || userId;
+        
+        try {
+          const followers = await serverClient.feed('user', targetUser).queryFollowers({
+            limit: req.body.limit || 20,
+            offset: req.body.offset || 0
+          });
+
+          return res.json({
+            success: true,
+            followers: followers.results || [],
+            count: followers.results?.length || 0
+          });
+        } catch (error) {
+          console.error('Error getting followers:', error);
+          return res.json({
+            success: true,
+            followers: [],
+            count: 0
+          });
+        }
+
+      case 'get_following':
+        // Get users that this user is following
+        try {
+          const following = await serverClient.feed('timeline', userId).queryFollowing({
+            limit: req.body.limit || 20,
+            offset: req.body.offset || 0
+          });
+
+          return res.json({
+            success: true,
+            following: following.results || [],
+            count: following.results?.length || 0
+          });
+        } catch (error) {
+          console.error('Error getting following:', error);
+          return res.json({
+            success: true,
+            following: [],
+            count: 0
+          });
+        }
+
+      case 'check_following':
+        // Check if current user follows target user
+        const { targetUserId: checkTargetUserId } = req.body;
+        if (!checkTargetUserId) {
+          return res.status(400).json({ error: 'targetUserId is required' });
+        }
+
+        try {
+          const following = await serverClient.feed('timeline', userId).queryFollowing({
+            filter: { target_feed: `user:${checkTargetUserId}` },
+            limit: 1
+          });
+
+          const isFollowing = following.results && following.results.length > 0;
+
+          return res.json({
+            success: true,
+            isFollowing
+          });
+        } catch (error) {
+          console.error('Error checking following status:', error);
+          return res.json({
+            success: true,
+            isFollowing: false
+          });
+        }
 
       default:
         return res.status(400).json({ error: 'Invalid action' });

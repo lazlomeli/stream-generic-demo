@@ -1,8 +1,9 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import LoadingIcon from './LoadingIcon'
 
 const LoadingSpinner: React.FC = () => {
-  return (
+  const overlay = (
     <div 
       className="loading-spinner-container"
       style={{
@@ -11,16 +12,21 @@ const LoadingSpinner: React.FC = () => {
         left: 0,
         right: 0,
         bottom: 0,
+        width: '100vw',
+        height: '100vh',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        zIndex: 1000
+        zIndex: 99999 /* Much higher z-index to ensure it covers everything including sidebars */
       }}
     >
       <LoadingIcon size={80} />
     </div>
   )
+
+  // Use portal to render at document body level, ensuring it covers everything
+  return createPortal(overlay, document.body)
 }
 
 export default LoadingSpinner

@@ -52,8 +52,8 @@ const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increased limit for base64 image uploads
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -319,21 +319,22 @@ app.post('/api/stream/feed-actions', async (req, res) => {
 
     switch (action) {
       case 'create_post':
-        if (!postData?.text) {
-          return res.status(400).json({ error: 'Post text is required' });
+        // Allow posts with either text or attachments (or both)
+        if (!postData?.text && (!postData?.attachments || postData.attachments.length === 0)) {
+          return res.status(400).json({ error: 'Post must have either text or attachments' });
         }
 
         // Extract user profile information from request
         const userProfile = req.body.userProfile || {};
         
-        console.log('📝 Creating post:', postData.text.substring(0, 50) + '...');
+        console.log('📝 Creating post:', postData.text ? postData.text.substring(0, 50) + '...' : '[Media only post]');
         console.log('👤 User profile data:', JSON.stringify(userProfile, null, 2));
         
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
           object: 'post',
-          text: postData.text,
+          text: postData.text || '', // Allow empty text for media-only posts
           attachments: postData.attachments || [],
           custom: {
             likes: 0,
