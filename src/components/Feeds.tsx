@@ -424,7 +424,6 @@ const Feeds = () => {
     }
     setModalFadingOut(null); // Cancel any fade-out
     setHoveredPost(postId);
-    console.log('👆 Mouse entered for post:', postId, 'UserCounts:', Object.keys(userCounts).length);
   };
 
   const handleUserMouseLeave = () => {
@@ -528,11 +527,9 @@ const Feeds = () => {
   // Optimized function to fetch follower/following counts with caching and batching
   const fetchUserCounts = async (userIds: string[]) => {
     if (!feedsClient?.userId || userIds.length === 0) {
-      console.log('📊 No feedsClient or userIds, skipping user counts fetch');
       return;
     }
 
-    console.log('📊 Fetching user counts for:', userIds);
     try {
       const accessToken = await getAccessTokenSilently();
       
@@ -564,7 +561,6 @@ const Feeds = () => {
           }
 
           const data = await response.json();
-          console.log('📊 API response data:', data);
           return data.userCounts || {};
         }
       );
@@ -574,8 +570,6 @@ const Feeds = () => {
         ...prev,
         ...userCounts
       }));
-
-      console.log(`✅ Updated counts for ${Object.keys(userCounts).length} users`);
 
     } catch (error) {
       console.error('❌ Error fetching user counts:', error);
