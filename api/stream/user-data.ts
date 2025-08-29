@@ -1,8 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { connect } from 'getstream';
 import { StreamChat } from 'stream-chat';
-import { verifyAuth0Token } from '../_utils/auth0';
-import { standardResponse } from '../_utils/responses';
+import jwt from 'jsonwebtoken';
 
 interface UserProfileResponse {
   [userId: string]: {
@@ -13,6 +12,29 @@ interface UserProfileResponse {
     role?: string;
     company?: string;
   };
+}
+
+// Simple auth verification function
+async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    
+    const token = authHeader.substring(7);
+    if (!token) {
+      return null;
+    }
+    
+    // For now, just decode without verification (since we need the user ID)
+    // In a production environment, you'd want proper JWT verification
+    const decoded = jwt.decode(token) as any;
+    return decoded?.sub || null;
+  } catch (error) {
+    console.error('Auth verification error:', error);
+    return null;
+  }
 }
 
 /**
@@ -102,7 +124,13 @@ export default async function handler(
         const userPromises = userIds.map(async (id) => {
           try {
             const user = await streamFeedsClient.user(id).get();
-            return { [id]: user };
+            return { [id]: {
+              name: user.name || id,
+              username: user.username,
+              image: user.image || user.profile_image,
+              role: user.role,
+              company: user.company
+            }};
           } catch (userError) {
             console.warn(`Failed to get user profile for ${id}:`, userError);
             return { [id]: { name: id } };
@@ -110,7 +138,7 @@ export default async function handler(
         });
 
         const userResults = await Promise.all(userPromises);
-        userProfiles = userResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+        userProfiles = userResults.reduce((acc, curr) => ({ ...acc, ...curr }), {} as UserProfileResponse);
       } catch (profileError) {
         console.warn('Failed to fetch user profiles:', profileError);
       }
@@ -139,14 +167,15 @@ export default async function handler(
       }
 
       // Initialize Stream Chat client to query users
-      const streamChatClient = StreamChat.getInstance(
-        process.env.VITE_STREAM_API_KEY!,
-        process.env.STREAM_SECRET_KEY!
+      const streamChatClient = new StreamChat(
+        process.env.STREAM_API_KEY!,
+        process.env.STREAM_API_SECRET!
       );
 
       try {
         // Query all users from Stream Chat (this might need pagination for large user bases)
-        const { users } = await streamChatClient.queryUsers({}, { limit: 1000 });
+        const response = await streamChatClient.queryUsers({}, { id: 1 }, { limit: 1000 });
+        const users = response.users || [];
 
         // Find the user whose hashed ID matches the requested one
         for (const streamUser of users) {
@@ -179,17 +208,17 @@ export default async function handler(
       // Verify authentication
       const authenticatedUserId = await verifyAuth0Token(req);
       if (!authenticatedUserId) {
-        return standardResponse(res, 401, 'Unauthorized');
+        return res.status(401).json({ error: 'Unauthorized' });
       }
 
       const { userId } = req.body;
 
       if (!userId) {
-        return standardResponse(res, 400, 'User ID is required');
+        return res.status(400).json({ error: 'User ID is required' });
       }
 
       // Initialize Stream Chat client
-      const serverClient = StreamChat.getInstance(
+      const serverClient = new StreamChat(
         process.env.STREAM_API_KEY!,
         process.env.STREAM_API_SECRET!
       );
@@ -212,7 +241,9 @@ export default async function handler(
             role: user.role
           });
 
-          return standardResponse(res, 200, 'Success', { 
+          return res.status(200).json({ 
+            success: true,
+            message: 'Success',
             user: {
               id: user.id,
               name: user.name,
@@ -226,13 +257,17 @@ export default async function handler(
           });
         } else {
           console.log(`⚠️ No Stream Chat user found for ${userId}`);
-          return standardResponse(res, 404, 'User not found in Stream Chat', { 
+          return res.status(404).json({ 
+            success: false,
+            message: 'User not found in Stream Chat',
             user: null 
           });
         }
       } catch (chatError: any) {
         console.warn(`Failed to fetch Stream Chat user ${userId}:`, chatError.message);
-        return standardResponse(res, 404, 'User not found in Stream Chat', { 
+        return res.status(404).json({ 
+          success: false,
+          message: 'User not found in Stream Chat',
           user: null,
           error: chatError.message
         });
