@@ -240,7 +240,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
               disabled={isCreating || (!isDM && !channelName.trim()) || selectedUsers.size === 0}
             >
               {isCreating ? (
-                <LoadingIcon size={16} />
+                <LoadingIcon size={48} />
               ) : (
                 isDM ? 'Start Message' : 'Create Channel'
               )}

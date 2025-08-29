@@ -28,7 +28,7 @@ const Login: React.FC = () => {
         <div className="login-content">
           {isLoading ? (
             <div className="login-cta login-cta-loading">
-              <LoadingIcon size={24} />
+              <LoadingIcon size={48} />
             </div>
           ) : (
             <button

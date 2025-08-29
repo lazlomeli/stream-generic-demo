@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 import LoadingIcon from './LoadingIcon';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
+import { getPublicUserId, cacheUserIdMapping, cacheMultipleUserIdMappings } from '../utils/idUtils';
+import { apiCache } from '../utils/apiCache';
 import HeartIcon from '../icons/heart.svg';
 import HeartFilledIcon from '../icons/heart-filled.svg';
 import MessageIcon from '../icons/message-circle.svg';
@@ -115,6 +117,18 @@ const getUserProfileImage = (actorId: string, currentUser: any, userInfo?: any, 
   return undefined;
 };
 
+// Helper function to generate user initials (same as UserProfile)
+const getUserInitials = (name: string): string => {
+  if (!name) return 'U';
+  
+  return name
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U';
+};
+
 // Helper function to format joined date
 const formatJoinedDate = (actorId: string) => {
   // Simple hardcoded demo date
@@ -164,6 +178,7 @@ interface FeedPost {
 const Feeds = () => {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [feedsClient, setFeedsClient] = useState<any>(null);
   const [clientReady, setClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,9 +189,10 @@ const Feeds = () => {
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
   const [followingUsers, setFollowingUsers] = useState<Set<string>>(new Set());
   const [userCounts, setUserCounts] = useState<{ [userId: string]: { followers: number; following: number } }>({});
-  const [hoveredUser, setHoveredUser] = useState<string | null>(null);
+  const [hoveredPost, setHoveredPost] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [modalFadingOut, setModalFadingOut] = useState<string | null>(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
 
   const [newPostText, setNewPostText] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
@@ -277,7 +293,10 @@ const Feeds = () => {
       )];
       
       if (userIds.length > 0) {
-
+        // Cache user ID mappings for all users in batch
+        const userMappings = userIds.map(userId => ({ auth0UserId: userId }));
+        cacheMultipleUserIdMappings(userMappings);
+        
         fetchUserCounts(userIds);
       }
     }
@@ -398,23 +417,23 @@ const Feeds = () => {
   }, [hoverTimeout]);
 
   // Hover handlers for user modal
-  const handleUserMouseEnter = (userId: string) => {
+  const handleUserMouseEnter = (postId: string) => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       setHoverTimeout(null);
     }
     setModalFadingOut(null); // Cancel any fade-out
-    setHoveredUser(userId);
+    setHoveredPost(postId);
   };
 
   const handleUserMouseLeave = () => {
-    if (hoveredUser) {
+    if (hoveredPost) {
       // Start fade-out animation
-      setModalFadingOut(hoveredUser);
+      setModalFadingOut(hoveredPost);
       
       // Remove modal from DOM after animation completes
       const timeout = setTimeout(() => {
-        setHoveredUser(null);
+        setHoveredPost(null);
         setModalFadingOut(null);
       }, 200); // Match the animation duration
       
@@ -505,75 +524,50 @@ const Feeds = () => {
     }
   };
 
-  // Function to fetch follower/following counts for users visible in posts
+  // Optimized function to fetch follower/following counts with caching and batching
   const fetchUserCounts = async (userIds: string[]) => {
     if (!feedsClient?.userId || userIds.length === 0) return;
 
     try {
       const accessToken = await getAccessTokenSilently();
       
-      // Fetch counts for each user in parallel
-      const countPromises = userIds.map(async (userId) => {
-        try {
-          const [followersRes, followingRes] = await Promise.all([
-            fetch('/api/stream/feed-actions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              },
-              body: JSON.stringify({
-                action: 'get_followers',
-                userId: feedsClient.userId, // Current user context
-                targetUserId: userId,
-                limit: 1 // Just for count
-              })
-            }),
-            fetch('/api/stream/feed-actions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              },
-              body: JSON.stringify({
-                action: 'get_following',
-                userId: userId, // Target user's following
-                limit: 1 // Just for count
-              })
+      // Use caching service with batch API for optimal performance
+      const userCounts = await apiCache.fetchUserCountsBatch(
+        userIds,
+        async (uncachedUserIds: string[]) => {
+          if (uncachedUserIds.length === 0) return {};
+          
+          console.log(`📊 Batch fetching counts for ${uncachedUserIds.length} users (${userIds.length - uncachedUserIds.length} from cache)`);
+          
+          const response = await fetch('/api/stream/get-user-counts-batch', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+              userId: feedsClient.userId,
+              targetUserIds: uncachedUserIds
             })
-          ]);
+          });
 
-          const [followersData, followingData] = await Promise.all([
-            followersRes.ok ? followersRes.json() : { count: 0 },
-            followingRes.ok ? followingRes.json() : { count: 0 }
-          ]);
+          if (!response.ok) {
+            console.warn('Batch user counts request failed:', response.status);
+            return {};
+          }
 
-          return {
-            userId,
-            followers: followersData.count || 0,
-            following: followingData.count || 0
-          };
-        } catch (error) {
-          console.warn(`Failed to fetch counts for user ${userId}:`, error);
-          return {
-            userId,
-            followers: 0,
-            following: 0
-          };
+          const data = await response.json();
+          return data.userCounts || {};
         }
-      });
-
-      const results = await Promise.all(countPromises);
+      );
       
-      // Update state with new counts
-      setUserCounts(prev => {
-        const newCounts = { ...prev };
-        results.forEach(({ userId, followers, following }) => {
-          newCounts[userId] = { followers, following };
-        });
-        return newCounts;
-      });
+      // Update state with all counts (cached + fresh)
+      setUserCounts(prev => ({
+        ...prev,
+        ...userCounts
+      }));
 
+      console.log(`✅ Updated counts for ${Object.keys(userCounts).length} users`);
 
     } catch (error) {
       console.error('Error fetching user counts:', error);
@@ -663,6 +657,13 @@ const Feeds = () => {
         const displayName = getUserDisplayName(actorId, user, activity.userInfo, activity.userProfile);
         const profileImage = getUserProfileImage(actorId, user, activity.userInfo, activity.userProfile);
         
+        // Debug: log when Stream Chat provides image data
+        if (activity.userInfo?.image && actorId !== userIdToUse) {
+          console.log(`📰 Feed post has image for ${actorId}: ${activity.userInfo.image.slice(0, 50)}...`);
+        } else if (actorId !== userIdToUse) {
+          console.log(`📰 Feed post has NO image for ${actorId}`);
+        }
+        
         const userInfo = {
           name: displayName,
           image: profileImage,
@@ -673,7 +674,7 @@ const Feeds = () => {
         return {
           id: activity.id,
           actor: actorId,
-          text: activity.text || activity.object,
+          text: activity.text && activity.text.trim() && activity.text !== 'media' ? activity.text : '',
           attachments: activity.attachments || [],
           custom: activity.custom || {
             likes: 0,
@@ -1091,6 +1092,28 @@ const Feeds = () => {
     }
   };
 
+  const handleUserNameClick = (auth0UserId: string) => {
+    // Cache the mapping and navigate with public (hashed) ID
+    const publicUserId = getPublicUserId(auth0UserId);
+    cacheUserIdMapping(auth0UserId, publicUserId);
+    navigate(`/profile/${publicUserId}`);
+  };
+
+  const handleImageError = (actorId: string) => {
+    console.log(`❌ Feed image failed to load for actor: ${actorId}`);
+    setImageLoadErrors(prev => new Set(prev).add(actorId));
+  };
+
+  const handleImageLoad = (actorId: string) => {
+    console.log(`✅ Feed image loaded successfully for actor: ${actorId}`);
+    // Remove from error set if it was there
+    setImageLoadErrors(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(actorId);
+      return newSet;
+    });
+  };
+
   const handleFollow = async (targetUserId: string) => {
     if (!feedsClient?.userId || targetUserId === feedsClient.userId) return;
 
@@ -1267,12 +1290,6 @@ const Feeds = () => {
   // Render feeds when client is ready and posts are loaded
   return (
     <div className="feeds-container">
-      <div className="feeds-header">
-        <h1>Activity Feeds</h1>
-      </div>
-
-
-
       {/* Inline Post Creation */}
       <div className="create-post-inline">
         <div className="create-post-author">
@@ -1385,7 +1402,7 @@ const Feeds = () => {
               onClick={createPost}
               disabled={(newPostText.trim() === '' && selectedAttachments.length === 0) || isCreatingPost}
             >
-              {isCreatingPost ? <LoadingIcon size={16} /> : 'Post'}
+              {isCreatingPost ? <LoadingIcon size={48} /> : 'Post'}
             </button>
           </div>
         </div>
@@ -1411,29 +1428,19 @@ const Feeds = () => {
                 <div className="post-author">
                   <div 
                     className={`post-author-info ${!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? 'user-hover-container' : ''}`}
-                    onMouseEnter={!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? () => handleUserMouseEnter(post.actor) : undefined}
+                    onMouseEnter={!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? () => handleUserMouseEnter(post.id) : undefined}
                     onMouseLeave={!post.isOwnPost && post.actor && post.actor !== feedsClient?.userId ? handleUserMouseLeave : undefined}
                   >
                     <div className="author-avatar">
-                      {post.userInfo?.image ? (
+                      {post.userInfo?.image && !imageLoadErrors.has(post.actor) ? (
                         <img 
                           src={post.userInfo.image}
                           alt={post.userInfo?.name}
-                          onError={(e) => {
-                            // Fallback to initials avatar if image fails to load
-                            const target = e.target as HTMLImageElement;
-                            const displayName = post.userInfo?.name || 'U';
-                            const initial = displayName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-                            target.src = `data:image/svg+xml,${encodeURIComponent(`
-                              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="20" cy="20" r="20" fill="#6b7280"/>
-                                <text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
-                              </svg>
-                            `)}`;
-                          }}
+                          onError={() => handleImageError(post.actor)}
+                          onLoad={() => handleImageLoad(post.actor)}
                         />
                         ) : (
-                        // Show initials avatar if no profile picture
+                        // Show initials avatar if no profile picture or image failed to load
                         <div 
                           className="initials-avatar"
                           style={{
@@ -1449,13 +1456,17 @@ const Feeds = () => {
                             fontWeight: 'bold'
                           }}
                         >
-                          {(post.userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                          {getUserInitials(post.userInfo?.name || 'Unknown User')}
                         </div>
                       )}
                     </div>
                     <div className="author-info">
                       <div className="author-name-row">
-                        <span className="author-name">
+                        <span 
+                          className="author-name clickable-name"
+                          onClick={() => handleUserNameClick(post.actor)}
+                          style={{ cursor: 'pointer' }}
+                        >
                           {post.userInfo?.name || 'Unknown User'}
                         </span>
                       </div>
@@ -1463,15 +1474,26 @@ const Feeds = () => {
                     </div>
 
                     {/* User hover modal - now inside the hover container */}
-                    {(hoveredUser === post.actor || modalFadingOut === post.actor) && !post.isOwnPost && userCounts[post.actor] && (
-                      <div className={`user-hover-modal ${modalFadingOut === post.actor ? 'fading-out' : ''}`}>
+                    {(hoveredPost === post.id || modalFadingOut === post.id) && !post.isOwnPost && userCounts[post.actor] && (
+                      <div 
+                        className={`user-hover-modal ${modalFadingOut === post.id ? 'fading-out' : ''}`}
+                        onClick={() => handleUserNameClick(post.actor)}
+                        onMouseEnter={() => handleUserMouseEnter(post.id)}
+                        onMouseLeave={handleUserMouseLeave}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <div className="user-modal-header">
                           <div className="user-modal-avatar">
-                            {post.userInfo?.image ? (
-                              <img src={post.userInfo.image} alt={post.userInfo?.name} />
+                            {post.userInfo?.image && !imageLoadErrors.has(post.actor) ? (
+                              <img 
+                                src={post.userInfo.image} 
+                                alt={post.userInfo?.name}
+                                onError={() => handleImageError(post.actor)}
+                                onLoad={() => handleImageLoad(post.actor)}
+                              />
                             ) : (
                               <div className="modal-initials-avatar">
-                                {(post.userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                {getUserInitials(post.userInfo?.name || 'Unknown User')}
                               </div>
                             )}
                           </div>
@@ -1488,7 +1510,10 @@ const Feeds = () => {
                         </div>
                         <button 
                           className={`modal-follow-button ${followingUsers.has(post.actor) ? 'following' : ''}`}
-                          onClick={() => handleFollow(post.actor)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent modal click
+                            handleFollow(post.actor);
+                          }}
                         >
                           {followingUsers.has(post.actor) ? 'Following' : 'Follow'}
                         </button>
@@ -1523,7 +1548,7 @@ const Feeds = () => {
               </div>
               
               <div className="post-content">
-                {post.text && post.text.trim() && (
+                {post.text && post.text.trim() && post.text !== 'media' && post.text !== 'post' && (
                   <p className="post-text">{post.text}</p>
                 )}
                 {post.attachments && post.attachments.length > 0 && (
@@ -1681,7 +1706,7 @@ const Feeds = () => {
                     disabled={loadingComments === post.id}
                   >
                     {loadingComments === post.id ? (
-                      <LoadingIcon size={16} />
+                      <LoadingIcon size={48} />
                     ) : showComments === post.id ? 'Hide Comments' : 
                      `View Comments (${post.custom?.comments || 0})`}
                   </button>

@@ -73,7 +73,7 @@ export default async function handler(
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
-          object: 'post',
+          object: postData.text && postData.text.trim() ? 'post' : 'media', // Use 'media' for media-only posts
           text: postData.text || '', // Allow empty text for media-only posts
           attachments: postData.attachments || [],
           custom: {
@@ -90,7 +90,7 @@ export default async function handler(
         await serverClient.feed('user', userId).addActivity({
           actor: userId,
           verb: 'post',
-          object: 'post',
+          object: postData.text && postData.text.trim() ? 'post' : 'media', // Use 'media' for media-only posts
           text: postData.text || '', // Allow empty text for media-only posts
           attachments: postData.attachments || [],
           custom: {

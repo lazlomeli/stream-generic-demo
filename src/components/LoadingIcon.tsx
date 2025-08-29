@@ -7,7 +7,7 @@ interface LoadingIconProps {
   className?: string;
 }
 
-const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 32, className = '' }) => {
+const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 48, className = '' }) => {
   return (
     <div className={`loading-icon ${className}`} style={{ width: size, height: size }}>
       <img 
@@ -18,7 +18,8 @@ const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 32, className = '' }) 
         style={{ 
           width: '100%',
           height: '100%',
-          filter: 'grayscale(1) brightness(0.6) opacity(0.2)'
+          filter: 'brightness(0) saturate(100%) invert(46%) sepia(8%) saturate(629%) hue-rotate(191deg) brightness(95%) contrast(89%)',
+          opacity: 0.3
         }}
       />
     </div>

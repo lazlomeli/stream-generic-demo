@@ -1,0 +1,243 @@
+/* User Profile Styles */
+.user-profile-header {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.profile-left-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 4px solid #f3f4f6;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-initials-avatar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+
+
+.profile-name {
+  display: flex;
+  width: 100%;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  line-height: 1.2;
+}
+
+.profile-role {
+  font-size: 1.125rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stat strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.stat span {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.profile-join-date {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.profile-follow-button {
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid #3b82f6;
+  background-color: white;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 120px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.profile-follow-button:hover {
+  background-color: #3b82f6;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.profile-follow-button.following {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.profile-follow-button.following:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  position: relative;
+}
+
+.profile-follow-button.following:hover::before {
+  content: "Unfollow";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: inherit;
+  border-radius: inherit;
+}
+
+.user-posts-section {
+  width: 100%;
+}
+
+.posts-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #747881;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .profile-left-section {
+    gap: 1rem;
+  }
+
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-initials-avatar {
+    font-size: 2.5rem;
+  }
+
+  .profile-name {
+    font-size: 1.5rem;
+  }
+
+  .profile-stats {
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat strong {
+    font-size: 1.25rem;
+  }
+
+  .profile-follow-button {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-profile-header {
+    padding: 1rem;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-initials-avatar {
+    font-size: 2rem;
+  }
+
+  .profile-name {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .profile-stats {
+    gap: 1rem;
+  }
+
+  .stat strong {
+    font-size: 1rem;
+  }
+
+  .stat span {
+    font-size: 0.75rem;
+  }
+}

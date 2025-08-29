@@ -10,14 +10,15 @@ import Chat from './components/Chat'
 import './App.css'
 import Feeds from './components/Feeds'
 import BookmarkedPosts from './pages/BookmarkedPosts'
+import UserProfile from './pages/UserProfile'
 import Login from './pages/Login'
 
 function App() {
   const { isLoading, error, isAuthenticated } = useAuth0()
   const location = useLocation()
 
-  // Determine if we should show the sidebars (feeds and bookmarked pages only)
-  const showSidebars = isAuthenticated && (location.pathname === '/feeds' || location.pathname === '/bookmarked')
+  // Determine if we should show the sidebars (feeds, bookmarked, and profile pages)
+  const showSidebars = isAuthenticated && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname.startsWith('/profile/'))
 
   // Scroll-based sidebar padding adjustment
   React.useEffect(() => {
@@ -94,6 +95,11 @@ function App() {
           <Route path="/bookmarked" element={
             <ProtectedRoute>
               <BookmarkedPosts />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/:userId" element={
+            <ProtectedRoute>
+              <UserProfile />
             </ProtectedRoute>
           } />
         </Routes>

@@ -192,7 +192,6 @@ app.post('/api/stream/get-posts', async (req, res) => {
     
     // Debug: Log the first activity to see its structure
     if (result.results.length > 0) {
-      console.log('🔍 Sample activity structure:', JSON.stringify(result.results[0], null, 2));
       console.log('🔍 Sample activity reaction_counts:', result.results[0].reaction_counts);
       console.log('🔍 Sample activity custom:', result.results[0].custom);
       
@@ -202,9 +201,8 @@ app.post('/api/stream/get-posts', async (req, res) => {
           activity_id: result.results[0].id,
           limit: 1
         });
-        console.log(`🔍 Test reactions for first activity:`, testReactions);
       } catch (error) {
-        console.log(`⚠️ Could not test reactions for first activity:`, error.message);
+        console.error(`⚠️ Could not test reactions for first activity:`, error.message);
       }
     }
 
@@ -285,6 +283,343 @@ app.post('/api/stream/get-posts', async (req, res) => {
   }
 });
 
+// Stream Get User Posts endpoint
+app.post('/api/stream/get-user-posts', async (req, res) => {
+  try {
+    const { targetUserId, limit = 20 } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'Target user ID is required' });
+    }
+
+    console.log(`🔍 Fetching posts for user: ${targetUserId}`);
+
+    // Initialize Stream Feeds client (dynamic import for consistency)
+    const { connect } = await import('getstream');
+    const streamFeedsClient = connect(
+      process.env.STREAM_API_KEY,
+      process.env.STREAM_API_SECRET,
+      process.env.STREAM_APP_ID
+    );
+
+    // Get the user's feed (their posts)
+    const userFeed = streamFeedsClient.feed('user', targetUserId);
+    const result = await userFeed.get({
+      limit: parseInt(limit),
+      withOwnReactions: true,
+      withReactionCounts: true,
+      withRecentReactions: true,
+    });
+
+    console.log(`📝 Found ${result.results.length} posts for user ${targetUserId}`);
+
+    if (!result.results || result.results.length === 0) {
+      return res.json({ 
+        posts: [],
+        message: 'No posts found for this user'
+      });
+    }
+
+    // Enrich activities with user information
+    const enrichedActivities = await Promise.all(
+      result.results.map(async (activity) => {
+        try {
+          // Priority 1: Use userProfile data stored directly in the activity
+          if (activity.userProfile && activity.userProfile.name) {
+            console.log(`✅ Using stored userProfile for ${activity.actor}:`, activity.userProfile);
+            return {
+              ...activity,
+              userInfo: {
+                name: activity.userProfile.name,
+                image: activity.userProfile.image || undefined,
+                role: activity.userProfile.role || undefined,
+                company: activity.userProfile.company || undefined
+              }
+            };
+          }
+          
+          // Priority 2: Fallback to Stream's user profile system
+          if (streamFeedsClient.getUsers) {
+            const userProfile = await streamFeedsClient.getUsers([activity.actor]);
+            const userData = userProfile[activity.actor];
+            
+            if (userData && userData.name) {
+              console.log(`✅ Using Stream user profile for ${activity.actor}:`, userData);
+              return {
+                ...activity,
+                userInfo: {
+                  name: userData.name || userData.username,
+                  image: userData.image || userData.profile_image || undefined,
+                  role: userData.role || undefined,
+                  company: userData.company || undefined
+                }
+              };
+            }
+          }
+          
+          // Priority 3: Use actor ID as fallback
+          console.warn(`⚠️ No user profile found for ${activity.actor}, using actor ID as name`);
+          return {
+            ...activity,
+            userInfo: {
+              name: activity.actor,
+              image: undefined,
+              role: undefined,
+              company: undefined
+            }
+          };
+        } catch (userError) {
+          console.warn(`Failed to fetch user profile for ${activity.actor}:`, userError);
+          return {
+            ...activity,
+            userInfo: {
+              name: activity.actor,
+              image: undefined,
+              role: undefined,
+              company: undefined
+            }
+          };
+        }
+      })
+    );
+
+    console.log(`✅ Successfully enriched ${enrichedActivities.length} posts for user ${targetUserId}`);
+
+    res.json({ 
+      posts: enrichedActivities,
+      count: enrichedActivities.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching user posts:', error);
+    res.status(500).json({ error: 'Failed to fetch user posts' });
+  }
+});
+
+// Stream Get Chat User endpoint
+app.post('/api/stream/get-chat-user', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    console.log(`🔍 Fetching Stream Chat user data for: ${userId}`);
+
+    // Initialize Stream Chat client
+    const serverClient = StreamChat.getInstance(
+      process.env.STREAM_API_KEY,
+      process.env.STREAM_API_SECRET
+    );
+
+    try {
+      // Query the user from Stream Chat
+      const response = await serverClient.queryUsers(
+        { id: userId },
+        { id: 1 },
+        { limit: 1 }
+      );
+
+      if (response.users && response.users.length > 0) {
+        const user = response.users[0];
+        console.log(`✅ Found Stream Chat user data for ${userId}:`, {
+          name: user.name,
+          image: user.image,
+          role: user.role
+        });
+
+        res.json({ 
+          user: {
+            id: user.id,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+            online: user.online,
+            last_active: user.last_active,
+            created_at: user.created_at,
+            updated_at: user.updated_at
+          }
+        });
+      } else {
+        console.log(`⚠️ No Stream Chat user found for ${userId}`);
+        res.status(404).json({ 
+          user: null,
+          message: 'User not found in Stream Chat'
+        });
+      }
+    } catch (chatError) {
+      console.warn(`Failed to fetch Stream Chat user ${userId}:`, chatError.message);
+      res.status(404).json({ 
+        user: null,
+        error: chatError.message
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error fetching Stream Chat user:', error);
+    res.status(500).json({ error: 'Failed to fetch user from Stream Chat' });
+  }
+});
+
+// Stream Resolve User ID endpoint
+app.post('/api/stream/resolve-user-id', async (req, res) => {
+  try {
+    const { hashedUserId } = req.body;
+
+    if (!hashedUserId) {
+      return res.status(400).json({ error: 'hashedUserId is required' });
+    }
+
+    console.log(`🔍 Resolving hashed user ID: ${hashedUserId}`);
+
+    // Synchronous hash function (matches the one in frontend idUtils.ts)
+    function createPublicUserIdSync(auth0UserId) {
+      let hash = 0;
+      for (let i = 0; i < auth0UserId.length; i++) {
+        const char = auth0UserId.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      
+      // Convert to positive hex string with consistent length
+      const hashHex = Math.abs(hash).toString(16).padStart(8, '0');
+      return hashHex + auth0UserId.length.toString(16).padStart(2, '0'); // Add length for extra uniqueness
+    }
+
+    // Initialize Stream Chat client
+    const { StreamChat } = await import('stream-chat');
+    const serverClient = StreamChat.getInstance(
+      process.env.STREAM_API_KEY,
+      process.env.STREAM_API_SECRET
+    );
+
+    try {
+      // Query all users from Stream Chat (this might need pagination for large user bases)
+      const { users } = await serverClient.queryUsers({}, { limit: 1000 });
+
+      // Find the user whose hashed ID matches the requested one
+      for (const streamUser of users) {
+        const userHash = createPublicUserIdSync(streamUser.id);
+        if (userHash === hashedUserId) {
+          console.log(`✅ Found matching user: ${streamUser.id} -> ${userHash}`);
+          return res.status(200).json({ 
+            auth0UserId: streamUser.id,
+            userName: streamUser.name || streamUser.id 
+          });
+        }
+      }
+
+      // If no match found, return error
+      console.log(`❌ No user found with hashed ID: ${hashedUserId}`);
+      return res.status(404).json({ 
+        error: 'User not found',
+        message: `No user found with hashed ID: ${hashedUserId}` 
+      });
+
+    } catch (streamError) {
+      console.error('🚨 Stream Chat query error:', streamError);
+      return res.status(500).json({ 
+        error: 'Failed to query Stream Chat users',
+        details: streamError.message || 'Unknown error'
+      });
+    }
+
+  } catch (error) {
+    console.error('🚨 Error resolving user ID:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message || 'Unknown error'
+    });
+  }
+});
+
+// Stream Batch User Counts endpoint
+app.post('/api/stream/get-user-counts-batch', async (req, res) => {
+  try {
+    const { userId, targetUserIds } = req.body;
+
+    if (!userId || !targetUserIds || !Array.isArray(targetUserIds)) {
+      return res.status(400).json({ error: 'userId and targetUserIds array are required' });
+    }
+
+    if (targetUserIds.length === 0) {
+      return res.status(200).json({ userCounts: {} });
+    }
+
+    if (targetUserIds.length > 50) {
+      return res.status(400).json({ error: 'Maximum 50 user IDs allowed per batch' });
+    }
+
+    console.log(`📊 Batch fetching user counts for ${targetUserIds.length} users`);
+
+    // Initialize Stream client
+    const { connect } = await import('getstream');
+    const client = connect(
+      process.env.STREAM_API_KEY,
+      process.env.STREAM_API_SECRET,
+      process.env.STREAM_APP_ID,
+      { location: 'us-east' }
+    );
+
+    const results = {};
+
+    // Batch fetch counts for all users
+    const countPromises = targetUserIds.map(async (targetUserId) => {
+      try {
+        // Get followers count
+        const followersPromise = client.feed('timeline', targetUserId).followers({ limit: 1000 });
+        
+        // Get following count  
+        const followingPromise = client.feed('user', targetUserId).following({ limit: 1000 });
+
+        const [followersResponse, followingResponse] = await Promise.all([
+          followersPromise.catch(() => ({ results: [] })),
+          followingPromise.catch(() => ({ results: [] }))
+        ]);
+
+        const followers = followersResponse.results?.length || 0;
+        const following = followingResponse.results?.length || 0;
+
+        return {
+          userId: targetUserId,
+          followers,
+          following
+        };
+      } catch (error) {
+        console.warn(`Failed to fetch counts for user ${targetUserId}:`, error);
+        return {
+          userId: targetUserId,
+          followers: 0,
+          following: 0
+        };
+      }
+    });
+
+    // Execute all requests in parallel
+    const countResults = await Promise.all(countPromises);
+
+    // Format results
+    countResults.forEach(({ userId, followers, following }) => {
+      results[userId] = { followers, following };
+    });
+
+    console.log(`✅ Successfully fetched counts for ${Object.keys(results).length} users`);
+
+    return res.status(200).json({
+      userCounts: results,
+      totalUsers: Object.keys(results).length
+    });
+
+  } catch (error) {
+    console.error('🚨 Error in batch user counts fetch:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch user counts',
+      details: error.message || 'Unknown error'
+    });
+  }
+});
+
 // Stream Feeds Actions endpoint
 app.post('/api/stream/feed-actions', async (req, res) => {
   try {
@@ -333,7 +668,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
-          object: 'post',
+          object: postData.text && postData.text.trim() ? 'post' : 'media', // Use 'media' for media-only posts
           text: postData.text || '', // Allow empty text for media-only posts
           attachments: postData.attachments || [],
           custom: {
@@ -576,9 +911,6 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           })
           // Sort by bookmark date (newest bookmarks first)
           .sort((a, b) => new Date(b.bookmarked_at).getTime() - new Date(a.bookmarked_at).getTime()) || [];
-
-        console.log('📖 Final bookmarked posts:', bookmarkedPosts.length);
-        console.log('📖 First post sample:', JSON.stringify(bookmarkedPosts[0], null, 2));
 
         return res.json({
           success: true,
