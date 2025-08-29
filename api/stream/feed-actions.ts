@@ -69,7 +69,13 @@ export default async function handler(
           // Continue with post creation even if profile update fails
         }
 
-        // Add to global feed for discovery
+        // Extract user profile information from request
+        const userProfile = req.body.userProfile || {};
+        
+        console.log('📝 Creating post:', postData.text ? postData.text.substring(0, 50) + '...' : '[Media only post]');
+        console.log('👤 User profile data:', JSON.stringify(userProfile, null, 2));
+        
+        // Create post only in global feed - Stream will handle fanout to timelines
         const newActivity = await serverClient.feed('flat', 'global').addActivity({
           actor: userId,
           verb: 'post',
@@ -82,43 +88,22 @@ export default async function handler(
             comments: 0,
             category: postData.category || 'general'
           },
-          // Store user profile directly in the activity
-          userProfile: req.body.userProfile
+          // Store complete user profile information in the post
+          userProfile: {
+            name: userProfile.name || userId,
+            image: userProfile.image || undefined,
+            role: userProfile.role || 'User',
+            company: userProfile.company || undefined,
+            // Store additional Auth0 profile data
+            given_name: userProfile.given_name || undefined,
+            family_name: userProfile.family_name || undefined,
+            nickname: userProfile.nickname || undefined,
+            email: userProfile.email || undefined,
+            sub: userProfile.sub || userId
+          }
         });
 
-        // Add to user's personal feed (this is what followers will see)
-        await serverClient.feed('user', userId).addActivity({
-          actor: userId,
-          verb: 'post',
-          object: postData.text && postData.text.trim() ? 'post' : 'media', // Use 'media' for media-only posts
-          text: postData.text || '', // Allow empty text for media-only posts
-          attachments: postData.attachments || [],
-          custom: {
-            likes: 0,
-            shares: 0,
-            comments: 0,
-            category: postData.category || 'general'
-          },
-          // Store user profile directly in the activity
-          userProfile: req.body.userProfile
-        });
-
-        // Also add to user's own timeline so they see their own posts
-        await serverClient.feed('timeline', userId).addActivity({
-          actor: userId,
-          verb: 'post',
-          object: 'post',
-          text: postData.text || '', // Allow empty text for media-only posts
-          attachments: postData.attachments || [],
-          custom: {
-            likes: 0,
-            shares: 0,
-            comments: 0,
-            category: postData.category || 'general'
-          },
-          // Store user profile directly in the activity
-          userProfile: req.body.userProfile
-        });
+        console.log('✅ Post created with ID:', newActivity.id);
 
         return res.json({
           success: true,

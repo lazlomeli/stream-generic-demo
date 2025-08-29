@@ -847,6 +847,12 @@ const Feeds = () => {
     // Allow posts with either text or attachments (or both)
     if ((newPostText.trim() === '' && selectedAttachments.length === 0) || !feedsClient?.userId) return;
 
+    // Prevent double submission
+    if (isCreatingPost) {
+      console.log('⚠️ Post creation already in progress, ignoring duplicate request');
+      return;
+    }
+
     setIsCreatingPost(true);
     try {
       const accessToken = await getAccessTokenSilently();
