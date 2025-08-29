@@ -29,12 +29,34 @@ export default async function handler(
       return res.status(400).json({ error: 'userId and action are required' });
     }
 
-    // Get Stream API credentials
-    const apiKey = process.env.STREAM_API_KEY;
-    const apiSecret = process.env.STREAM_API_SECRET;
+    // Get Stream API credentials with fallbacks
+    const apiKey = process.env.STREAM_API_KEY || process.env.VITE_STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET || process.env.VITE_STREAM_API_SECRET;
+
+    // Debug environment variables in production
+    console.log('🔑 Environment variables check:', {
+      hasStreamApiKey: !!process.env.STREAM_API_KEY,
+      hasViteStreamApiKey: !!process.env.VITE_STREAM_API_KEY,
+      hasStreamApiSecret: !!process.env.STREAM_API_SECRET,
+      hasViteStreamApiSecret: !!process.env.VITE_STREAM_API_SECRET,
+      apiKeyUsed: apiKey ? `${apiKey.slice(0, 8)}...` : 'none',
+      apiSecretUsed: apiSecret ? `${apiSecret.slice(0, 8)}...` : 'none'
+    });
 
     if (!apiKey || !apiSecret) {
-      return res.status(500).json({ error: 'Missing Stream API credentials' });
+      console.error('❌ Missing Stream API credentials:', {
+        apiKey: !!apiKey,
+        apiSecret: !!apiSecret,
+        envKeys: Object.keys(process.env).filter(key => key.includes('STREAM'))
+      });
+      return res.status(500).json({ 
+        error: 'Missing Stream API credentials',
+        debug: {
+          hasApiKey: !!apiKey,
+          hasApiSecret: !!apiSecret,
+          availableStreamEnvs: Object.keys(process.env).filter(key => key.includes('STREAM'))
+        }
+      });
     }
 
     // Initialize Stream client with proper user impersonation
@@ -369,55 +391,87 @@ export default async function handler(
 
       case 'follow_user':
         const { targetUserId } = req.body;
+        console.log(`👥 FOLLOW REQUEST: User ${userId} wants to follow ${targetUserId}`);
+        
         if (!targetUserId) {
+          console.error('❌ Missing targetUserId in follow request');
           return res.status(400).json({ error: 'targetUserId is required' });
         }
 
         try {
+          console.log(`🚀 Initiating follow operation...`);
+          
           // Following the React docs pattern: timeline feed follows user feed
           const userTimeline = serverClient.feed('timeline', userId);
-          await userTimeline.follow('user', targetUserId);
+          console.log(`🔗 Created timeline feed for user: ${userId}`);
           
-          console.log(`✅ User ${userId} followed ${targetUserId}`);
+          const followResult = await userTimeline.follow('user', targetUserId);
+          console.log(`🎉 Follow operation completed:`, followResult);
+          
+          console.log(`✅ User ${userId} successfully followed ${targetUserId}`);
 
           return res.json({
             success: true,
             message: 'User followed successfully',
             followerUserId: userId,
-            targetUserId: targetUserId
+            targetUserId: targetUserId,
+            timestamp: new Date().toISOString()
           });
         } catch (error) {
-          console.error('❌ Error following user:', error);
+          console.error('❌ Error following user:', {
+            error: error instanceof Error ? error.message : error,
+            stack: error instanceof Error ? error.stack : undefined,
+            userId,
+            targetUserId
+          });
           return res.status(500).json({ 
             error: 'Failed to follow user',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? error.message : 'Unknown error',
+            userId,
+            targetUserId
           });
         }
 
       case 'unfollow_user':
         const { targetUserId: unfollowTargetUserId } = req.body;
+        console.log(`👥 UNFOLLOW REQUEST: User ${userId} wants to unfollow ${unfollowTargetUserId}`);
+        
         if (!unfollowTargetUserId) {
+          console.error('❌ Missing targetUserId in unfollow request');
           return res.status(400).json({ error: 'targetUserId is required' });
         }
 
         try {
+          console.log(`🚀 Initiating unfollow operation...`);
+          
           // Unfollow using timeline feed
           const userTimelineUnfollow = serverClient.feed('timeline', userId);
-          await userTimelineUnfollow.unfollow('user', unfollowTargetUserId);
+          console.log(`🔗 Created timeline feed for user: ${userId}`);
           
-          console.log(`✅ User ${userId} unfollowed ${unfollowTargetUserId}`);
+          const unfollowResult = await userTimelineUnfollow.unfollow('user', unfollowTargetUserId);
+          console.log(`🎉 Unfollow operation completed:`, unfollowResult);
+          
+          console.log(`✅ User ${userId} successfully unfollowed ${unfollowTargetUserId}`);
 
           return res.json({
             success: true,
             message: 'User unfollowed successfully',
             followerUserId: userId,
-            targetUserId: unfollowTargetUserId
+            targetUserId: unfollowTargetUserId,
+            timestamp: new Date().toISOString()
           });
         } catch (error) {
-          console.error('❌ Error unfollowing user:', error);
+          console.error('❌ Error unfollowing user:', {
+            error: error instanceof Error ? error.message : error,
+            stack: error instanceof Error ? error.stack : undefined,
+            userId,
+            unfollowTargetUserId
+          });
           return res.status(500).json({ 
             error: 'Failed to unfollow user',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? error.message : 'Unknown error',
+            userId,
+            targetUserId: unfollowTargetUserId
           });
         }
 

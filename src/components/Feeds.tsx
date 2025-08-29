@@ -1133,10 +1133,30 @@ const Feeds = () => {
     const isCurrentlyFollowing = followingUsers.has(targetUserId);
     const action = isCurrentlyFollowing ? 'unfollow_user' : 'follow_user';
     
+    console.log(`👥 FRONTEND: Starting ${action} for user ${targetUserId}`, {
+      currentUserId: feedsClient.userId,
+      targetUserId,
+      isCurrentlyFollowing,
+      action
+    });
+    
 
     
     try {
       const accessToken = await getAccessTokenSilently();
+      
+      const requestBody = {
+        action,
+        userId: feedsClient.userId,
+        targetUserId
+      };
+      
+      console.log(`🚀 FRONTEND: Making ${action} API call:`, {
+        url: '/api/stream/feed-actions',
+        method: 'POST',
+        body: requestBody,
+        hasAccessToken: !!accessToken
+      });
       
       const response = await fetch('/api/stream/feed-actions', {
         method: 'POST',
@@ -1144,11 +1164,13 @@ const Feeds = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          action,
-          userId: feedsClient.userId,
-          targetUserId
-        }),
+        body: JSON.stringify(requestBody),
+      });
+      
+      console.log(`💬 FRONTEND: API response status:`, {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
 
       if (!response.ok) {
@@ -1164,7 +1186,7 @@ const Feeds = () => {
       }
       
       const responseData = await response.json();
-      console.log(`✅ ${action} successful:`, responseData);
+      console.log(`✅ FRONTEND: ${action} response data:`, responseData);
 
       // Update local state
       setFollowingUsers(prev => {

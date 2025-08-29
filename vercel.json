@@ -35,6 +35,9 @@
     },
     "api/stream/add-user-to-general.ts": {
       "maxDuration": 30
+    },
+    "api/stream/debug-env.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
