@@ -480,7 +480,9 @@ export default async function handler(
         const targetUser = req.body.targetUserId || userId;
         
         try {
-          const followers = await serverClient.feed('user', targetUser).queryFollowers({
+          // Use the correct Stream SDK method for getting followers
+          const userFeed = serverClient.feed('user', targetUser);
+          const followers = await userFeed.followers({
             limit: req.body.limit || 20,
             offset: req.body.offset || 0
           });
@@ -502,7 +504,9 @@ export default async function handler(
       case 'get_following':
         // Get users that this user is following
         try {
-          const following = await serverClient.feed('timeline', userId).queryFollowing({
+          // Use the correct Stream SDK method for getting following
+          const timelineFeed = serverClient.feed('timeline', userId);
+          const following = await timelineFeed.following({
             limit: req.body.limit || 20,
             offset: req.body.offset || 0
           });
@@ -529,8 +533,10 @@ export default async function handler(
         }
 
         try {
-          const following = await serverClient.feed('timeline', userId).queryFollowing({
-            filter: { target_feed: `user:${checkTargetUserId}` },
+          // Use the correct Stream SDK method for checking following status
+          const timelineFeed = serverClient.feed('timeline', userId);
+          const following = await timelineFeed.following({
+            filter: [`user:${checkTargetUserId}`],
             limit: 1
           });
 

@@ -100,13 +100,16 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
         channelImage: channelImageData
       };
 
-      const response = await fetch('/api/stream/create-channel', {
+      const response = await fetch('/api/stream/chat-operations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          type: 'create-channel',
+          ...requestBody
+        }),
       });
 
       if (!response.ok) {

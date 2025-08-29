@@ -1,0 +1,178 @@
+import { StreamChat } from 'stream-chat';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { type } = req.body;
+
+    if (!type) {
+      return res.status(400).json({ error: 'type is required' });
+    }
+
+    if (!['create-channel', 'add-to-general'].includes(type)) {
+      return res.status(400).json({ error: 'type must be "create-channel" or "add-to-general"' });
+    }
+
+    // Get Stream API credentials
+    const apiKey = process.env.STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      console.error('Missing Stream API credentials');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    // Initialize Stream Chat client
+    const streamClient = new StreamChat(apiKey, apiSecret);
+
+    // Handle channel creation
+    if (type === 'create-channel') {
+      console.log('🏗️ Create channel request started');
+      console.log('🔑 Environment check:');
+      console.log(`   - STREAM_API_KEY: ${apiKey ? 'Set' : 'NOT SET'}`);
+      console.log(`   - STREAM_API_SECRET: ${apiSecret ? 'Set' : 'NOT SET'}`);
+      console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+
+      // Validate API key format (basic check)
+      if (apiKey.length < 10 || apiSecret.length < 10) {
+        console.error('❌ Invalid Stream API credentials format');
+        return res.status(500).json({ 
+          error: 'Invalid API credentials format',
+          details: 'API credentials appear to be malformed'
+        });
+      }
+
+      console.log('✅ Stream API credentials validated');
+
+      const { channelName, selectedUsers, currentUserId, isDM, channelImage } = req.body;
+      
+      console.log('🏗️ Creating new channel:', channelName);
+      console.log('👥 Selected users:', selectedUsers);
+      console.log('👤 Current user ID:', currentUserId);
+      
+      if (!channelName || !selectedUsers || !currentUserId) {
+        return res.status(400).json({ 
+          error: 'Channel name, selected users, and current user ID are required',
+          received: { channelName, selectedUsers, currentUserId }
+        });
+      }
+
+      // Parse selected users
+      let userIds;
+      try {
+        userIds = JSON.parse(selectedUsers);
+      } catch (error) {
+        return res.status(400).json({ error: 'Invalid selected users format' });
+      }
+
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'At least one user must be selected' });
+      }
+
+      // Add current user to the channel members
+      const allMembers = [currentUserId, ...userIds];
+
+      // Prepare channel data
+      const channelData = {
+        name: channelName,
+        members: allMembers,
+        created_by_id: currentUserId,
+        image: channelImage || undefined
+      };
+
+      // Create the channel using Stream Chat
+      // Let Stream auto-generate the channel ID by passing null as second parameter
+      const channel = streamClient.channel('messaging', null, channelData);
+
+      await channel.create();
+
+      console.log('✅ Channel created successfully:', channel.id);
+
+      return res.json({
+        success: true,
+        message: isDM ? 'Direct message started successfully' : 'Channel created successfully',
+        channelId: channel.id,
+        channel: {
+          id: channel.id,
+          name: channelName,
+          members: allMembers,
+          created_by_id: currentUserId,
+          image: channelImage,
+          isDM: isDM
+        }
+      });
+    }
+
+    // Handle adding user to general channel
+    if (type === 'add-to-general') {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      try {
+        // Get the general channel and watch it to get current state
+        const general = streamClient.channel("messaging", "general");
+        await general.watch();
+        
+        // Check if user is already a member
+        const currentMembers = Object.keys(general.state.members || {});
+        const isAlreadyMember = currentMembers.includes(userId);
+        
+        if (isAlreadyMember) {
+          console.log(`✅ User ${userId} is already a member of general channel`);
+          return res.status(200).json({
+            success: true,
+            message: 'User already has access to general channel'
+          });
+        }
+        
+        // Add the user to the general channel
+        await general.addMembers([userId]);
+        
+        console.log(`✅ Successfully added user ${userId} to general channel`);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'User added to general channel'
+        });
+        
+      } catch (error: any) {
+        console.error('❌ Error with general channel operation:', error);
+        
+        // Check if the channel doesn't exist (common Stream error codes)
+        if (error.code === 4 || error.code === 17 || error.message?.includes('does not exist') || error.message?.includes('not found')) {
+          console.error(`❌ General channel does not exist. Run /api/stream/seed to create it.`);
+          return res.status(404).json({
+            error: 'General channel does not exist',
+            message: 'The general channel needs to be created. Please run the seed endpoint first.',
+            suggestion: 'POST to /api/stream/seed to initialize channels and users'
+          });
+        }
+        
+        // For any other error (including add member failures), return the actual error
+        console.error(`❌ Unexpected error with general channel:`, error);
+        return res.status(500).json({
+          error: 'Failed to process general channel operation',
+          details: error.message,
+          code: error.code || 'unknown'
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error in chat-operations handler:', error);
+    return res.status(500).json({ 
+      error: 'Failed to process chat operation',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+}

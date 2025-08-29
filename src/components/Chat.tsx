@@ -45,13 +45,14 @@ const Chat: React.FC<ChatProps> = () => {
   const getStreamToken = useCallback(
     async (userId: string): Promise<string> => {
       const accessToken = await getAccessTokenSilently();
-      const res = await fetch("/api/stream/chat-token", {
+      const res = await fetch("/api/stream/auth-tokens", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ 
+          type: 'chat',
           userId,
           userProfile: {
             name: user?.name || user?.email || 'Anonymous User',
@@ -62,7 +63,7 @@ const Chat: React.FC<ChatProps> = () => {
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`chat-token failed: ${res.status} ${text}`);
+        throw new Error(`auth-tokens failed: ${res.status} ${text}`);
       }
       const json = await res.json();
       return json.token as string;
@@ -148,13 +149,16 @@ const Chat: React.FC<ChatProps> = () => {
         // Ensure user is added to general channel before trying to watch
         try {
           const accessToken = await getAccessTokenSilently();
-          const response = await fetch("/api/stream/add-user-to-general", {
+          const response = await fetch("/api/stream/chat-operations", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${accessToken}`,
             },
-            body: JSON.stringify({ userId: sanitizedUserId }),
+            body: JSON.stringify({ 
+              type: 'add-to-general',
+              userId: sanitizedUserId 
+            }),
           });
           
           if (!response.ok) {

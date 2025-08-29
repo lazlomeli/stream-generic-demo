@@ -6,37 +6,22 @@
     "api/stream/feed-actions.ts": {
       "maxDuration": 30
     },
-    "api/stream/create-channel.ts": {
-      "maxDuration": 30
-    },
     "api/stream/get-posts.ts": {
-      "maxDuration": 30
-    },
-    "api/stream/get-user-posts.ts": {
-      "maxDuration": 30
-    },
-    "api/stream/get-chat-user.ts": {
-      "maxDuration": 30
-    },
-    "api/stream/resolve-user-id.ts": {
       "maxDuration": 30
     },
     "api/stream/get-user-counts-batch.ts": {
       "maxDuration": 30
     },
-    "api/stream/feed-token.ts": {
-      "maxDuration": 30
-    },
-    "api/stream/chat-token.ts": {
-      "maxDuration": 30
-    },
     "api/stream/seed.ts": {
       "maxDuration": 30
     },
-    "api/stream/add-user-to-general.ts": {
+    "api/stream/auth-tokens.ts": {
       "maxDuration": 30
     },
-    "api/stream/debug-env.ts": {
+    "api/stream/user-data.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/chat-operations.ts": {
       "maxDuration": 30
     }
   },

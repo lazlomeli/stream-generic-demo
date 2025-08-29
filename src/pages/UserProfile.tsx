@@ -216,13 +216,14 @@ const UserProfile = () => {
         const accessToken = await getAccessTokenSilently();
         const sanitizedUserId = getSanitizedUserId(user);
         
-        const response = await fetch('/api/stream/feed-token', {
+        const response = await fetch('/api/stream/auth-tokens', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ 
+            type: 'feed',
             userId: sanitizedUserId,
             userProfile: {
               name: user?.name || user?.email || 'Anonymous User',
@@ -261,13 +262,16 @@ const UserProfile = () => {
         if (!getAuth0UserId(userId)) {
           // If not in cache, try to resolve via backend
           try {
-            const resolveResponse = await fetch('/api/stream/resolve-user-id', {
+            const resolveResponse = await fetch('/api/stream/user-data', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${accessToken}`,
               },
-              body: JSON.stringify({ hashedUserId: userId }),
+              body: JSON.stringify({ 
+                type: 'resolve',
+                hashedUserId: userId 
+              }),
             });
 
             if (resolveResponse.ok) {
@@ -286,13 +290,14 @@ const UserProfile = () => {
         }
 
         // Fetch user's posts
-        const postsResponse = await fetch('/api/stream/get-user-posts', {
+        const postsResponse = await fetch('/api/stream/user-data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
+            type: 'posts',
             userId: feedsClient.userId,
             targetUserId: auth0UserId,
             limit: 20
@@ -365,13 +370,16 @@ const UserProfile = () => {
           async () => {
             console.log('🔍 Fetching Stream Chat user data for:', auth0UserId);
             
-            const chatUserResponse = await fetch('/api/stream/get-chat-user', {
+            const chatUserResponse = await fetch('/api/stream/user-data', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${accessToken}`,
               },
-              body: JSON.stringify({ userId: auth0UserId }),
+              body: JSON.stringify({ 
+                type: 'chat-user',
+                userId: auth0UserId 
+              }),
             });
 
             if (chatUserResponse.ok) {

@@ -181,13 +181,14 @@ const BookmarkedPosts = () => {
         const sanitizedUserId = getSanitizedUserId(user);
         
         // Call your local server endpoint to get the feed token
-        const response = await fetch('/api/stream/feed-token', {
+        const response = await fetch('/api/stream/auth-tokens', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ 
+            type: 'feed',
             userId: sanitizedUserId,
             userProfile: {
               name: user?.name || user?.email || 'Anonymous User',
