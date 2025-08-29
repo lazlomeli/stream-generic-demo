@@ -1151,12 +1151,20 @@ const Feeds = () => {
         }),
       });
 
-      const responseData = await response.json();
-
-
       if (!response.ok) {
-        throw new Error(`Failed to ${action}: ${responseData.error || response.statusText}`);
+        const errorText = await response.text();
+        console.error(`❌ Follow API failed:`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          action,
+          targetUserId
+        });
+        throw new Error(`Failed to ${action}: ${response.status} ${response.statusText}`);
       }
+      
+      const responseData = await response.json();
+      console.log(`✅ ${action} successful:`, responseData);
 
       // Update local state
       setFollowingUsers(prev => {
@@ -1185,9 +1193,46 @@ const Feeds = () => {
         return newCounts;
       });
       
+      // Invalidate cache and refresh user counts to ensure persistence
+      setTimeout(() => {
+        // Clear cache for this user to force fresh fetch
+        apiCache.clearUserCounts([targetUserId]);
+        // Re-fetch user counts to get updated data from Stream
+        fetchUserCounts([targetUserId]);
+        // Also refresh the following users list to ensure consistency
+        fetchFollowingUsers();
+      }, 1000); // Small delay to allow Stream to process the follow action
+      
     } catch (err: any) {
-      console.error('Error updating follow status:', err);
-      alert('Failed to update follow status. Please try again.');
+      console.error('❌ Error updating follow status:', err);
+      
+      // Revert UI state on failure
+      setFollowingUsers(prev => {
+        const newFollowing = new Set(prev);
+        if (isCurrentlyFollowing) {
+          // Was trying to unfollow, revert back to following
+          newFollowing.add(targetUserId);
+        } else {
+          // Was trying to follow, revert back to not following
+          newFollowing.delete(targetUserId);
+        }
+        return newFollowing;
+      });
+      
+      // Revert follower count
+      setUserCounts(prev => {
+        const newCounts = { ...prev };
+        if (newCounts[targetUserId]) {
+          const currentFollowers = newCounts[targetUserId].followers;
+          newCounts[targetUserId] = {
+            ...newCounts[targetUserId],
+            followers: isCurrentlyFollowing ? currentFollowers + 1 : currentFollowers - 1
+          };
+        }
+        return newCounts;
+      });
+      
+      alert(`Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
     }
   };
 

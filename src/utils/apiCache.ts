@@ -216,6 +216,30 @@ class APICache {
   }
 
   /**
+   * Clear user counts cache for specific users (useful after follow/unfollow)
+   */
+  clearUserCounts(userIds: string[]): void {
+    userIds.forEach(userId => {
+      const key = `user_counts_${userId}`;
+      if (this.cache.has(key)) {
+        console.log(`🗑️ Clearing user counts cache for: ${userId}`);
+        this.cache.delete(key);
+      }
+    });
+    
+    // Also clear any batch cache keys that might include these users
+    const batchKeysToDelete = Array.from(this.cache.keys()).filter(key => 
+      key.startsWith('batch_user_counts_') && 
+      userIds.some(userId => key.includes(userId))
+    );
+    
+    batchKeysToDelete.forEach(key => {
+      console.log(`🗑️ Clearing batch user counts cache: ${key}`);
+      this.cache.delete(key);
+    });
+  }
+
+  /**
    * Clear all cache (useful for logout)
    */
   clearAll(): void {

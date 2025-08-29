@@ -373,14 +373,26 @@ export default async function handler(
           return res.status(400).json({ error: 'targetUserId is required' });
         }
 
-        // Following the React docs pattern: timeline feed follows user feed
-        const userTimeline = serverClient.feed('timeline', userId);
-        await userTimeline.follow('user', targetUserId);
-
-        return res.json({
-          success: true,
+        try {
+          // Following the React docs pattern: timeline feed follows user feed
+          const userTimeline = serverClient.feed('timeline', userId);
+          await userTimeline.follow('user', targetUserId);
           
-        });
+          console.log(`✅ User ${userId} followed ${targetUserId}`);
+
+          return res.json({
+            success: true,
+            message: 'User followed successfully',
+            followerUserId: userId,
+            targetUserId: targetUserId
+          });
+        } catch (error) {
+          console.error('❌ Error following user:', error);
+          return res.status(500).json({ 
+            error: 'Failed to follow user',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
 
       case 'unfollow_user':
         const { targetUserId: unfollowTargetUserId } = req.body;
@@ -388,14 +400,26 @@ export default async function handler(
           return res.status(400).json({ error: 'targetUserId is required' });
         }
 
-        // Unfollow using timeline feed
-        const userTimelineUnfollow = serverClient.feed('timeline', userId);
-        await userTimelineUnfollow.unfollow('user', unfollowTargetUserId);
+        try {
+          // Unfollow using timeline feed
+          const userTimelineUnfollow = serverClient.feed('timeline', userId);
+          await userTimelineUnfollow.unfollow('user', unfollowTargetUserId);
+          
+          console.log(`✅ User ${userId} unfollowed ${unfollowTargetUserId}`);
 
-        return res.json({
-          success: true,
-          message: 'User unfollowed successfully'
-        });
+          return res.json({
+            success: true,
+            message: 'User unfollowed successfully',
+            followerUserId: userId,
+            targetUserId: unfollowTargetUserId
+          });
+        } catch (error) {
+          console.error('❌ Error unfollowing user:', error);
+          return res.status(500).json({ 
+            error: 'Failed to unfollow user',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
 
       case 'get_followers':
         // Get followers for a user's feed
