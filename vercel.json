@@ -11,6 +11,30 @@
     },
     "api/stream/get-posts.ts": {
       "maxDuration": 30
+    },
+    "api/stream/get-user-posts.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/get-chat-user.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/resolve-user-id.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/get-user-counts-batch.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/feed-token.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/chat-token.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/seed.ts": {
+      "maxDuration": 30
+    },
+    "api/stream/add-user-to-general.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

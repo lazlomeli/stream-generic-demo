@@ -1,7 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { connect } from 'getstream';
-import { requireAuth } from '../_utils/auth0';
-import { json, serverError, unauthorized, bad } from '../_utils/responses';
 
 interface UserProfileResponse {
   [userId: string]: {
@@ -19,31 +17,30 @@ export default async function handler(
   res: VercelResponse
 ) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed', allowedMethods: ['POST'] }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Verify authentication
-    const auth = await requireAuth(req as any);
-    const userId = auth.sub;
+    const { userId, targetUserId, limit = 20 } = req.body;
+
     if (!userId) {
-      return unauthorized();
+      return res.status(400).json({ error: 'userId is required' });
     }
 
-    const { targetUserId, limit = 20 } = req.body;
-
     if (!targetUserId) {
-      return bad('Target user ID is required');
+      return res.status(400).json({ error: 'targetUserId is required' });
+    }
+
+    // Get Stream API credentials
+    const apiKey = process.env.STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
 
     // Initialize Stream Feeds client (matches working endpoints)
-    const streamFeedsClient = connect(
-      process.env.STREAM_API_KEY!,
-      process.env.STREAM_API_SECRET!
-    );
+    const streamFeedsClient = connect(apiKey, apiSecret);
 
     console.log(`🔍 Fetching posts for user: ${targetUserId}`);
 
@@ -65,7 +62,7 @@ export default async function handler(
     console.log(`📝 Found ${limitedPosts.length} posts for user ${targetUserId} (out of ${result.results.length} total posts)`);
 
     if (!limitedPosts || limitedPosts.length === 0) {
-      return json({ 
+      return res.status(200).json({ 
         posts: [],
         message: 'No posts found for this user'
       });
@@ -136,13 +133,16 @@ export default async function handler(
 
     console.log(`✅ Successfully enriched ${enrichedActivities.length} posts for user ${targetUserId}`);
 
-    return json({ 
+    return res.status(200).json({ 
       posts: enrichedActivities,
       count: enrichedActivities.length
     });
 
   } catch (error: any) {
     console.error('❌ Error fetching user posts:', error);
-    return serverError(`Failed to fetch user posts: ${error.message}`);
+    return res.status(500).json({ 
+      error: 'Failed to fetch user posts',
+      details: error.message
+    });
   }
 }
