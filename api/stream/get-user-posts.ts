@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { connect } from 'getstream';
-import { verifyAuth0Token } from '../_utils/auth0';
-import { standardResponse } from '../_utils/responses';
+import { requireAuth } from '../_utils/auth0';
+import { json, serverError, unauthorized, bad } from '../_utils/responses';
 
 interface UserProfileResponse {
   [userId: string]: {
@@ -19,44 +19,53 @@ export default async function handler(
   res: VercelResponse
 ) {
   if (req.method !== 'POST') {
-    return standardResponse(res, 405, 'Method not allowed', { allowedMethods: ['POST'] });
+    return new Response(JSON.stringify({ error: 'Method not allowed', allowedMethods: ['POST'] }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
     // Verify authentication
-    const userId = await verifyAuth0Token(req);
+    const auth = await requireAuth(req as any);
+    const userId = auth.sub;
     if (!userId) {
-      return standardResponse(res, 401, 'Unauthorized');
+      return unauthorized();
     }
 
     const { targetUserId, limit = 20 } = req.body;
 
     if (!targetUserId) {
-      return standardResponse(res, 400, 'Target user ID is required');
+      return bad('Target user ID is required');
     }
 
-    // Initialize Stream Feeds client
+    // Initialize Stream Feeds client (matches working endpoints)
     const streamFeedsClient = connect(
       process.env.STREAM_API_KEY!,
-      process.env.STREAM_API_SECRET!,
-      process.env.STREAM_APP_ID!
+      process.env.STREAM_API_SECRET!
     );
 
     console.log(`🔍 Fetching posts for user: ${targetUserId}`);
 
-    // Get the user's feed (their posts)
-    const userFeed = streamFeedsClient.feed('user', targetUserId);
-    const result = await userFeed.get({
-      limit: parseInt(limit as string),
+    // Get posts from global feed filtered by target user
+    const globalFeed = streamFeedsClient.feed('flat', 'global');
+    const result = await globalFeed.get({
+      limit: 100, // Get more to filter
       withOwnReactions: true,
       withReactionCounts: true,
       withRecentReactions: true,
     });
 
-    console.log(`📝 Found ${result.results.length} posts for user ${targetUserId}`);
+    // Filter posts by the target user
+    const userPosts = result.results.filter((activity: any) => activity.actor === targetUserId);
+    
+    // Limit to requested amount
+    const limitedPosts = userPosts.slice(0, parseInt(limit as string));
 
-    if (!result.results || result.results.length === 0) {
-      return standardResponse(res, 200, 'Success', { 
+    console.log(`📝 Found ${limitedPosts.length} posts for user ${targetUserId} (out of ${result.results.length} total posts)`);
+
+    if (!limitedPosts || limitedPosts.length === 0) {
+      return json({ 
         posts: [],
         message: 'No posts found for this user'
       });
@@ -64,7 +73,7 @@ export default async function handler(
 
     // Enrich activities with user information
     const enrichedActivities = await Promise.all(
-      result.results.map(async (activity: any) => {
+      limitedPosts.map(async (activity: any) => {
         try {
           // Priority 1: Use userProfile data stored directly in the activity
           if (activity.userProfile && activity.userProfile.name) {
@@ -127,16 +136,13 @@ export default async function handler(
 
     console.log(`✅ Successfully enriched ${enrichedActivities.length} posts for user ${targetUserId}`);
 
-    return standardResponse(res, 200, 'Success', { 
+    return json({ 
       posts: enrichedActivities,
       count: enrichedActivities.length
     });
 
   } catch (error: any) {
     console.error('❌ Error fetching user posts:', error);
-    return standardResponse(res, 500, 'Failed to fetch user posts', {
-      error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    return serverError(`Failed to fetch user posts: ${error.message}`);
   }
 }

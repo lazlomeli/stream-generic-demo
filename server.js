@@ -298,22 +298,27 @@ app.post('/api/stream/get-user-posts', async (req, res) => {
     const { connect } = await import('getstream');
     const streamFeedsClient = connect(
       process.env.STREAM_API_KEY,
-      process.env.STREAM_API_SECRET,
-      process.env.STREAM_APP_ID
+      process.env.STREAM_API_SECRET
     );
 
-    // Get the user's feed (their posts)
-    const userFeed = streamFeedsClient.feed('user', targetUserId);
-    const result = await userFeed.get({
-      limit: parseInt(limit),
+    // Get posts from global feed filtered by target user
+    const globalFeed = streamFeedsClient.feed('flat', 'global');
+    const result = await globalFeed.get({
+      limit: 100, // Get more to filter
       withOwnReactions: true,
       withReactionCounts: true,
       withRecentReactions: true,
     });
 
-    console.log(`📝 Found ${result.results.length} posts for user ${targetUserId}`);
+    // Filter posts by the target user
+    const userPosts = result.results.filter(activity => activity.actor === targetUserId);
+    
+    // Limit to requested amount
+    const limitedPosts = userPosts.slice(0, parseInt(limit));
 
-    if (!result.results || result.results.length === 0) {
+    console.log(`📝 Found ${limitedPosts.length} posts for user ${targetUserId} (out of ${result.results.length} total posts)`);
+
+    if (!limitedPosts || limitedPosts.length === 0) {
       return res.json({ 
         posts: [],
         message: 'No posts found for this user'
@@ -322,7 +327,7 @@ app.post('/api/stream/get-user-posts', async (req, res) => {
 
     // Enrich activities with user information
     const enrichedActivities = await Promise.all(
-      result.results.map(async (activity) => {
+      limitedPosts.map(async (activity) => {
         try {
           // Priority 1: Use userProfile data stored directly in the activity
           if (activity.userProfile && activity.userProfile.name) {
