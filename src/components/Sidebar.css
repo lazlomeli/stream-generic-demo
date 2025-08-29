@@ -1,16 +1,32 @@
 /* Sidebar Component Styles */
 .sidebar {
   width: 300px;
-  height: 100vh;
+  height: calc(100vh - 8rem); /* Static height: 100vh - (6rem top + 2rem bottom) */
   background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
-  border-right: 1px solid #e5e7eb;
-  padding: var(--sidebar-top-padding, 6rem) 0 2rem 0; /* Dynamic top padding based on scroll */
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem; /* Rounded edges */
+  margin: 0rem 0rem 0rem 5rem; /* Let CSS custom properties handle top/bottom spacing */
+  padding: 1.5rem 0 2rem 0; /* Simplified padding */
   position: fixed;
   left: 0;
-  top: 0; /* Start from very top */
+  top: 6rem; /* Static position: 4rem header + 2rem gap */
   z-index: 100; /* Below header (z-index: 200) and loading overlays (z-index: 99999) */
   overflow-y: auto;
-  transition: padding-top 0.2s ease-out; /* Smooth padding transitions */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+  transition: all 0.3s ease-out; /* Smooth transitions for sliding */
+}
+
+.sidebar-header {
+  display: flex;
+  margin: 0rem 2.2rem 1rem;
+}
+
+.sidebar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  text-align: center;
 }
 
 .sidebar-nav {
@@ -76,7 +92,17 @@
 @media (max-width: 768px) {
   .sidebar {
     width: 60px;
-    padding: var(--sidebar-top-padding, 5rem) 0 1rem 0; /* Dynamic top padding based on scroll */
+    margin: 0.5rem; /* Keep consistent margin */
+    padding: 1rem 0 1rem 0;
+  }
+  
+  .sidebar-header {
+    padding: 0.5rem;
+  }
+  
+  .sidebar-title {
+    font-size: 0.75rem;
+    font-weight: 600;
   }
   
   .sidebar-nav {
@@ -99,5 +125,9 @@
 @media (max-width: 640px) {
   .sidebar {
     display: none; /* Hide sidebar on mobile, keep header navigation */
+  }
+  
+  .sidebar-header {
+    display: none;
   }
 }

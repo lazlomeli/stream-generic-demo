@@ -20,48 +20,7 @@ function App() {
   // Determine if we should show the sidebars (feeds, bookmarked, and profile pages)
   const showSidebars = isAuthenticated && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname.startsWith('/profile/'))
 
-  // Scroll-based sidebar padding adjustment
-  React.useEffect(() => {
-    if (!showSidebars) return
-
-    const handleScroll = () => {
-      const headerHeight = 64 // 4rem in pixels
-      const scrollY = window.scrollY
-      
-      // Check if we're on mobile (simplified check)
-      const isMobile = window.innerWidth <= 768
-      const basePadding = isMobile ? 80 : 96 // 5rem for mobile, 6rem for desktop
-      const minPadding = 16 // 1rem minimum
-      
-      // Calculate dynamic padding: reduce padding as we scroll past header
-      let dynamicPadding
-      if (scrollY <= headerHeight) {
-        // Still showing header, keep original padding
-        dynamicPadding = basePadding
-      } else {
-        // Scrolled past header, smoothly reduce padding
-        const scrollPastHeader = scrollY - headerHeight
-        dynamicPadding = Math.max(minPadding, basePadding - scrollPastHeader)
-      }
-      
-      // Set CSS custom property for sidebar padding
-      document.documentElement.style.setProperty('--sidebar-top-padding', `${dynamicPadding}px`)
-    }
-
-    // Set initial padding
-    handleScroll()
-    
-    // Add scroll and resize listeners
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('resize', handleScroll, { passive: true })
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', handleScroll)
-      document.documentElement.style.removeProperty('--sidebar-top-padding')
-    }
-  }, [showSidebars])
+  // No dynamic positioning needed - header is always visible and fixed
 
   if (error) {
     return <div>Authentication Error: {error.message}</div>

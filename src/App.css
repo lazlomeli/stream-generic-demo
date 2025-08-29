@@ -20,17 +20,19 @@ body {
 .app {
   /* min-height: 100vh; */
   background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
+  padding-top: 4rem; /* Account for fixed header */
 }
 
 .app-main {
   position: relative;
   transition: all 0.3s ease;
   min-height: calc(100vh - 4rem);
+  /* Content area starts below fixed header */
 }
 
 .app-main.with-sidebars {
-  margin-left: 300px;
-  margin-right: 300px;
+  margin-left: 368px; /* 240px sidebar + 8rem margin */
+  margin-right: 380px; /* 300px sidebar + 5rem margin */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -51,7 +53,7 @@ body {
 
 @media (max-width: 768px) {
   .app-main.with-sidebars {
-    margin-left: 60px;
+    margin-left: 68px; /* 60px sidebar + 0.5rem margin (already correct) */
     margin-right: 0;
   }
 }
@@ -65,24 +67,20 @@ body {
 
 /* ===== HEADER COMPONENT STYLES ===== */
 .header {
-  background-color: #ffffff;
-  border-bottom: 1px solid #f3f4f6;
+  background-color: rgba(255, 255, 255, 0.5); /* 50% transparent white */
+  backdrop-filter: blur(10px); /* Blur effect for glassmorphism */
+  -webkit-backdrop-filter: blur(10px); /* Safari support */
+  border-bottom: 1px solid rgba(243, 244, 246, 0.8); /* Semi-transparent border */
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  position: relative;
-  z-index: 200; /* Above sidebars (z-index: 100) but below modals */
-}
-
-/* Create infinite top extension for header */
-.header::before {
-  content: '';
   position: fixed;
-  top: -200vh; /* Extend 200vh upward for better coverage */
+  top: 0;
   left: 0;
   right: 0;
-  width: 100vw;
-  height: 200vh;
-  background-color: #ffffff;
-  z-index: -1; /* Behind header content but still above sidebars due to parent z-index */
+  width: 100%;
+  z-index: 200; /* Above sidebars (z-index: 100) but below modals */
+  height: 4rem; /* Stable height that never changes */
+  min-height: 4rem; /* Ensure minimum height */
+  max-height: 4rem; /* Prevent height from growing */
 }
 
 .header-container {
@@ -107,6 +105,8 @@ body {
   justify-content: space-between;
   align-items: center;
   height: 4rem;
+  min-height: 4rem; /* Ensure consistent height */
+  max-height: 4rem; /* Prevent expansion */
 }
 
 /* Left side - Navigation icons */
@@ -453,8 +453,17 @@ body {
     padding: 0 0.75rem;
   }
   
+  /* Keep header height consistent on mobile */
+  .header {
+    height: 4rem;
+    min-height: 4rem;
+    max-height: 4rem;
+  }
+  
   .header-content {
-    height: 3.5rem;
+    height: 4rem;
+    min-height: 4rem;
+    max-height: 4rem;
   }
   
   .login-logo {

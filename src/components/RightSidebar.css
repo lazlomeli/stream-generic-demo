@@ -1,29 +1,34 @@
 /* Right Sidebar Component Styles */
 .right-sidebar {
   width: 300px;
-  height: 100vh;
+  height: calc(100vh - 8rem); /* Static height: 100vh - (6rem top + 2rem bottom) */
   background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
-  border-left: 1px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem; /* Rounded edges */
+  margin: 0rem 5rem 0rem 0rem; /* Let CSS custom properties handle top/bottom spacing */
   position: fixed;
   right: 0;
-  top: 0; /* Start from very top */
+  top: 6rem; /* Static position: 4rem header + 2rem gap */
   z-index: 100; /* Below header (z-index: 200) and loading overlays (z-index: 99999) */
   overflow-y: auto;
-  transition: padding-top 0.2s ease-out; /* Smooth padding transitions */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+  transition: all 0.3s ease-out; /* Smooth transitions for sliding */
   
   /* Hide scrollbar */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
 
+.right-sidebar-content {
+  padding: 1.5rem 1.5rem 2rem 1.5rem; /* Simplified padding */
+  transition: all 0.2s ease-out; /* Smooth transitions */
+}
+
+
+
 /* Hide scrollbar for webkit browsers */
 .right-sidebar::-webkit-scrollbar {
   display: none;
-}
-
-.right-sidebar-content {
-  padding: var(--sidebar-top-padding, 6rem) 1.5rem 2rem 1.5rem; /* Dynamic top padding based on scroll */
-  transition: padding-top 0.2s ease-out; /* Smooth padding transitions */
 }
 
 .sidebar-section {

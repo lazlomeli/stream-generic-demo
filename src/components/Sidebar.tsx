@@ -34,6 +34,9 @@ const Sidebar: React.FC<SidebarProps> = () => {
 
   return (
     <aside className="sidebar">
+      <div className="sidebar-header">
+        <h2 className="sidebar-title">Menu</h2>
+      </div>
       <nav className="sidebar-nav">
         <button
           onClick={handleFeedsClick}
