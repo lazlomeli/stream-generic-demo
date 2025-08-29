@@ -424,6 +424,7 @@ const Feeds = () => {
     }
     setModalFadingOut(null); // Cancel any fade-out
     setHoveredPost(postId);
+    console.log('👆 Mouse entered for post:', postId, 'UserCounts:', Object.keys(userCounts).length);
   };
 
   const handleUserMouseLeave = () => {
@@ -526,8 +527,12 @@ const Feeds = () => {
 
   // Optimized function to fetch follower/following counts with caching and batching
   const fetchUserCounts = async (userIds: string[]) => {
-    if (!feedsClient?.userId || userIds.length === 0) return;
+    if (!feedsClient?.userId || userIds.length === 0) {
+      console.log('📊 No feedsClient or userIds, skipping user counts fetch');
+      return;
+    }
 
+    console.log('📊 Fetching user counts for:', userIds);
     try {
       const accessToken = await getAccessTokenSilently();
       
@@ -552,11 +557,14 @@ const Feeds = () => {
           });
 
           if (!response.ok) {
-            console.warn('Batch user counts request failed:', response.status);
+            console.warn('Batch user counts request failed:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.warn('Error response:', errorText);
             return {};
           }
 
           const data = await response.json();
+          console.log('📊 API response data:', data);
           return data.userCounts || {};
         }
       );
@@ -570,7 +578,12 @@ const Feeds = () => {
       console.log(`✅ Updated counts for ${Object.keys(userCounts).length} users`);
 
     } catch (error) {
-      console.error('Error fetching user counts:', error);
+      console.error('❌ Error fetching user counts:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        userIds: userIds
+      });
     }
   };
 
@@ -1480,7 +1493,7 @@ const Feeds = () => {
                     </div>
 
                     {/* User hover modal - now inside the hover container */}
-                    {(hoveredPost === post.id || modalFadingOut === post.id) && !post.isOwnPost && userCounts[post.actor] && (
+                    {(hoveredPost === post.id || modalFadingOut === post.id) && !post.isOwnPost && (
                       <div 
                         className={`user-hover-modal ${modalFadingOut === post.id ? 'fading-out' : ''}`}
                         onClick={() => handleUserNameClick(post.actor)}
@@ -1506,8 +1519,17 @@ const Feeds = () => {
                           <div className="user-modal-info">
                             <h4 className="user-modal-name">{post.userInfo?.name || 'Unknown User'}</h4>
                             <div className="user-modal-stats">
-                              <span><strong>{userCounts[post.actor].followers}</strong> followers</span>
-                              <span><strong>{userCounts[post.actor].following}</strong> following</span>
+                              {userCounts[post.actor] ? (
+                                <>
+                                  <span><strong>{userCounts[post.actor].followers}</strong> followers</span>
+                                  <span><strong>{userCounts[post.actor].following}</strong> following</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span><strong>-</strong> followers</span>
+                                  <span><strong>-</strong> following</span>
+                                </>
+                              )}
                             </div>
                             <div className="user-joined-date">
                               Joined {formatJoinedDate(post.actor)}
