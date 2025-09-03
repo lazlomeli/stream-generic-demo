@@ -1,26 +1,53 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import jwt from 'jsonwebtoken';
-import { FeedsClient } from '@stream-io/feeds-client';
+// import { FeedsClient } from '@stream-io/feeds-client'; // Disabled - V3 alpha causing issues
+import { connect } from 'getstream'; // Use V2 for production stability
 
 // Simple auth verification function
 async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
   try {
+    console.log('🔐 GET-USER-COUNTS: Auth verification attempt...');
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    
+    if (!authHeader) {
+      console.log('❌ GET-USER-COUNTS: No authorization header found');
+      return null;
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
+      console.log('❌ GET-USER-COUNTS: Invalid authorization header format:', authHeader.substring(0, 20) + '...');
       return null;
     }
     
     const token = authHeader.substring(7);
     if (!token) {
+      console.log('❌ GET-USER-COUNTS: Empty token after Bearer prefix');
       return null;
     }
+    
+    console.log('🔍 GET-USER-COUNTS: Token found, attempting to decode...');
     
     // For now, just decode without verification (since we need the user ID)
     // In a production environment, you'd want proper JWT verification
     const decoded = jwt.decode(token) as any;
-    return decoded?.sub || null;
+    
+    if (!decoded) {
+      console.log('❌ GET-USER-COUNTS: Failed to decode JWT token');
+      return null;
+    }
+    
+    const userId = decoded?.sub || null;
+    console.log('✅ GET-USER-COUNTS: Auth verification successful:', { 
+      hasUserId: !!userId, 
+      userIdLength: userId?.length || 0 
+    });
+    
+    return userId;
   } catch (error) {
-    console.error('Auth verification error:', error);
+    console.error('❌ GET-USER-COUNTS: Auth verification error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 }
@@ -31,9 +58,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('🔧 GET-USER-COUNTS: Request received:', {
+      method: req.method,
+      hasBody: !!req.body,
+      userId: req.body?.userId,
+      targetUserIds: req.body?.targetUserIds?.length || 0,
+      hasAuthHeader: !!req.headers.authorization
+    });
+    
     // Verify the Auth0 token
     const user = await verifyAuth0Token(req);
     if (!user) {
+      console.log('❌ GET-USER-COUNTS: Unauthorized - returning 401');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -65,65 +101,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
     
-    console.log('🔌 Connecting to Stream V3...');
-    const feedsClient = new FeedsClient(apiKey);
-    
-    // Create a server token for admin operations
-    const serverToken = jwt.sign(
-      { user_id: 'admin' }, // Use admin user for server operations
-      apiSecret,
-      { algorithm: 'HS256', expiresIn: '24h' }
-    );
-    
-    await feedsClient.connectUser({ id: 'admin' }, serverToken);
-    console.log('✅ Stream V3 Feeds client connected');
+    console.log('🔌 Connecting to Stream V2 (server-side)...');
+    const serverClient = connect(apiKey, apiSecret, undefined, { 
+      logLevel: 'warn' // Reduce verbose logging
+    });
+    console.log('✅ Stream V2 Feeds client connected');
 
     const results: Record<string, { followers: number; following: number }> = {};
 
-    // Batch fetch counts for all users
+    // Batch fetch counts for all users using V2 API
     const countPromises = targetUserIds.map(async (targetUserId: string) => {
       try {
-        console.log(`👤 Fetching counts for user: ${targetUserId} (V3)`);
+        console.log(`👤 Fetching counts for user: ${targetUserId} (V2)`);
         console.log(`📊 Counting pattern: user:${targetUserId} followers + timeline:${targetUserId} following`);
         
-        // Get user feed and timeline feed
-        const userFeed = feedsClient.feed('user', targetUserId);
-        const timelineFeed = feedsClient.feed('timeline', targetUserId);
+        // Get user feed and timeline feed using V2 (server-side access)
+        const userFeed = serverClient.feed('user', targetUserId);
+        const timelineFeed = serverClient.feed('timeline', targetUserId);
         
-        // Initialize feeds
-        await Promise.all([
-          userFeed.getOrCreate({ watch: false }),
-          timelineFeed.getOrCreate({ watch: false })
-        ]);
-        
-        // Get followers count and following count using V3 queryFollowers/queryFollowing
+        // Get followers count and following count using V2 followers()/following()
         const [followersResponse, followingResponse] = await Promise.all([
-          userFeed.queryFollowers({ limit: 1000 }).catch((err) => {
-            console.warn(`❌ queryFollowers failed for ${targetUserId} (V3):`, err.message);
-            return { followers: [] };
+          userFeed.followers({ limit: 100 }).catch((err) => {
+            console.warn(`❌ followers() failed for ${targetUserId} (V2):`, err.message);
+            return { results: [] };
           }),
-          timelineFeed.queryFollowing({ limit: 1000 }).catch((err) => {
-            console.warn(`❌ queryFollowing failed for ${targetUserId} (V3):`, err.message);
-            return { following: [] };
+          timelineFeed.following({ limit: 100 }).catch((err) => {
+            console.warn(`❌ following() failed for ${targetUserId} (V2):`, err.message);
+            return { results: [] };
           })
         ]);
 
-        const followers = followersResponse.followers?.length || 0;
-        const following = followingResponse.following?.length || 0;
+        const followers = followersResponse.results?.length || 0;
+        const following = followingResponse.results?.length || 0;
         
         console.log(`✅ User ${targetUserId}: ${followers} followers, ${following} following`);
         
-        // Debug: Log ALL relationships for troubleshooting (V3)
-        if (followersResponse.followers?.length > 0) {
-          console.log(`🔍 ALL followers for ${targetUserId} (V3):`, followersResponse.followers);
+        // Debug: Log ALL relationships for troubleshooting (V2)
+        if (followersResponse.results?.length > 0) {
+          console.log(`🔍 ALL followers for ${targetUserId} (V2):`, followersResponse.results);
         } else {
-          console.log(`⚠️ NO followers found for ${targetUserId} (V3)`);
+          console.log(`⚠️ NO followers found for ${targetUserId} (V2)`);
         }
         
-        if (followingResponse.following?.length > 0) {
-          console.log(`🔍 ALL following for ${targetUserId} (V3):`, followingResponse.following);
+        if (followingResponse.results?.length > 0) {
+          console.log(`🔍 ALL following for ${targetUserId} (V2):`, followingResponse.results);
         } else {
-          console.log(`⚠️ NO following found for ${targetUserId} (V3)`);
+          console.log(`⚠️ NO following found for ${targetUserId} (V2)`);
         }
 
         return {
@@ -179,10 +202,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error) {
-    console.error('🚨 Error in batch user counts fetch:', error);
+    console.error('❌ GET-USER-COUNTS: Critical error fetching user counts:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: req.body?.userId,
+      targetUserIds: req.body?.targetUserIds,
+      hasAuthHeader: !!req.headers.authorization
+    });
+    
     return res.status(500).json({ 
       error: 'Failed to fetch user counts',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      userId: req.body?.userId
     });
   }
 }

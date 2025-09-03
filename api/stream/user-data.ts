@@ -17,22 +17,48 @@ interface UserProfileResponse {
 // Simple auth verification function
 async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
   try {
+    console.log('🔐 USER-DATA: Auth verification attempt...');
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    
+    if (!authHeader) {
+      console.log('❌ USER-DATA: No authorization header found');
+      return null;
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
+      console.log('❌ USER-DATA: Invalid authorization header format:', authHeader.substring(0, 20) + '...');
       return null;
     }
     
     const token = authHeader.substring(7);
     if (!token) {
+      console.log('❌ USER-DATA: Empty token after Bearer prefix');
       return null;
     }
+    
+    console.log('🔍 USER-DATA: Token found, attempting to decode...');
     
     // For now, just decode without verification (since we need the user ID)
     // In a production environment, you'd want proper JWT verification
     const decoded = jwt.decode(token) as any;
-    return decoded?.sub || null;
+    
+    if (!decoded) {
+      console.log('❌ USER-DATA: Failed to decode JWT token');
+      return null;
+    }
+    
+    const userId = decoded?.sub || null;
+    console.log('✅ USER-DATA: Auth verification successful:', { 
+      hasUserId: !!userId, 
+      userIdLength: userId?.length || 0 
+    });
+    
+    return userId;
   } catch (error) {
-    console.error('Auth verification error:', error);
+    console.error('❌ USER-DATA: Auth verification error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 }
@@ -62,25 +88,45 @@ export default async function handler(
   }
 
   try {
+    console.log('🔧 USER-DATA: Request received:', {
+      method: req.method,
+      type: req.body?.type,
+      hasBody: !!req.body,
+      hasAuthHeader: !!req.headers.authorization
+    });
+    
     const { type } = req.body;
 
     if (!type) {
+      console.log('❌ USER-DATA: Missing type parameter');
       return res.status(400).json({ error: 'type is required' });
     }
 
     if (!['posts', 'resolve', 'chat-user'].includes(type)) {
+      console.log('❌ USER-DATA: Invalid type:', type);
       return res.status(400).json({ error: 'type must be "posts", "resolve", or "chat-user"' });
     }
 
     // Handle user posts fetching
     if (type === 'posts') {
+      console.log('📝 USER-DATA: Handling posts request...');
+      
+      // Verify authentication for posts endpoint too
+      const authenticatedUserId = await verifyAuth0Token(req);
+      if (!authenticatedUserId) {
+        console.log('❌ USER-DATA: Unauthorized for posts - returning 401');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      
       const { userId, targetUserId, limit = 20 } = req.body;
 
       if (!userId) {
+        console.log('❌ USER-DATA: Missing userId for posts');
         return res.status(400).json({ error: 'userId is required' });
       }
 
       if (!targetUserId) {
+        console.log('❌ USER-DATA: Missing targetUserId for posts');
         return res.status(400).json({ error: 'targetUserId is required' });
       }
 
