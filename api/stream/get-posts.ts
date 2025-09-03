@@ -66,7 +66,7 @@ export default async function handler(
           limit: 1
         });
         console.log(`🔍 Test reactions for first activity:`, testReactions);
-      } catch (error) {
+      } catch (error: any) {
         console.log(`⚠️ Could not test reactions for first activity:`, error.message);
       }
     }

@@ -221,7 +221,7 @@ export default async function handler(
 
       // Posts are already from the target user's feed, no filtering needed
       const userPosts = result.results || [];
-      const limitedPosts = userPosts.slice(0, limit);
+      const limitedPosts: any[] = userPosts.slice(0, limit);
 
       console.log(`✅ Found ${limitedPosts.length} posts in user:${targetUserId} feed`);
       console.log(`🔗 This feed has ${result.results?.length || 0} total activities`);
@@ -242,7 +242,7 @@ export default async function handler(
           activity.actor === targetUserId
         ) || [];
         
-        const fallbackLimited = fallbackPosts.slice(0, limit);
+        const fallbackLimited: any[] = fallbackPosts.slice(0, limit);
         console.log(`📋 Fallback: Found ${fallbackLimited.length} posts by filtering global feed`);
         
         // Use fallback posts if found
@@ -260,13 +260,13 @@ export default async function handler(
           try {
             // Try to get user from Stream, but handle 404 gracefully
             const user = await streamFeedsClient.user(id).get();
-            console.log(`✅ Found Stream user profile for ${id}:`, user.name);
+            console.log(`✅ Found Stream user profile for ${id}:`, (user as any).name);
             return { [id]: {
-              name: user.name || id,
-              username: user.username,
-              image: user.image || user.profile_image,
-              role: user.role,
-              company: user.company
+              name: (user as any).name || id,
+              username: (user as any).username,
+              image: (user as any).image || (user as any).profile_image,
+              role: (user as any).role,
+              company: (user as any).company
             }};
           } catch (userError: any) {
             // Handle user not found gracefully
@@ -276,7 +276,7 @@ export default async function handler(
               // Create a basic profile from the Auth0 ID
               const fallbackName = id.includes('google-oauth2_') 
                 ? id.replace('google-oauth2_', '').replace(/^\d+/, 'User') // Clean up Google OAuth ID
-                : id.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Format other IDs
+                : id.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()); // Format other IDs
               
               return { [id]: { 
                 name: fallbackName,

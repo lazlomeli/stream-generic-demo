@@ -72,9 +72,7 @@ export default async function handler(
     console.log('🔧 FEED-ACTIONS: Initializing Stream V2 client for production stability...');
     
     // Initialize Stream V2 Feeds client (server-side access)
-    const serverClient = connect(apiKey, apiSecret, undefined, { 
-      logLevel: 'warn' // Reduce verbose logging
-    });
+    const serverClient = connect(apiKey, apiSecret, undefined);
     
     console.log('✅ FEED-ACTIONS: Stream V2 client initialized successfully');
 
@@ -183,8 +181,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add reaction using user client for proper attribution
-        await userClient.reactions.add('like', postId);
+        // Add reaction using server client for proper attribution
+        await serverClient.reactions.add('like', postId);
 
         return res.json({
           success: true,
@@ -208,7 +206,7 @@ export default async function handler(
 
           if (activityReaction) {
             
-            await userClient.reactions.delete(activityReaction.id);
+            await serverClient.reactions.delete(activityReaction.id);
             
           } else {
             
@@ -231,8 +229,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        // Add comment using user client for proper attribution
-        const comment = await userClient.reactions.add('comment', postId, {
+        // Add comment using server client for proper attribution
+        const comment = await serverClient.reactions.add('comment', postId, {
           text: postData.text
         });
 
@@ -247,8 +245,8 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add bookmark reaction using user client
-        await userClient.reactions.add('bookmark', postId);
+        // Add bookmark reaction using server client
+        await serverClient.reactions.add('bookmark', postId);
 
         return res.json({
           success: true,
@@ -276,7 +274,7 @@ export default async function handler(
 
           if (activityReaction) {
             
-            await userClient.reactions.delete(activityReaction.id);
+            await serverClient.reactions.delete(activityReaction.id);
             
           } else {
             

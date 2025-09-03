@@ -141,9 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log('🔌 Connecting to Stream V2 (server-side)...');
-    const serverClient = connect(apiKey, apiSecret, undefined, { 
-      logLevel: 'warn' // Reduce verbose logging
-    });
+        const serverClient = connect(apiKey, apiSecret, undefined);
     console.log('✅ Stream V2 Feeds client connected');
 
     const results: Record<string, { followers: number; following: number }> = {};
