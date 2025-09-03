@@ -1,4 +1,5 @@
-import { FeedsClient } from '@stream-io/feeds-client';
+// import { FeedsClient } from '@stream-io/feeds-client'; // Disabled - V3 alpha causing 500 errors
+import { connect } from 'getstream'; // Use V2 for production stability
 import jwt from 'jsonwebtoken';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -23,9 +24,18 @@ export default async function handler(
   }
 
   try {
+    console.log('🔧 FEED-ACTIONS: Request received:', {
+      action: req.body?.action,
+      userId: req.body?.userId,
+      targetUserId: req.body?.targetUserId,
+      method: req.method,
+      hasBody: !!req.body
+    });
+    
     const { action, userId, postData, postId } = req.body;
 
     if (!userId || !action) {
+      console.error('❌ FEED-ACTIONS: Missing required fields:', { userId: !!userId, action: !!action });
       return res.status(400).json({ error: 'userId and action are required' });
     }
 
@@ -59,18 +69,14 @@ export default async function handler(
       });
     }
 
-    // Initialize Stream V3 Feeds client
-    const feedsClient = new FeedsClient(apiKey);
+    console.log('🔧 FEED-ACTIONS: Initializing Stream V2 client for production stability...');
     
-    // Create user token for V3 authentication
-    const userToken = jwt.sign(
-      { user_id: userId },
-      apiSecret,
-      { algorithm: 'HS256', expiresIn: '24h' }
-    );
+    // Initialize Stream V2 Feeds client (server-side access)
+    const serverClient = connect(apiKey, apiSecret, undefined, { 
+      logLevel: 'warn' // Reduce verbose logging
+    });
     
-    // Connect user for V3 operations
-    await feedsClient.connectUser({ id: userId }, userToken);
+    console.log('✅ FEED-ACTIONS: Stream V2 client initialized successfully');
 
     switch (action) {
       case 'create_post':
@@ -425,22 +431,21 @@ export default async function handler(
         }
 
         try {
-          console.log(`🚀 Initiating follow operation (V3)...`);
+          console.log(`🚀 Initiating follow operation (V2)...`);
           console.log(`📋 Pattern: timeline:${userId} follows user:${targetUserId}`);
           
-          // V3 API follow operation using FeedsClient
-          const timelineFeed = feedsClient.feed('timeline', userId);
-          await timelineFeed.getOrCreate({ watch: false }); // Initialize feed
+          // V2 API follow operation using server-side client
+          const timelineFeed = serverClient.feed('timeline', userId);
           
-          const followResult = await timelineFeed.follow(`user:${targetUserId}`);
-          console.log(`🎉 Follow operation completed (V3):`, followResult);
+          const followResult = await timelineFeed.follow('user', targetUserId);
+          console.log(`🎉 Follow operation completed (V2):`, followResult);
           
-          // Verify the follow was created using V3 queryFollowing/queryFollowers
+          // Verify the follow was created using V2 following()
           try {
-            const verification = await timelineFeed.queryFollowing({ limit: 10 });
-            console.log(`🔍 Verification (V3): timeline:${userId} now follows ${verification.following?.length || 0} feeds`);
-            if (verification.following?.length > 0) {
-              console.log(`🔍 Following relationships:`, verification.following.map(r => ({
+            const verification = await timelineFeed.following({ limit: 10 });
+            console.log(`🔍 Verification (V2): timeline:${userId} now follows ${verification.results?.length || 0} feeds`);
+            if (verification.results?.length > 0) {
+              console.log(`🔍 Following relationships:`, verification.results.map(r => ({
                 feed_id: r.feed_id,
                 target_id: r.target_id,
                 created_at: r.created_at
@@ -448,19 +453,18 @@ export default async function handler(
             }
             
             // Also check if the target user gained a follower
-            const userFeed = feedsClient.feed('user', targetUserId);
-            await userFeed.getOrCreate({ watch: false });
-            const targetFollowers = await userFeed.queryFollowers({ limit: 10 });
-            console.log(`🔍 Target user ${targetUserId} now has ${targetFollowers.followers?.length || 0} followers`);
-            if (targetFollowers.followers?.length > 0) {
-              console.log(`🔍 Follower relationships:`, targetFollowers.followers.map(r => ({
+            const userFeed = serverClient.feed('user', targetUserId);
+            const targetFollowers = await userFeed.followers({ limit: 10 });
+            console.log(`🔍 Target user ${targetUserId} now has ${targetFollowers.results?.length || 0} followers`);
+            if (targetFollowers.results?.length > 0) {
+              console.log(`🔍 Follower relationships:`, targetFollowers.results.map(r => ({
                 feed_id: r.feed_id,
                 target_id: r.target_id,
                 created_at: r.created_at
               })));
             }
           } catch (verifyError) {
-            console.warn(`⚠️  Could not verify follow (V3):`, verifyError);
+            console.warn(`⚠️  Could not verify follow (V2):`, verifyError);
           }
           
           console.log(`✅ User ${userId} successfully followed ${targetUserId}`);
@@ -498,15 +502,14 @@ export default async function handler(
         }
 
         try {
-          console.log(`🚀 Initiating unfollow operation (V3)...`);
+          console.log(`🚀 Initiating unfollow operation (V2)...`);
           console.log(`📋 Pattern: timeline:${userId} unfollows user:${unfollowTargetUserId}`);
           
-          // V3 API unfollow operation using FeedsClient
-          const timelineUnfollowFeed = feedsClient.feed('timeline', userId);
-          await timelineUnfollowFeed.getOrCreate({ watch: false }); // Initialize feed
+          // V2 API unfollow operation using server-side client
+          const timelineUnfollowFeed = serverClient.feed('timeline', userId);
           
-          const unfollowResult = await timelineUnfollowFeed.unfollow(`user:${unfollowTargetUserId}`);
-          console.log(`🎉 Unfollow operation completed (V3):`, unfollowResult);
+          const unfollowResult = await timelineUnfollowFeed.unfollow('user', unfollowTargetUserId);
+          console.log(`🎉 Unfollow operation completed (V2):`, unfollowResult);
           
           console.log(`✅ User ${userId} successfully unfollowed ${unfollowTargetUserId}`);
 
@@ -616,13 +619,19 @@ export default async function handler(
     }
 
   } catch (error: any) {
-    console.error('Error in feed actions:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Action:', req.body?.action, 'UserId:', req.body?.userId, 'PostId:', req.body?.postId);
+    console.error('❌ FEED-ACTIONS: Critical error in feed actions:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      action: req.body?.action,
+      userId: req.body?.userId,
+      targetUserId: req.body?.targetUserId,
+      postId: req.body?.postId
+    });
     res.status(500).json({ 
       error: 'Failed to process feed action',
-      details: error.message,
-      action: req.body?.action
+      details: error instanceof Error ? error.message : String(error),
+      action: req.body?.action,
+      userId: req.body?.userId
     });
   }
 }
