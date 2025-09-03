@@ -119,17 +119,30 @@ class StreamFeedsManager {
   async getUserCounts(userId: string): Promise<UserCounts> {
     try {
       console.log(`📊 Getting counts for user: ${userId} (using V2 backend API)`);
+      console.log(`🎯 STREAMFEEDSCLIENT DEBUG: getUserCounts called with:`, {
+        requestedUserId: userId,
+        currentUserId: this.config?.userId,
+        meaning: `We want to get follower/following counts for ${userId}`,
+        expectedResult: {
+          followers: `How many people follow ${userId}`,
+          following: `How many people ${userId} follows`
+        }
+      });
       
       // Use V2 backend API instead of V3 client
+      const requestPayload = {
+        userId: this.config?.userId || 'unknown',
+        targetUserIds: [userId]
+      };
+      
+      console.log(`🚀 STREAMFEEDSCLIENT: Sending request:`, requestPayload);
+      
       const response = await fetch('/api/stream/get-user-counts-batch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: this.config?.userId || 'unknown',
-          targetUserIds: [userId]
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       if (!response.ok) {
@@ -147,6 +160,18 @@ class StreamFeedsManager {
       console.log(`✅ V2 backend counts for ${userId}:`, {
         followers: userCounts.followers,
         following: userCounts.following
+      });
+      
+      console.log(`📈 STREAMFEEDSCLIENT RESULT: Count API returned:`, {
+        requestedUser: userId,
+        result: {
+          followers: userCounts.followers,
+          following: userCounts.following
+        },
+        interpretation: {
+          followers: `${userCounts.followers} people follow ${userId}`,
+          following: `${userId} follows ${userCounts.following} people`
+        }
       });
 
       return {

@@ -192,10 +192,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         console.log(`👤 Fetching counts for user: ${targetUserId} (V2)`);
         console.log(`📊 Counting pattern: user:${targetUserId} followers + timeline:${targetUserId} following`);
+        console.log(`🎯 EXPECTED BEHAVIOR: This should return WHO follows ${targetUserId} + WHO ${targetUserId} follows`);
         
         // Get user feed and timeline feed using V2 (server-side access)
         const userFeed = serverClient.feed('user', targetUserId);
         const timelineFeed = serverClient.feed('timeline', targetUserId);
+        
+        console.log(`🔍 About to call:`, {
+          followersCall: `user:${targetUserId}.followers()`,
+          followingCall: `timeline:${targetUserId}.following()`,
+          meaning: {
+            followers: `Who follows ${targetUserId}`,
+            following: `Who ${targetUserId} follows`
+          }
+        });
         
         // Get followers count and following count using V2 followers()/following()
         const [followersResponse, followingResponse] = await Promise.all([
@@ -213,6 +223,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const following = followingResponse.results?.length || 0;
         
         console.log(`✅ User ${targetUserId}: ${followers} followers, ${following} following`);
+        console.log(`📊 COUNT BREAKDOWN for ${targetUserId}:`, {
+          followers: {
+            count: followers,
+            meaning: `${followers} people follow ${targetUserId}`,
+            shouldChangeWhen: `Someone follows/unfollows ${targetUserId}`
+          },
+          following: {
+            count: following,
+            meaning: `${targetUserId} follows ${following} people`,
+            shouldChangeWhen: `${targetUserId} follows/unfollows someone else`
+          }
+        });
         
         // Debug: Log ALL relationships for troubleshooting (V2)
         if (followersResponse.results?.length > 0) {

@@ -719,23 +719,45 @@ const UserProfile = () => {
       }));
       console.log(`📡 USERPROFILE: Broadcasted follow state change event`);
       
+      // Small delay to ensure Stream API has processed the follow relationship
+      console.log(`⏱️ USERPROFILE: Waiting 500ms for Stream API to process follow relationship...`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // CRITICAL: Update follower counts only (trust the optimistic follow state update)
-      console.log(`🔄 USERPROFILE: Fetching updated follower count from client-side state...`);
+      console.log(`🔄 USERPROFILE: Fetching updated follower counts from client-side state...`);
+      console.log(`🎯 USERPROFILE DEBUG: Follow action context:`, {
+        currentUser: feedsClient.userId,
+        targetUser: targetUserId,
+        action,
+        followDirection: `${feedsClient.userId} ${!currentlyFollowing ? 'follows' : 'unfollows'} ${targetUserId}`,
+        expectedChanges: {
+          [`${feedsClient.userId}_following`]: !currentlyFollowing ? '+1' : '-1',
+          [`${targetUserId}_followers`]: !currentlyFollowing ? '+1' : '-1',
+          [`${feedsClient.userId}_followers`]: 'unchanged',
+          [`${targetUserId}_following`]: 'unchanged'
+        }
+      });
+      
       try {
         const counts = await streamFeedsManager.getUserCounts(targetUserId);
+        console.log(`📊 USERPROFILE DEBUG: Count API returned for ${targetUserId}:`, {
+          followers: counts.followers,
+          following: counts.following,
+          note: `These are ${targetUserId}'s counts (followers of them + people they follow)`
+        });
+        
         setProfile(prev => prev ? {
           ...prev,
           followerCount: counts.followers,
-          // DON'T update followingCount - that represents how many people THIS user follows,
-          // which doesn't change when someone else follows them
+          followingCount: counts.following
         } : null);
-        console.log(`✅ USERPROFILE: Updated follower count only:`, {
+        console.log(`✅ USERPROFILE: Updated follower counts:`, {
           followers: counts.followers,
-          followingCountUnchanged: true,
+          following: counts.following,
           followButtonState: !currentlyFollowing // Should match optimistic update
         });
       } catch (error) {
-        console.error('❌ USERPROFILE: Error fetching updated follower count:', error);
+        console.error('❌ USERPROFILE: Error fetching updated counts:', error);
       }
       
     } catch (err: any) {

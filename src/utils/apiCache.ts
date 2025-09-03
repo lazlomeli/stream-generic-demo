@@ -285,13 +285,10 @@ class APICache {
     }
     this.setFollowingList(currentUserId, followingList);
     
-    // Only clear specific counts that actually changed:
-    // - currentUser's following count changed (they followed/unfollowed someone)
-    // - targetUser's followers count changed (they gained/lost a follower)
+    // Clear user counts to force refresh (follower/following counts will change)
     this.clearUserCounts([currentUserId, targetUserId]);
     
     console.log(`📝 Updated follow state: ${currentUserId} ${isNowFollowing ? 'follows' : 'unfollows'} ${targetUserId}`);
-    console.log(`🔄 Cache cleared for: ${currentUserId} (following count) & ${targetUserId} (followers count)`);
   }
 
   /**
