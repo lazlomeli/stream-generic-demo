@@ -327,23 +327,25 @@ const Feeds = () => {
         });
         
         // Update follower counts only (avoid calling fetchUserCounts to prevent state conflicts)
-        console.log(`🔄 FEEDS EVENT: Updating follower counts from real-time state...`);
+        console.log(`🔄 FEEDS EVENT: Updating follower count from real-time state...`);
         try {
           const counts = await streamFeedsManager.getUserCounts(targetUserId);
           setUserCounts(prev => ({
             ...prev,
             [targetUserId]: {
               followers: counts.followers,
-              following: counts.following
+              // DON'T update following count - that represents how many people THIS user follows,
+              // which doesn't change when someone else follows them
+              following: prev[targetUserId]?.following || 0
             }
           }));
-          console.log(`✅ FEEDS EVENT: Updated follower counts from event:`, {
+          console.log(`✅ FEEDS EVENT: Updated follower count only from event:`, {
             followers: counts.followers,
-            following: counts.following,
+            followingCountUnchanged: true,
             eventFollowState: isFollowing
           });
         } catch (error) {
-          console.error('❌ FEEDS EVENT: Error updating counts:', error);
+          console.error('❌ FEEDS EVENT: Error updating follower count:', error);
         }
         
         console.log('✅ FEEDS: Updated local state from follow change event');
@@ -1355,23 +1357,25 @@ const Feeds = () => {
       console.log(`📡 FEEDS: Broadcasted follow state change event`);
       
       // CRITICAL: Update follower counts only (trust the optimistic follow state update)
-      console.log(`🔄 FEEDS: Fetching updated follower counts from client-side state...`);
+      console.log(`🔄 FEEDS: Fetching updated follower count from client-side state...`);
       try {
         const counts = await streamFeedsManager.getUserCounts(targetUserId);
         setUserCounts(prev => ({
           ...prev,
           [targetUserId]: {
             followers: counts.followers,
-            following: counts.following
+            // DON'T update following count - that represents how many people THIS user follows,
+            // which doesn't change when someone else follows them
+            following: prev[targetUserId]?.following || 0
           }
         }));
-        console.log(`✅ FEEDS: Updated follower counts:`, {
+        console.log(`✅ FEEDS: Updated follower count only:`, {
           followers: counts.followers,
-          following: counts.following,
+          followingCountUnchanged: true,
           followButtonState: !isCurrentlyFollowing // Should match optimistic update
         });
       } catch (error) {
-        console.error('❌ FEEDS: Error fetching updated counts:', error);
+        console.error('❌ FEEDS: Error fetching updated follower count:', error);
       }
       
     } catch (err: any) {

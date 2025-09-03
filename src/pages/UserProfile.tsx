@@ -720,21 +720,22 @@ const UserProfile = () => {
       console.log(`📡 USERPROFILE: Broadcasted follow state change event`);
       
       // CRITICAL: Update follower counts only (trust the optimistic follow state update)
-      console.log(`🔄 USERPROFILE: Fetching updated follower counts from client-side state...`);
+      console.log(`🔄 USERPROFILE: Fetching updated follower count from client-side state...`);
       try {
         const counts = await streamFeedsManager.getUserCounts(targetUserId);
         setProfile(prev => prev ? {
           ...prev,
           followerCount: counts.followers,
-          followingCount: counts.following
+          // DON'T update followingCount - that represents how many people THIS user follows,
+          // which doesn't change when someone else follows them
         } : null);
-        console.log(`✅ USERPROFILE: Updated follower counts:`, {
+        console.log(`✅ USERPROFILE: Updated follower count only:`, {
           followers: counts.followers,
-          following: counts.following,
+          followingCountUnchanged: true,
           followButtonState: !currentlyFollowing // Should match optimistic update
         });
       } catch (error) {
-        console.error('❌ USERPROFILE: Error fetching updated counts:', error);
+        console.error('❌ USERPROFILE: Error fetching updated follower count:', error);
       }
       
     } catch (err: any) {
