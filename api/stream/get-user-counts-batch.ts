@@ -50,7 +50,22 @@ async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
       isExpired: decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)
     });
     
-    const userId = decoded?.sub || null;
+    // Check if token is expired
+    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
+      console.log('❌ GET-USER-COUNTS: Token has expired:', {
+        expiredAt: new Date(decoded.exp * 1000).toISOString(),
+        now: new Date().toISOString()
+      });
+      return null;
+    }
+    
+    // Check if token has required fields
+    if (!decoded.sub) {
+      console.log('❌ GET-USER-COUNTS: Token missing required "sub" field');
+      return null;
+    }
+    
+    const userId = decoded.sub;
     console.log('✅ GET-USER-COUNTS: Auth verification successful:', { 
       hasUserId: !!userId, 
       userIdLength: userId?.length || 0,

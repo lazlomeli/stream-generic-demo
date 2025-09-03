@@ -61,7 +61,22 @@ async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
       isExpired: decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)
     });
     
-    const userId = decoded?.sub || null;
+    // Check if token is expired
+    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
+      console.log('❌ USER-DATA: Token has expired:', {
+        expiredAt: new Date(decoded.exp * 1000).toISOString(),
+        now: new Date().toISOString()
+      });
+      return null;
+    }
+    
+    // Check if token has required fields
+    if (!decoded.sub) {
+      console.log('❌ USER-DATA: Token missing required "sub" field');
+      return null;
+    }
+    
+    const userId = decoded.sub;
     console.log('✅ USER-DATA: Auth verification successful:', { 
       hasUserId: !!userId, 
       userIdLength: userId?.length || 0,
@@ -120,7 +135,15 @@ export default async function handler(
       authHeaderStart: req.headers.authorization?.substring(0, 50) + '...' || 'none',
       userAgent: req.headers['user-agent']?.substring(0, 100) || 'none',
       origin: req.headers.origin || 'none',
-      referer: req.headers.referer || 'none'
+      referer: req.headers.referer || 'none',
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        hasAuth0Domain: !!process.env.AUTH0_DOMAIN,
+        hasAuth0ClientId: !!process.env.AUTH0_CLIENT_ID,
+        hasAuth0ClientSecret: !!process.env.AUTH0_CLIENT_SECRET,
+        hasAuth0Audience: !!process.env.AUTH0_AUDIENCE,
+        hasAuth0Issuer: !!process.env.AUTH0_ISSUER
+      }
     });
     
     const { type } = req.body;
