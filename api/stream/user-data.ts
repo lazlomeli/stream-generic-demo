@@ -116,7 +116,11 @@ export default async function handler(
       method: req.method,
       type: req.body?.type,
       hasBody: !!req.body,
-      hasAuthHeader: !!req.headers.authorization
+      hasAuthHeader: !!req.headers.authorization,
+      authHeaderStart: req.headers.authorization?.substring(0, 50) + '...' || 'none',
+      userAgent: req.headers['user-agent']?.substring(0, 100) || 'none',
+      origin: req.headers.origin || 'none',
+      referer: req.headers.referer || 'none'
     });
     
     const { type } = req.body;
@@ -133,14 +137,30 @@ export default async function handler(
 
     // Handle user posts fetching
     if (type === 'posts') {
-      console.log('📝 USER-DATA: Handling posts request...');
+      console.log('📝 USER-DATA: Handling posts request...', {
+        hasAuthHeader: !!req.headers.authorization,
+        authHeaderStart: req.headers.authorization?.substring(0, 30) + '...' || 'none',
+        bodyKeys: Object.keys(req.body),
+        userId: req.body?.userId,
+        targetUserId: req.body?.targetUserId
+      });
       
       // Verify authentication for posts endpoint too
       const authenticatedUserId = await verifyAuth0Token(req);
       if (!authenticatedUserId) {
         console.log('❌ USER-DATA: Unauthorized for posts - returning 401');
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ 
+          error: 'Unauthorized',
+          debug: {
+            hasAuthHeader: !!req.headers.authorization,
+            authHeaderFormat: req.headers.authorization?.startsWith('Bearer ') || false
+          }
+        });
       }
+      
+      console.log('✅ USER-DATA: Posts request authenticated successfully:', {
+        authenticatedUserId: authenticatedUserId?.substring(0, 20) + '...' || 'none'
+      });
       
       const { userId, targetUserId, limit = 20 } = req.body;
 

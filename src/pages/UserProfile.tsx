@@ -266,6 +266,11 @@ const UserProfile = () => {
 
       try {
         const accessToken = await getAccessTokenSilently();
+        console.log('🔐 UserProfile fetchUserProfile: Got access token:', {
+          hasToken: !!accessToken,
+          tokenLength: accessToken?.length || 0,
+          tokenStart: accessToken?.substring(0, 30) + '...' || 'none'
+        });
 
         // Resolve hashed userId to Auth0 userId
         let auth0UserId: string = getAuth0UserId(userId) || userId; // Try cache first, fallback to original userId
@@ -304,6 +309,18 @@ const UserProfile = () => {
         const sanitizedTargetUserId = sanitizeUserId(auth0UserId);
         console.log(`🔧 UserProfile: Sanitizing targetUserId "${auth0UserId}" → "${sanitizedTargetUserId}"`);
         
+        console.log('🔐 UserProfile: About to call posts API with token:', {
+          hasAccessToken: !!accessToken,
+          tokenLength: accessToken?.length || 0,
+          tokenStart: accessToken?.substring(0, 30) + '...' || 'none',
+          payload: {
+            type: 'posts',
+            userId: feedsClient.userId,
+            targetUserId: sanitizedTargetUserId,
+            limit: 20
+          }
+        });
+        
         const postsResponse = await fetch('/api/stream/user-data', {
           method: 'POST',
           headers: {
@@ -318,7 +335,23 @@ const UserProfile = () => {
           }),
         });
 
+        console.log('📡 UserProfile: Posts API response:', {
+          status: postsResponse.status,
+          statusText: postsResponse.statusText,
+          ok: postsResponse.ok,
+          headers: {
+            'content-type': postsResponse.headers.get('content-type'),
+            'cache-control': postsResponse.headers.get('cache-control')
+          }
+        });
+
         if (!postsResponse.ok) {
+          const errorText = await postsResponse.text();
+          console.error('❌ UserProfile: Posts API failed:', {
+            status: postsResponse.status,
+            statusText: postsResponse.statusText,
+            errorText: errorText.substring(0, 500)
+          });
           throw new Error('Failed to fetch user posts');
         }
 
