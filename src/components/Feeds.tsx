@@ -329,7 +329,8 @@ const Feeds = () => {
         // Update follower counts only (avoid calling fetchUserCounts to prevent state conflicts)
         console.log(`🔄 FEEDS EVENT: Updating follower counts from real-time state...`);
         try {
-          const counts = await streamFeedsManager.getUserCounts(targetUserId);
+          const accessToken = await getAccessTokenSilently();
+          const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
           setUserCounts(prev => ({
             ...prev,
             [targetUserId]: {
@@ -652,10 +653,13 @@ const Feeds = () => {
     try {
       console.log(`📊 Fetching real-time counts for ${userIds.length} users using client-side state`);
       
+      // Get access token for authenticated API calls
+      const accessToken = await getAccessTokenSilently();
+      
       // Use client-side state management for real-time counts
       const countPromises = userIds.map(async (userId) => {
         try {
-          const counts = await streamFeedsManager.getUserCounts(userId);
+          const counts = await streamFeedsManager.getUserCounts(userId, accessToken);
           return { [userId]: counts };
         } catch (error) {
           console.warn(`❌ Failed to get real-time counts for ${userId}:`, error);
@@ -1357,7 +1361,7 @@ const Feeds = () => {
       // CRITICAL: Update follower counts only (trust the optimistic follow state update)
       console.log(`🔄 FEEDS: Fetching updated follower counts from client-side state...`);
       try {
-        const counts = await streamFeedsManager.getUserCounts(targetUserId);
+        const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
         setUserCounts(prev => ({
           ...prev,
           [targetUserId]: {

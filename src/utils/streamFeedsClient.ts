@@ -116,7 +116,7 @@ class StreamFeedsManager {
   /**
    * Get follower/following counts using V3 queryFollowers/queryFollowing API
    */
-  async getUserCounts(userId: string): Promise<UserCounts> {
+  async getUserCounts(userId: string, accessToken?: string): Promise<UserCounts> {
     try {
       console.log(`📊 Getting counts for user: ${userId} (using V2 backend API)`);
       console.log(`🎯 STREAMFEEDSCLIENT DEBUG: getUserCounts called with:`, {
@@ -136,12 +136,23 @@ class StreamFeedsManager {
       };
       
       console.log(`🚀 STREAMFEEDSCLIENT: Sending request:`, requestPayload);
+      console.log(`🔐 STREAMFEEDSCLIENT: Authorization:`, {
+        hasAccessToken: !!accessToken,
+        tokenLength: accessToken?.length || 0,
+        willIncludeAuthHeader: !!accessToken
+      });
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
       
       const response = await fetch('/api/stream/get-user-counts-batch', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(requestPayload)
       });
 

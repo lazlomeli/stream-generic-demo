@@ -609,7 +609,8 @@ const UserProfile = () => {
 
       // Get user counts using real-time client-side state
       console.log(`📊 USERPROFILE: Fetching real-time counts for user: ${targetUserId}`);
-      const counts = await streamFeedsManager.getUserCounts(targetUserId);
+      const accessToken = await getAccessTokenSilently();
+      const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
       
       // Update state with fresh data
       console.log(`🔄 USERPROFILE: Setting follow state from cache:`, {
@@ -739,7 +740,7 @@ const UserProfile = () => {
       });
       
       try {
-        const counts = await streamFeedsManager.getUserCounts(targetUserId);
+        const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
         console.log(`📊 USERPROFILE DEBUG: Count API returned for ${targetUserId}:`, {
           followers: counts.followers,
           following: counts.following,
