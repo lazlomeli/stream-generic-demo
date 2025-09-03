@@ -47,8 +47,9 @@ async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
         // We'll need to skip auth verification for now or implement proper JWE decoding
         console.log('⚠️ GET-USER-COUNTS: JWE token detected - skipping verification for development');
         
-        // Extract user ID from request body instead since we can't decode JWE easily
-        // This is a temporary workaround - in production you'd want proper JWE decryption
+        // For JWE tokens, we can't decode the payload easily
+        // Use the user ID from request body for now - in production you'd want proper JWE decryption
+        console.log('⚠️ GET-USER-COUNTS: Using userId from request body due to JWE token');
         return req.body.userId || null;
         
       } catch (jweError: any) {

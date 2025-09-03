@@ -58,8 +58,9 @@ async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
         // We'll need to skip auth verification for now or implement proper JWE decoding
         console.log('⚠️ USER-DATA: JWE token detected - skipping verification for development');
         
-        // Extract user ID from request body instead since we can't decode JWE easily
-        // This is a temporary workaround - in production you'd want proper JWE decryption
+        // For JWE tokens, we can't decode the payload easily
+        // Use the user ID from request body for now - in production you'd want proper JWE decryption
+        console.log('⚠️ USER-DATA: Using userId from request body due to JWE token');
         return req.body.userId || null;
         
       } catch (jweError: any) {
@@ -178,11 +179,16 @@ export default async function handler(
       referer: req.headers.referer || 'none',
       environment: {
         nodeEnv: process.env.NODE_ENV,
-        hasAuth0Domain: !!process.env.AUTH0_DOMAIN,
-        hasAuth0ClientId: !!process.env.AUTH0_CLIENT_ID,
+        hasAuth0Domain: !!(process.env.AUTH0_DOMAIN || process.env.VITE_AUTH0_DOMAIN),
+        hasAuth0ClientId: !!(process.env.AUTH0_CLIENT_ID || process.env.VITE_AUTH0_CLIENT_ID),
         hasAuth0ClientSecret: !!process.env.AUTH0_CLIENT_SECRET,
-        hasAuth0Audience: !!process.env.AUTH0_AUDIENCE,
-        hasAuth0Issuer: !!process.env.AUTH0_ISSUER
+        hasAuth0Audience: !!(process.env.AUTH0_AUDIENCE || process.env.VITE_AUTH0_AUDIENCE),
+        hasAuth0Issuer: !!process.env.AUTH0_ISSUER,
+        usingFallback: {
+          domain: !process.env.AUTH0_DOMAIN && !!process.env.VITE_AUTH0_DOMAIN,
+          clientId: !process.env.AUTH0_CLIENT_ID && !!process.env.VITE_AUTH0_CLIENT_ID,
+          audience: !process.env.AUTH0_AUDIENCE && !!process.env.VITE_AUTH0_AUDIENCE
+        }
       }
     });
     
