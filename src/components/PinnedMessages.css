@@ -1,0 +1,221 @@
+/* Pinned Messages Container - Now as overlay */
+.pinned-messages-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 100 !important;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+  max-height: 300px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Pinned Messages Header */
+.pinned-messages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.pinned-messages-header:hover {
+  background-color: #e9ecef;
+}
+
+.pinned-messages-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.pinned-icon {
+  width: 16px;
+  height: 16px;
+  color: #6c757d;
+}
+
+.pinned-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.pinned-toggle {
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.pinned-toggle:hover {
+  background-color: #dee2e6;
+}
+
+/* Pinned Messages List */
+.pinned-messages-list {
+  max-height: 240px;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Individual Pinned Message */
+.pinned-message-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.pinned-message-item:hover {
+  background-color: #f8f9fa;
+}
+
+.pinned-message-item:last-child {
+  border-bottom: none;
+}
+
+/* Removed avatar styling as it's no longer needed */
+
+.pinned-message-text {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pinned-message-time {
+  font-size: 0.75rem;
+  color: #a3a3a3;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+/* Scrollbar styling for pinned messages list */
+.pinned-messages-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.pinned-messages-list::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.pinned-messages-list::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 2px;
+}
+
+.pinned-messages-list::-webkit-scrollbar-thumb:hover {
+  background: #868e96;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .pinned-messages-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  .pinned-message-item {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  
+  .pinned-message-text {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+  
+  .pinned-message-time {
+    font-size: 0.6875rem;
+    margin-left: 0.5rem;
+  }
+  
+  .pinned-message-item::after {
+    display: none; /* Hide hover text on mobile */
+  }
+}
+
+/* Animation for expand/collapse */
+.pinned-messages-container.expanded {
+  max-height: 300px;
+}
+
+.pinned-messages-container.collapsed {
+  max-height: 60px;
+}
+
+/* Message highlighting animation */
+@keyframes messageHighlight {
+  0% {
+    background-color: #e3f2fd;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.highlighted-message {
+  animation: messageHighlight 3s ease-out;
+}
+
+/* Enhanced click feedback */
+.pinned-message-item:active {
+  background-color: #dee2e6;
+  transform: translateY(1px);
+}
+
+/* Removed old bubble dimming - now handled in ChatLayout.css with user-specific colors */
+
+/* Better text readability */
+.pinned-message-text {
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Click indicator for pinned messages */
+.pinned-message-item::after {
+  content: 'Click to view';
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #6c757d;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e5e7eb;
+  z-index: 10;
+}
+
+.pinned-message-item {
+  position: relative;
+}
+
+.pinned-message-item:hover::after {
+  opacity: 1;
+}

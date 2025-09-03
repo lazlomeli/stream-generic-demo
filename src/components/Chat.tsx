@@ -16,6 +16,7 @@ import LoadingSpinner from './LoadingSpinner'
 import VoiceMessageHandler from './VoiceMessageHandler'
 import CustomChannelList from './CustomChannelList'
 import CustomChannelHeader from './CustomChannelHeader'
+import PinnedMessages from './PinnedMessages'
 import { getSanitizedUserId } from '../utils/userUtils'
 import 'stream-chat-react/dist/css/v2/index.css'
 
@@ -268,7 +269,10 @@ const Chat: React.FC<ChatProps> = () => {
         <Channel Attachment={CustomAttachment}>
           <Window>
             <CustomChannelHeader />
-            <MessageList />
+            <div className="message-area-container">
+              <PinnedMessages />
+              <MessageList />
+            </div>
             <CustomMessageInput />
           </Window>
           <Thread />

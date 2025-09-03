@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import LoadingIcon from '../components/LoadingIcon';
-import { getSanitizedUserId } from '../utils/userUtils';
+import { getSanitizedUserId, sanitizeUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { getAuth0UserId, cacheUserIdMapping, getPublicUserId } from '../utils/idUtils';
 import { apiCache } from '../utils/apiCache';
+import streamFeedsManager from '../utils/streamFeedsClient';
 import HeartIcon from '../icons/heart.svg';
 import HeartFilledIcon from '../icons/heart-filled.svg';
 import MessageIcon from '../icons/message-circle.svg';
@@ -236,6 +237,10 @@ const UserProfile = () => {
         if (response.ok) {
           const { token, apiKey } = await response.json();
           setFeedsClient({ token, apiKey, userId: sanitizedUserId });
+          
+          // Initialize Stream Feeds client for real-time state management
+          await streamFeedsManager.initialize({ token, apiKey, userId: sanitizedUserId });
+          console.log('✅ Stream Feeds client initialized for real-time counts in UserProfile');
         }
       } catch (err) {
         console.error('Error initializing feeds client:', err);
@@ -289,18 +294,21 @@ const UserProfile = () => {
           }
         }
 
-        // Fetch user's posts
+                // Fetch user's posts - IMPORTANT: Sanitize targetUserId for Stream API consistency
+        const sanitizedTargetUserId = sanitizeUserId(auth0UserId);
+        console.log(`🔧 UserProfile: Sanitizing targetUserId "${auth0UserId}" → "${sanitizedTargetUserId}"`);
+        
         const postsResponse = await fetch('/api/stream/user-data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
+          body: JSON.stringify({ 
             type: 'posts',
             userId: feedsClient.userId,
-            targetUserId: auth0UserId,
-            limit: 20
+            targetUserId: sanitizedTargetUserId, // ✅ Now sanitized!
+            limit: 20 
           }),
         });
 
@@ -311,21 +319,15 @@ const UserProfile = () => {
         const postsData = await postsResponse.json();
         const userPosts = postsData.posts || [];
 
-        // Fetch user counts (followers/following)
-        const [followersRes, followingRes] = await Promise.all([
-          fetch('/api/stream/feed-actions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
-              action: 'get_followers',
-              userId: feedsClient.userId,
-              targetUserId: auth0UserId
-            })
-          }),
-          fetch('/api/stream/feed-actions', {
+        // Get follow state from shared cache first  
+        let isCurrentlyFollowing = apiCache.getFollowState(feedsClient.userId, auth0UserId);
+        console.log('🎯 USERPROFILE: Cached follow state:', isCurrentlyFollowing);
+        
+        // If not cached, fetch from API
+        if (isCurrentlyFollowing === null) {
+          console.log('🌐 USERPROFILE: Follow state not cached, fetching from API...');
+          
+          const followingRes = await fetch('/api/stream/feed-actions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -333,42 +335,91 @@ const UserProfile = () => {
             },
             body: JSON.stringify({
               action: 'get_following',
-              userId: auth0UserId
+              userId: feedsClient.userId
             })
-          })
-        ]);
+          });
 
-        const [followersData, followingData] = await Promise.all([
-          followersRes.ok ? followersRes.json() : { count: 0 },
-          followingRes.ok ? followingRes.json() : { count: 0 }
-        ]);
-
-        // Check if current user is following this user
-        const isFollowingRes = await fetch('/api/stream/feed-actions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify({
-            action: 'get_following',
-            userId: feedsClient.userId
-          })
-        });
-
-        let isCurrentlyFollowing = false;
-        if (isFollowingRes.ok) {
-          const followingList = await isFollowingRes.json();
-          isCurrentlyFollowing = followingList.following?.some((follow: any) => 
-            follow.target_id === auth0UserId || follow.target?.split(':')[1] === auth0UserId
-          ) || false;
+          if (followingRes.ok) {
+            const followingList = await followingRes.json();
+            isCurrentlyFollowing = followingList.following?.some((follow: any) => {
+              const targetUserId = follow.target_id?.split(':')[1] || follow.target_id;
+              console.log(`🔍 USERPROFILE: Checking follow relationship:`, {
+                streamTargetId: follow.target_id,
+                extractedUserId: targetUserId,
+                currentUserId: auth0UserId,
+                matches: targetUserId === auth0UserId
+              });
+              return targetUserId === auth0UserId;
+            }) || false;
+            
+            // Cache the result and following list for consistency  
+            apiCache.setFollowState(feedsClient.userId, auth0UserId, isCurrentlyFollowing || false);
+            
+            const followingUserIds = new Set<string>(
+              (followingList.following || [])
+                .map((follow: any) => {
+                  const targetUserId = follow.target_id?.split(':')[1] || follow.target_id;
+                  console.log(`🔍 USERPROFILE: Extracting user ID from:`, {
+                    streamTargetId: follow.target_id,
+                    extractedUserId: targetUserId
+                  });
+                  return targetUserId;
+                })
+                .filter((id: string) => id)
+            );
+            apiCache.setFollowingList(feedsClient.userId, followingUserIds);
+          } else {
+            isCurrentlyFollowing = false;
+          }
         }
+
+        // Get user counts using the same batch API as Feeds
+        const userCounts = await apiCache.fetchUserCountsBatch(
+          [auth0UserId],
+          async (uncachedUserIds: string[]) => {
+            if (uncachedUserIds.length === 0) return {};
+            
+            console.log(`📊 USERPROFILE: Batch fetching counts for user: ${auth0UserId}`);
+            
+            // CRITICAL: Sanitize all target user IDs for Stream API consistency
+            const sanitizedTargetUserIds = uncachedUserIds.map(id => sanitizeUserId(id));
+            console.log(`🔧 USERPROFILE: Sanitizing batch user IDs:`, uncachedUserIds.map((original, i) => 
+              `"${original}" → "${sanitizedTargetUserIds[i]}"`));
+            
+            const response = await fetch('/api/stream/get-user-counts-batch', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+              },
+              body: JSON.stringify({
+                userId: feedsClient.userId,
+                targetUserIds: sanitizedTargetUserIds  // ✅ Now sanitized!
+              })
+            });
+
+            if (!response.ok) {
+              console.warn('USERPROFILE: User counts request failed:', response.status);
+              return {};
+            }
+
+            const data = await response.json();
+            return data.userCounts || {};
+          }
+        );
+
+        const counts = userCounts[auth0UserId] || { followers: 0, following: 0 };
+        const followersData = { count: counts.followers };
+        const followingData = { count: counts.following };
 
         // Try to get Stream Chat user data for better name/image (with caching)
         const chatUserData = await apiCache.fetchStreamChatUser(
           auth0UserId,
           async () => {
             console.log('🔍 Fetching Stream Chat user data for:', auth0UserId);
+            // Sanitize for Stream Chat API consistency too
+            const sanitizedChatUserId = sanitizeUserId(auth0UserId);
+            console.log(`🔧 UserProfile: Sanitizing chat userId "${auth0UserId}" → "${sanitizedChatUserId}"`);
             
             const chatUserResponse = await fetch('/api/stream/user-data', {
               method: 'POST',
@@ -378,7 +429,7 @@ const UserProfile = () => {
               },
               body: JSON.stringify({ 
                 type: 'chat-user',
-                userId: auth0UserId 
+                userId: sanitizedChatUserId  // ✅ Now sanitized!
               }),
             });
 
@@ -432,7 +483,13 @@ const UserProfile = () => {
 
         setProfile(userProfile);
         setPosts(userPosts);
-        setIsFollowing(isCurrentlyFollowing);
+        console.log('🔄 USERPROFILE: Setting initial follow state:', {
+          targetUserId: auth0UserId,
+          isCurrentlyFollowing,
+          willSetFollowingTo: isCurrentlyFollowing || false,
+          cacheKey: `follow_state_${feedsClient.userId}_${auth0UserId}`
+        });
+        setIsFollowing(isCurrentlyFollowing || false);
         setImageLoadError(false); // Reset image error state for new user
 
       } catch (err: any) {
@@ -446,11 +503,125 @@ const UserProfile = () => {
     fetchUserProfile();
   }, [userId, feedsClient, getAccessTokenSilently]);
 
+  // Function to refresh follow status and counts from Stream API using shared cache
+  const refreshFollowData = async () => {
+    if (!feedsClient?.userId || !profile?.userId) return;
+    
+    try {
+      console.log('🔄 USERPROFILE: Refreshing follow data using shared cache...');
+      
+      // Use the same batch API as Feeds component for consistency
+      const targetUserId = profile.userId;
+      
+      // Get follow state from cache first
+      let isCurrentlyFollowing = apiCache.getFollowState(feedsClient.userId, targetUserId);
+      
+      // If not cached, fetch from API
+      if (isCurrentlyFollowing === null) {
+        console.log('🌐 USERPROFILE: Follow state not cached, fetching from API...');
+        const accessToken = await getAccessTokenSilently();
+        
+        const followingRes = await fetch('/api/stream/feed-actions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            action: 'get_following',
+            userId: feedsClient.userId
+          })
+        });
+
+        if (followingRes.ok) {
+          const followingList = await followingRes.json();
+          isCurrentlyFollowing = followingList.following?.some((follow: any) => 
+            follow.target_id === targetUserId || follow.target?.split(':')[1] === targetUserId
+          ) || false;
+          
+          // Cache the result
+          apiCache.setFollowState(feedsClient.userId, targetUserId, isCurrentlyFollowing || false);
+          
+          // Also cache the full following list for Feeds component consistency
+          const followingUserIds = new Set<string>(
+            (followingList.following || [])
+              .map((follow: any) => follow.target_id || follow.target?.split(':')[1])
+              .filter((id: string) => id)
+          );
+          apiCache.setFollowingList(feedsClient.userId, followingUserIds);
+        } else {
+          isCurrentlyFollowing = false;
+        }
+      } else {
+        console.log('🎯 USERPROFILE: Using cached follow state');
+      }
+
+      // Get user counts using real-time client-side state
+      console.log(`📊 USERPROFILE: Fetching real-time counts for user: ${targetUserId}`);
+      const counts = await streamFeedsManager.getUserCounts(targetUserId);
+      
+      // Update state with fresh data
+      console.log(`🔄 USERPROFILE: Setting follow state from cache:`, {
+        isCurrentlyFollowing,
+        targetUserId,
+        cacheKey: `follow_state_${feedsClient.userId}_${targetUserId}`,
+        willSetTo: isCurrentlyFollowing !== null ? isCurrentlyFollowing : false
+      });
+      setIsFollowing(isCurrentlyFollowing !== null ? isCurrentlyFollowing : false);
+      setProfile(prev => prev ? {
+        ...prev,
+        followerCount: counts.followers,
+        followingCount: counts.following
+      } : null);
+      
+      console.log('✅ USERPROFILE: Follow data refreshed using shared cache:', {
+        isFollowing: isCurrentlyFollowing,
+        followerCount: counts.followers,
+        followingCount: counts.following,
+        usedCache: apiCache.getFollowState(feedsClient.userId, targetUserId) !== null
+      });
+      
+    } catch (error) {
+      console.error('❌ USERPROFILE: Error refreshing follow data:', error);
+    }
+  };
+
   const handleFollow = async () => {
     if (!feedsClient?.userId || !profile?.userId) return;
 
+    const targetUserId = profile.userId;
+    const currentlyFollowing = isFollowing;
+    const action = currentlyFollowing ? 'unfollow_user' : 'follow_user';
+    
+    console.log(`🐥 USERPROFILE: Starting ${action} for user ${targetUserId}`, {
+      currentUserId: feedsClient.userId,
+      targetUserId,
+      currentlyFollowing,
+      action
+    });
+
+    // Optimistic UI update
+    setIsFollowing(!currentlyFollowing);
+    setProfile(prev => prev ? {
+      ...prev,
+      followerCount: prev.followerCount + (currentlyFollowing ? -1 : 1)
+    } : null);
+
     try {
       const accessToken = await getAccessTokenSilently();
+      
+      const requestBody = {
+        action,
+        userId: feedsClient.userId,
+        targetUserId
+      };
+      
+      console.log(`🚀 USERPROFILE: Making ${action} API call:`, {
+        url: '/api/stream/feed-actions',
+        method: 'POST',
+        body: requestBody,
+        hasAccessToken: !!accessToken
+      });
       
       const response = await fetch('/api/stream/feed-actions', {
         method: 'POST',
@@ -458,22 +629,74 @@ const UserProfile = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          action: isFollowing ? 'unfollow_user' : 'follow_user',
-          userId: feedsClient.userId,
-          targetUserId: profile.userId
-        }),
+        body: JSON.stringify(requestBody),
+      });
+      
+      console.log(`💬 USERPROFILE: API response status:`, {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
 
-      if (response.ok) {
-        setIsFollowing(!isFollowing);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Follow API failed:`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          action,
+          targetUserId
+        });
+        throw new Error(`Failed to ${action}: ${response.status} ${response.statusText}`);
+      }
+      
+      const responseData = await response.json();
+      console.log(`✅ USERPROFILE: ${action} response data:`, responseData);
+      
+      // Update shared cache to notify all components
+      apiCache.updateFollowState(feedsClient.userId, targetUserId, !currentlyFollowing);
+      console.log(`📝 USERPROFILE: Updated shared follow state cache`);
+      
+      // Broadcast follow state change for other components (like Feeds)
+      // This ensures the hover modal in Feeds shows the correct follow button state
+      window.dispatchEvent(new CustomEvent('followStateChanged', {
+        detail: {
+          currentUserId: feedsClient.userId,
+          targetUserId,
+          isFollowing: !currentlyFollowing
+        }
+      }));
+      console.log(`📡 USERPROFILE: Broadcasted follow state change event`);
+      
+      // CRITICAL: Update follower counts only (trust the optimistic follow state update)
+      console.log(`🔄 USERPROFILE: Fetching updated follower counts from client-side state...`);
+      try {
+        const counts = await streamFeedsManager.getUserCounts(targetUserId);
         setProfile(prev => prev ? {
           ...prev,
-          followerCount: prev.followerCount + (isFollowing ? -1 : 1)
+          followerCount: counts.followers,
+          followingCount: counts.following
         } : null);
+        console.log(`✅ USERPROFILE: Updated follower counts:`, {
+          followers: counts.followers,
+          following: counts.following,
+          followButtonState: !currentlyFollowing // Should match optimistic update
+        });
+      } catch (error) {
+        console.error('❌ USERPROFILE: Error fetching updated counts:', error);
       }
-    } catch (err) {
-      console.error('Error updating follow status:', err);
+      
+    } catch (err: any) {
+      console.error('❌ USERPROFILE: Error updating follow status:', err);
+      
+      // Revert UI state on failure
+      setIsFollowing(currentlyFollowing);
+      setProfile(prev => prev ? {
+        ...prev,
+        followerCount: prev.followerCount + (currentlyFollowing ? 1 : -1)
+      } : null);
+      
+      alert(`Failed to ${currentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
     }
   };
 
@@ -526,7 +749,10 @@ const UserProfile = () => {
               className={`profile-follow-button ${isFollowing ? 'following' : ''}`}
               onClick={handleFollow}
             >
-              {isFollowing ? 'Following' : 'Follow'}
+              {(() => {
+                console.log(`🔘 USERPROFILE: Rendering follow button, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
+                return isFollowing ? 'Following' : 'Follow';
+              })()}
             </button>
           )}
         </div>

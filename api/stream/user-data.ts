@@ -95,26 +95,48 @@ export default async function handler(
       // Initialize Stream Feeds client
       const streamFeedsClient = connect(apiKey, apiSecret);
 
-      console.log(`🔍 Fetching posts for user: ${targetUserId}`);
+      console.log(`🔍 Fetching posts from user's personal feed: user:${targetUserId}`);
 
-      // Get posts from global feed filtered by target user
-      const globalFeed = streamFeedsClient.feed('flat', 'global');
-      const result = await globalFeed.get({
-        limit: 100, // Get more to filter
+      // Get posts from the user's personal feed (where follow relationships matter)
+      const userFeed = streamFeedsClient.feed('user', targetUserId);
+      const result = await userFeed.get({
+        limit: limit, // Use the requested limit directly
         offset: 0,
         withReactionCounts: true,
         withOwnReactions: true,
       });
 
-      // Filter posts by the target user (actor)
-      const userPosts = result.results?.filter((activity: any) => 
-        activity.actor === targetUserId
-      ) || [];
-
-      // Apply the requested limit
+      // Posts are already from the target user's feed, no filtering needed
+      const userPosts = result.results || [];
       const limitedPosts = userPosts.slice(0, limit);
 
-      console.log(`✅ Found ${limitedPosts.length} posts for user ${targetUserId}`);
+      console.log(`✅ Found ${limitedPosts.length} posts in user:${targetUserId} feed`);
+      console.log(`🔗 This feed has ${result.results?.length || 0} total activities`);
+      
+      // If no posts in user feed, fallback to global feed filtering (for backward compatibility)
+      if (limitedPosts.length === 0) {
+        console.log(`📋 No posts in user feed, trying global feed fallback...`);
+        
+        const globalFeed = streamFeedsClient.feed('flat', 'global');
+        const globalResult = await globalFeed.get({
+          limit: 100, // Get more to filter
+          offset: 0,
+          withReactionCounts: true,
+          withOwnReactions: true,
+        });
+
+        const fallbackPosts = globalResult.results?.filter((activity: any) => 
+          activity.actor === targetUserId
+        ) || [];
+        
+        const fallbackLimited = fallbackPosts.slice(0, limit);
+        console.log(`📋 Fallback: Found ${fallbackLimited.length} posts by filtering global feed`);
+        
+        // Use fallback posts if found
+        if (fallbackLimited.length > 0) {
+          limitedPosts.push(...fallbackLimited);
+        }
+      }
 
       // Get user profile information for post authors
       const userIds = Array.from(new Set([targetUserId]));
@@ -123,7 +145,9 @@ export default async function handler(
       try {
         const userPromises = userIds.map(async (id) => {
           try {
+            // Try to get user from Stream, but handle 404 gracefully
             const user = await streamFeedsClient.user(id).get();
+            console.log(`✅ Found Stream user profile for ${id}:`, user.name);
             return { [id]: {
               name: user.name || id,
               username: user.username,
@@ -131,16 +155,36 @@ export default async function handler(
               role: user.role,
               company: user.company
             }};
-          } catch (userError) {
-            console.warn(`Failed to get user profile for ${id}:`, userError);
-            return { [id]: { name: id } };
+          } catch (userError: any) {
+            // Handle user not found gracefully
+            if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
+              console.log(`👤 User ${id} not found in Stream user database - using fallback profile`);
+              
+              // Create a basic profile from the Auth0 ID
+              const fallbackName = id.includes('google-oauth2_') 
+                ? id.replace('google-oauth2_', '').replace(/^\d+/, 'User') // Clean up Google OAuth ID
+                : id.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Format other IDs
+              
+              return { [id]: { 
+                name: fallbackName,
+                username: id,
+                image: undefined,
+                role: 'User',
+                company: undefined
+              }};
+            } else {
+              console.warn(`❌ Failed to get user profile for ${id}:`, userError?.message || userError);
+              return { [id]: { name: id } };
+            }
           }
         });
 
         const userResults = await Promise.all(userPromises);
         userProfiles = userResults.reduce((acc, curr) => ({ ...acc, ...curr }), {} as UserProfileResponse);
       } catch (profileError) {
-        console.warn('Failed to fetch user profiles:', profileError);
+        console.warn('❌ Failed to fetch user profiles:', profileError);
+        // Fallback: create basic profile for target user
+        userProfiles = { [targetUserId]: { name: targetUserId } };
       }
 
       return res.status(200).json({

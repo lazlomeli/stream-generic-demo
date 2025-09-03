@@ -2,6 +2,7 @@ import React from 'react'
 import { ChannelItem } from '../hooks/listMyChannels'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingIcon from './LoadingIcon'
+import ChannelTypingIndicator from './ChannelTypingIndicator'
 import './ChannelList.css'
 
 interface ChannelListProps {
@@ -61,7 +62,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
                       <h3 className="channel-item-name">{channelItem.name}</h3>
                       <span className="channel-item-time">{channelItem.lastMessageTime}</span>
                     </div>
-                    <p className="channel-item-message">{channelItem.lastMessage}</p>
+                    <div className="channel-item-message">
+                      <ChannelTypingIndicator
+                        channelId={channelItem.id}
+                        lastMessage={channelItem.lastMessage}
+                      />
+                    </div>
                   </div>
                 </div>
               </button>

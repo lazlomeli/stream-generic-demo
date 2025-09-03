@@ -1,0 +1,51 @@
+/* Channel Typing Indicator Styles */
+.channel-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #6c757d;
+  font-style: italic;
+  animation: fadeIn 0.2s ease-in;
+  width: 100%;
+  overflow: hidden;
+}
+
+.channel-typing-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
+  filter: grayscale(100%) brightness(0) saturate(100%) invert(42%) sepia(3%) saturate(2119%) hue-rotate(201deg) brightness(98%) contrast(91%);
+}
+
+.channel-typing-text {
+  color: #6c757d;
+  font-size: 0.8125rem; /* Match existing channel-item-message font size */
+  font-style: italic;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-last-message {
+  color: #6b7280;
+  font-size: 0.8125rem; /* Match existing channel-item-message font size */
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+/* Fade in animation for typing indicator */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

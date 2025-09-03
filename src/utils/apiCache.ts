@@ -20,6 +20,8 @@ class APICache {
     USER_ID_MAPPING: 60 * 60 * 1000, // 1 hour
     STREAM_CHAT_USER: 15 * 60 * 1000, // 15 minutes
     FEED_TOKEN: 30 * 60 * 1000,      // 30 minutes
+    FOLLOW_STATE: 5 * 60 * 1000,     // 5 minutes
+    FOLLOWING_LIST: 5 * 60 * 1000,   // 5 minutes
   };
 
   /**
@@ -236,6 +238,83 @@ class APICache {
     batchKeysToDelete.forEach(key => {
       console.log(`🗑️ Clearing batch user counts cache: ${key}`);
       this.cache.delete(key);
+    });
+  }
+
+  /**
+   * Get follow state between two users
+   */
+  getFollowState(currentUserId: string, targetUserId: string): boolean | null {
+    return this.get(`follow_state_${currentUserId}_${targetUserId}`);
+  }
+
+  /**
+   * Set follow state between two users
+   */
+  setFollowState(currentUserId: string, targetUserId: string, isFollowing: boolean): void {
+    this.set(`follow_state_${currentUserId}_${targetUserId}`, isFollowing, this.TTL.FOLLOW_STATE);
+  }
+
+  /**
+   * Get list of users that a user is following
+   */
+  getFollowingList(userId: string): Set<string> | null {
+    return this.get(`following_list_${userId}`);
+  }
+
+  /**
+   * Set list of users that a user is following
+   */
+  setFollowingList(userId: string, followingSet: Set<string>): void {
+    this.set(`following_list_${userId}`, followingSet, this.TTL.FOLLOWING_LIST);
+  }
+
+  /**
+   * Update follow state after follow/unfollow action
+   */
+  updateFollowState(currentUserId: string, targetUserId: string, isNowFollowing: boolean): void {
+    // Update the specific follow state
+    this.setFollowState(currentUserId, targetUserId, isNowFollowing);
+    
+    // Update the following list cache
+    const followingList = this.getFollowingList(currentUserId) || new Set<string>();
+    if (isNowFollowing) {
+      followingList.add(targetUserId);
+    } else {
+      followingList.delete(targetUserId);
+    }
+    this.setFollowingList(currentUserId, followingList);
+    
+    // Clear user counts to force refresh (follower/following counts will change)
+    this.clearUserCounts([currentUserId, targetUserId]);
+    
+    console.log(`📝 Updated follow state: ${currentUserId} ${isNowFollowing ? 'follows' : 'unfollows'} ${targetUserId}`);
+  }
+
+  /**
+   * Clear follow-related cache for specific users
+   */
+  clearFollowData(currentUserId: string, targetUserId?: string): void {
+    if (targetUserId) {
+      // Clear specific follow relationship
+      const followKey = `follow_state_${currentUserId}_${targetUserId}`;
+      this.cache.delete(followKey);
+      console.log(`🗑️ Cleared follow state: ${currentUserId} -> ${targetUserId}`);
+    }
+    
+    // Clear following list
+    const followingKey = `following_list_${currentUserId}`;
+    this.cache.delete(followingKey);
+    console.log(`🗑️ Cleared following list for: ${currentUserId}`);
+    
+    // Clear any follow states where this user is the follower
+    const followKeysToDelete = Array.from(this.cache.keys()).filter(key =>
+      key.startsWith(`follow_state_${currentUserId}_`)
+    );
+    
+    followKeysToDelete.forEach(key => {
+      this.cache.delete(key);
+      console.log(`🗑️ Cleared follow state key: ${key}`);
     });
   }
 

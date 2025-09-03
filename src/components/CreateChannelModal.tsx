@@ -119,9 +119,6 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
       const result = await response.json();
       
-
-
-      
       // Show success message
       setSuccess('Channel created successfully!');
       
@@ -129,11 +126,13 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       setChannelName('');
       setSelectedUsers(new Set());
       
-      // Close modal after a short delay to show success message
+      // Immediately notify parent and close modal
+      onChannelCreated(result.channelId);
+      
+      // Close modal after a brief delay to show success message
       setTimeout(() => {
-        onChannelCreated(result.channelId);
         onClose();
-      }, 1500);
+      }, 800);
       
     } catch (err: any) {
       console.error('Error creating channel:', err);

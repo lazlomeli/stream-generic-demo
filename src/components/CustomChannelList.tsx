@@ -4,6 +4,7 @@ import CreateChannelModal from './CreateChannelModal';
 import ChannelList from './ChannelList';
 import { listMyChannels, ChannelItem } from '../hooks/listMyChannels';
 import usersGroupIcon from '../icons/users-group.svg';
+import userIcon from '../icons/user.svg';
 import sendIcon from '../icons/send.svg';
 import './CustomChannelList.css';
 
@@ -25,13 +26,24 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   }>>([]);
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [selectedChannelId, setSelectedChannelId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredChannels, setFilteredChannels] = useState<ChannelItem[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Function to load channels
-  const loadChannels = useCallback(async () => {
+  const loadChannels = useCallback(async (forceRefresh = false) => {
     if (!client.userID) return;
+    
     try {
+      console.log(`📡 Loading channels... ${forceRefresh ? '(force refresh)' : ''}`);
+      
+      // Get fresh channel data
       const channelData = await listMyChannels(client, client.userID);
+      
+      console.log(`✅ Loaded ${channelData.length} channels`);
       setChannels(channelData);
+      setFilteredChannels(channelData); // Initialize filtered channels
       
       // If no channel is selected and we have channels, select the first one
       if (!selectedChannelId && channelData.length > 0) {
@@ -43,26 +55,164 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           const channel = client.channel('messaging', firstChannel.id);
           await channel.watch();
           setActiveChannel(channel);
-
+          console.log(`✅ Auto-selected first channel: ${firstChannel.name}`);
         } catch (error) {
           console.error('❌ Error auto-selecting first channel:', error);
         }
       }
     } catch (error) {
-      console.error('Error loading channels:', error);
+      console.error('❌ Error loading channels:', error);
     }
   }, [client, selectedChannelId, setActiveChannel]);
 
+  // Function to search channels and users
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setFilteredChannels(channels);
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const lowerQuery = query.toLowerCase();
+
+    try {
+      // Filter local channels
+      const localFiltered = channels.filter(channel => 
+        channel.name?.toLowerCase().includes(lowerQuery)
+      );
+      setFilteredChannels(localFiltered);
+
+      // Search for additional channels and users from Stream
+      const [channelSearchResults, userSearchResults] = await Promise.all([
+        // Search channels
+        client.queryChannels(
+          {
+            type: 'messaging',
+            name: { $autocomplete: query },
+            ...(client.userID && { members: { $in: [client.userID] } })
+          },
+          { last_message_at: -1 },
+          { limit: 10 }
+        ).catch(() => []),
+        // Search users
+        client.queryUsers(
+          {
+            $or: [
+              { id: { $autocomplete: query } },
+              { name: { $autocomplete: query } }
+            ]
+          },
+          { id: 1 },
+          { limit: 10 }
+        ).catch(() => ({ users: [] }))
+      ]);
+
+      // Combine and format search results
+      const combinedResults = [
+        ...channelSearchResults.map(channel => ({
+          type: 'channel',
+          id: channel.id,
+          name: (channel.data as any)?.name || channel.id,
+          cid: channel.cid,
+          channel
+        })),
+        ...userSearchResults.users
+          .filter(user => user.id !== client.userID)
+          .map(user => ({
+            type: 'user',
+            id: user.id,
+            name: user.name || user.id,
+            user
+          }))
+      ];
+
+      setSearchResults(combinedResults);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [channels, client]);
+
   // Function to force refresh the channel list when a new channel is created
   const refreshChannelList = useCallback(() => {
+    console.log('🔄 Refreshing channel list...');
     setRefreshKey(prev => prev + 1);
-    loadChannels(); // Reload channels when refreshing
+    // Force reload channels with fresh data
+    loadChannels(true);
   }, [loadChannels]);
+
+  // Handle search result selection
+  const handleSearchResultSelect = useCallback(async (result: any) => {
+    if (result.type === 'channel') {
+      // Select existing channel
+      setSelectedChannelId(result.id);
+      try {
+        const channel = client.channel('messaging', result.id);
+        await channel.watch();
+        setActiveChannel(channel);
+      } catch (error) {
+        console.error('❌ Error selecting search result channel:', error);
+      }
+    } else if (result.type === 'user') {
+      // Create/open DM with user
+      try {
+        const channel = client.channel('messaging', { 
+          members: [client.userID, result.id] 
+        });
+        await channel.watch();
+        setActiveChannel(channel);
+        setSelectedChannelId(channel.id || '');
+        refreshChannelList(); // Refresh to show new channel
+      } catch (error) {
+        console.error('❌ Error creating DM with user:', error);
+      }
+    }
+    
+    // Clear search after selection
+    setSearchQuery('');
+    setSearchResults([]);
+    setFilteredChannels(channels);
+  }, [client, setActiveChannel, channels, refreshChannelList]);
+
+  // Effect to trigger search when query changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      performSearch(searchQuery);
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, performSearch]);
 
   // Load channels on mount and when refresh key changes
   useEffect(() => {
     loadChannels();
   }, [loadChannels, refreshKey]);
+
+  // Listen for real-time channel updates
+  useEffect(() => {
+    if (!client.userID) return;
+
+    const handleChannelUpdated = (event: any) => {
+      console.log('📡 Real-time channel update received:', event.type);
+      // Refresh channel list when channels are updated
+      if (event.type === 'channel.updated' || event.type === 'notification.added_to_channel') {
+        console.log('🔄 Auto-refreshing channel list due to real-time update');
+        refreshChannelList();
+      }
+    };
+
+    // Listen for channel events that might affect our channel list
+    client.on('channel.updated', handleChannelUpdated);
+    client.on('notification.added_to_channel', handleChannelUpdated);
+
+    return () => {
+      client.off('channel.updated', handleChannelUpdated);
+      client.off('notification.added_to_channel', handleChannelUpdated);
+    };
+  }, [client, refreshChannelList]);
 
   // Handle channel selection
   const handleChannelSelect = useCallback(async (channelId: string) => {
@@ -148,28 +298,52 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
     setShowCreateDMModal(true);
   }, [fetchUsers]);
 
-  const handleChannelCreated = useCallback(async (channelId: string) => {
+    const handleChannelCreated = useCallback(async (channelId: string) => {
+    console.log('🎉 Channel created, ID:', channelId);
 
     setShowCreateGroupModal(false);
     setShowCreateDMModal(false);
-    
+
     try {
       // Watch the new channel to ensure the client is aware of it
       const newChannel = client.channel('messaging', channelId);
       await newChannel.watch();
+      console.log('✅ New channel watched successfully');
 
-      
+      // Optimistic update: Add the new channel to our local state immediately
+      const newChannelItem: ChannelItem = {
+        id: channelId,
+        name: (newChannel.data as any)?.name || 'New Channel',
+        type: (newChannel.data as any)?.isDM ? 'dm' : 'group',
+        image: (newChannel.data as any)?.image,
+        lastMessage: undefined,
+        lastMessageTime: undefined,
+        status: 'offline',
+        onlineCount: 0,
+      };
+
+      setChannels(prev => [newChannelItem, ...prev]);
+      setFilteredChannels(prev => [newChannelItem, ...prev]);
+      console.log('⚡ Optimistically added new channel to list');
+
       // Set the new channel as selected and active
       setSelectedChannelId(channelId);
       setActiveChannel(newChannel);
-      
-      // Refresh the channel list once to show the new channel
-      refreshChannelList();
-      
+
+      // Add a small delay to ensure Stream has fully processed the channel
+      // then refresh the channel list to get the accurate data
+      setTimeout(() => {
+        console.log('🔄 Refreshing channel list for accurate data');
+        refreshChannelList();
+      }, 500);
+
     } catch (error) {
       console.error('❌ Error setting up new channel:', error);
-      // Fallback to just refreshing if watching fails
-      refreshChannelList();
+      // Fallback to refreshing with delay if watching fails
+      setTimeout(() => {
+        console.log('🔄 Fallback: Refreshing channel list after error');
+        refreshChannelList();
+      }, 500);
     }
   }, [refreshChannelList, client, setActiveChannel]);
 
@@ -218,10 +392,50 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         </button>
       </div>
 
-      {/* Our Custom ChannelList with group avatar support */}
+      {/* Search Bar */}
+      <div className="channel-search-container">
+        <input
+          type="text"
+          placeholder="Search channels and users..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="channel-search-input"
+        />
+        {isSearching && (
+          <div className="search-loading">🔍 Searching...</div>
+        )}
+      </div>
+
+      {/* Search Results */}
+      {searchQuery && searchResults.length > 0 && (
+        <div className="search-results-container">
+          <div className="search-results-header">Search Results</div>
+          <div className="search-results-list">
+            {searchResults.map((result, index) => (
+              <div
+                key={`${result.type}-${result.id}`}
+                className="search-result-item"
+                onClick={() => handleSearchResultSelect(result)}
+              >
+                <img 
+                  src={result.type === 'channel' ? usersGroupIcon : userIcon}
+                  alt={result.type === 'channel' ? 'Channel' : 'User'}
+                  className="search-result-icon"
+                />
+                <span className="search-result-name">{result.name}</span>
+                <span className="search-result-type">
+                  {result.type === 'channel' ? 'Channel' : 'User'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Channel List */}
       <div className="stream-channel-list">
         <ChannelList 
-          channels={channels}
+          channels={filteredChannels}
           selectedChannel={selectedChannelId}
           onChannelSelect={handleChannelSelect}
         />

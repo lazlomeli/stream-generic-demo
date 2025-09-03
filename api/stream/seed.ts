@@ -492,9 +492,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const relationship of followRelationships) {
       try {
         // Create follow relationships using Stream's feed following API
-        const userFeed = feedsServer.feed('user', relationship.follower);
-        await userFeed.follow('user', relationship.following);
-        console.log(`✅ Created follow relationship: ${relationship.follower} → ${relationship.following}`);
+        // Use timeline:follower follows user:following pattern (consistent with new follows)
+        const timelineFeed = feedsServer.feed('timeline', relationship.follower);
+        await timelineFeed.follow('user', relationship.following);
+        console.log(`✅ Created follow relationship: timeline:${relationship.follower} → user:${relationship.following}`);
       } catch (error) {
         console.log(`⚠️  Follow relationship already exists or error:`, error);
       }

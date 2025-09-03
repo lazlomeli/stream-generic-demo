@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import jwt from 'jsonwebtoken';
-import { connect } from 'getstream';
+import { FeedsClient } from '@stream-io/feeds-client';
 
 // Simple auth verification function
 async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
@@ -65,38 +65,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Missing Stream API credentials' });
     }
     
-    console.log('🔌 Connecting to Stream...');
-    const client = connect(apiKey, apiSecret);
-    console.log('✅ Stream client connected');
+    console.log('🔌 Connecting to Stream V3...');
+    const feedsClient = new FeedsClient(apiKey);
+    
+    // Create a server token for admin operations
+    const serverToken = jwt.sign(
+      { user_id: 'admin' }, // Use admin user for server operations
+      apiSecret,
+      { algorithm: 'HS256', expiresIn: '24h' }
+    );
+    
+    await feedsClient.connectUser({ id: 'admin' }, serverToken);
+    console.log('✅ Stream V3 Feeds client connected');
 
     const results: Record<string, { followers: number; following: number }> = {};
 
     // Batch fetch counts for all users
     const countPromises = targetUserIds.map(async (targetUserId: string) => {
       try {
-        console.log(`👤 Fetching counts for user: ${targetUserId}`);
+        console.log(`👤 Fetching counts for user: ${targetUserId} (V3)`);
+        console.log(`📊 Counting pattern: user:${targetUserId} followers + timeline:${targetUserId} following`);
         
-        // Get followers count
-        const followersPromise = client.feed('timeline', targetUserId).followers({ limit: 1000 });
+        // Get user feed and timeline feed
+        const userFeed = feedsClient.feed('user', targetUserId);
+        const timelineFeed = feedsClient.feed('timeline', targetUserId);
         
-        // Get following count  
-        const followingPromise = client.feed('user', targetUserId).following({ limit: 1000 });
-
+        // Initialize feeds
+        await Promise.all([
+          userFeed.getOrCreate({ watch: false }),
+          timelineFeed.getOrCreate({ watch: false })
+        ]);
+        
+        // Get followers count and following count using V3 queryFollowers/queryFollowing
         const [followersResponse, followingResponse] = await Promise.all([
-          followersPromise.catch((err) => {
-            console.warn(`❌ Followers fetch failed for ${targetUserId}:`, err.message);
-            return { results: [] };
+          userFeed.queryFollowers({ limit: 1000 }).catch((err) => {
+            console.warn(`❌ queryFollowers failed for ${targetUserId} (V3):`, err.message);
+            return { followers: [] };
           }),
-          followingPromise.catch((err) => {
-            console.warn(`❌ Following fetch failed for ${targetUserId}:`, err.message);
-            return { results: [] };
+          timelineFeed.queryFollowing({ limit: 1000 }).catch((err) => {
+            console.warn(`❌ queryFollowing failed for ${targetUserId} (V3):`, err.message);
+            return { following: [] };
           })
         ]);
 
-        const followers = followersResponse.results?.length || 0;
-        const following = followingResponse.results?.length || 0;
+        const followers = followersResponse.followers?.length || 0;
+        const following = followingResponse.following?.length || 0;
         
         console.log(`✅ User ${targetUserId}: ${followers} followers, ${following} following`);
+        
+        // Debug: Log ALL relationships for troubleshooting (V3)
+        if (followersResponse.followers?.length > 0) {
+          console.log(`🔍 ALL followers for ${targetUserId} (V3):`, followersResponse.followers);
+        } else {
+          console.log(`⚠️ NO followers found for ${targetUserId} (V3)`);
+        }
+        
+        if (followingResponse.following?.length > 0) {
+          console.log(`🔍 ALL following for ${targetUserId} (V3):`, followingResponse.following);
+        } else {
+          console.log(`⚠️ NO following found for ${targetUserId} (V3)`);
+        }
 
         return {
           userId: targetUserId,

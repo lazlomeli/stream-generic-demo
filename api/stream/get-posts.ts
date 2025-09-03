@@ -91,20 +91,30 @@ export default async function handler(
           
           // Priority 2: Fallback to Stream's user profile system
           if (streamFeedsClient.getUsers) {
-            const userProfile = await streamFeedsClient.getUsers([activity.actor]) as UserProfileResponse;
-            const userData = userProfile[activity.actor];
-            
-            if (userData && userData.name) {
-              console.log(`✅ Using Stream user profile for ${activity.actor}:`, userData);
-              return {
-                ...activity,
-                userInfo: {
-                  name: userData.name || userData.username,
-                  image: userData.image || userData.profile_image || undefined,
-                  role: userData.role || undefined,
-                  company: userData.company || undefined
-                }
-              };
+            try {
+              const userProfile = await streamFeedsClient.getUsers([activity.actor]) as UserProfileResponse;
+              const userData = userProfile[activity.actor];
+              
+              if (userData && userData.name) {
+                console.log(`✅ Using Stream user profile for ${activity.actor}:`, userData);
+                return {
+                  ...activity,
+                  userInfo: {
+                    name: userData.name || userData.username,
+                    image: userData.image || userData.profile_image || undefined,
+                    role: userData.role || undefined,
+                    company: userData.company || undefined
+                  }
+                };
+              }
+            } catch (getUserError: any) {
+              // Handle user not found gracefully
+              if (getUserError?.response?.status === 404 || getUserError?.error?.status_code === 404) {
+                console.log(`👤 User ${activity.actor} not found in Stream user database - using fallback`);
+              } else {
+                console.warn(`❌ Failed to get Stream user profile for ${activity.actor}:`, getUserError?.message);
+              }
+              // Fall through to Priority 3 fallback
             }
           }
           

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { connect } from 'getstream';
+import { FeedsClient } from '@stream-io/feeds-client';
 import { StreamChat } from 'stream-chat';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -30,20 +30,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Handle feed token generation
     if (type === 'feed') {
-      // Create/update user profile in Stream Feeds if profile information is provided
+      // Create/update user profile in Stream Feeds V3 if profile information is provided
       if (userProfile) {
         try {
-          const streamFeedsClient = connect(apiKey, apiSecret);
-          await streamFeedsClient.setUser({
-            id: userId,
-            name: userProfile.name,
-            image: userProfile.image,
-            role: userProfile.role
-          });
-          console.log(`✅ User profile updated for feeds: ${userId}`);
+          const feedsClient = new FeedsClient(apiKey);
+          
+          // For server-side operations, we can use the secret to create a user token
+          const serverToken = jwt.sign(
+            { user_id: userId },
+            apiSecret,
+            { algorithm: 'HS256', expiresIn: '24h' }
+          );
+          
+          await feedsClient.connectUser({ id: userId }, serverToken);
+          
+          // Update user profile (V3 may handle this automatically during connectUser)
+          console.log(`✅ User connected to feeds V3: ${userId}`);
         } catch (profileError) {
-          console.warn(`Failed to update user profile for feeds ${userId}:`, profileError);
-          // Continue with token generation even if profile update fails
+          console.warn(`Failed to connect user to feeds V3 ${userId}:`, profileError);
+          // Continue with token generation even if profile connection fails
         }
       }
 

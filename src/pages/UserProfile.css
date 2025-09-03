@@ -118,9 +118,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  min-width: 120px;
-  width: 100%;
-  max-width: 200px;
+  width: 140px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-follow-button:hover {
@@ -205,8 +207,7 @@
   }
 
   .profile-follow-button {
-    width: 100%;
-    max-width: 200px;
+    width: 140px;
   }
 }
 
