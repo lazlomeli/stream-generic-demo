@@ -25,21 +25,36 @@ async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
       return null;
     }
     
-    console.log('🔍 GET-USER-COUNTS: Token found, attempting to decode...');
+    console.log('🔍 GET-USER-COUNTS: Token found, attempting to decode...', {
+      tokenLength: token.length,
+      tokenStart: token.substring(0, 30) + '...',
+      tokenEnd: '...' + token.substring(token.length - 30)
+    });
     
     // For now, just decode without verification (since we need the user ID)
     // In a production environment, you'd want proper JWT verification
     const decoded = jwt.decode(token) as any;
     
     if (!decoded) {
-      console.log('❌ GET-USER-COUNTS: Failed to decode JWT token');
+      console.log('❌ GET-USER-COUNTS: Failed to decode JWT token - token might be malformed');
       return null;
     }
+    
+    console.log('🔍 GET-USER-COUNTS: Token decoded successfully:', {
+      hasIss: !!decoded.iss,
+      hasSub: !!decoded.sub,
+      hasAud: !!decoded.aud,
+      hasExp: !!decoded.exp,
+      exp: decoded.exp,
+      now: Math.floor(Date.now() / 1000),
+      isExpired: decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)
+    });
     
     const userId = decoded?.sub || null;
     console.log('✅ GET-USER-COUNTS: Auth verification successful:', { 
       hasUserId: !!userId, 
-      userIdLength: userId?.length || 0 
+      userIdLength: userId?.length || 0,
+      userId: userId?.substring(0, 20) + '...' || 'none'
     });
     
     return userId;
@@ -53,6 +68,15 @@ async function verifyAuth0Token(req: VercelRequest): Promise<string | null> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Handle CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

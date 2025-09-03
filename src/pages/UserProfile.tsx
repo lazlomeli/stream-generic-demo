@@ -215,6 +215,12 @@ const UserProfile = () => {
 
       try {
         const accessToken = await getAccessTokenSilently();
+        console.log('🔐 UserProfile: Got access token:', {
+          hasToken: !!accessToken,
+          tokenLength: accessToken?.length || 0,
+          tokenStart: accessToken?.substring(0, 30) + '...' || 'none'
+        });
+        
         const sanitizedUserId = getSanitizedUserId(user);
         
         const response = await fetch('/api/stream/auth-tokens', {
@@ -421,6 +427,12 @@ const UserProfile = () => {
             const sanitizedChatUserId = sanitizeUserId(auth0UserId);
             console.log(`🔧 UserProfile: Sanitizing chat userId "${auth0UserId}" → "${sanitizedChatUserId}"`);
             
+            console.log('🔐 UserProfile: Access token check:', {
+              hasAccessToken: !!accessToken,
+              tokenLength: accessToken?.length || 0,
+              tokenStart: accessToken?.substring(0, 20) + '...' || 'none'
+            });
+            
             const chatUserResponse = await fetch('/api/stream/user-data', {
               method: 'POST',
               headers: {
@@ -431,6 +443,12 @@ const UserProfile = () => {
                 type: 'chat-user',
                 userId: sanitizedChatUserId  // ✅ Now sanitized!
               }),
+            });
+            
+            console.log('📡 UserProfile: user-data response:', {
+              status: chatUserResponse.status,
+              statusText: chatUserResponse.statusText,
+              ok: chatUserResponse.ok
             });
 
             if (chatUserResponse.ok) {
