@@ -34,10 +34,27 @@ export default async function handler(
     
     const { action, userId, postData, postId } = req.body;
 
-    if (!userId || !action) {
-      console.error('❌ FEED-ACTIONS: Missing required fields:', { userId: !!userId, action: !!action });
-      return res.status(400).json({ error: 'userId and action are required' });
+    // Enhanced validation for userId
+    if (!userId || !action || typeof userId !== 'string' || userId.trim() === '') {
+      console.error('❌ FEED-ACTIONS: Missing or invalid required fields:', { 
+        userId: userId, 
+        userIdType: typeof userId,
+        userIdTrimmed: userId?.trim?.(),
+        userIdLength: userId?.length,
+        action: !!action 
+      });
+      return res.status(400).json({ error: 'userId and action are required and userId must be a non-empty string' });
     }
+
+    // Trim userId to ensure no whitespace issues
+    const trimmedUserId = userId.trim();
+    
+    console.log('🔧 FEED-ACTIONS: Using userId for Stream API:', {
+      originalUserId: userId,
+      trimmedUserId: trimmedUserId,
+      userIdLength: trimmedUserId.length,
+      action: action
+    });
 
     // Get Stream API credentials with fallbacks
     const apiKey = process.env.STREAM_API_KEY || process.env.VITE_STREAM_API_KEY;
@@ -88,7 +105,7 @@ export default async function handler(
           const { userProfile } = req.body;
           if (userProfile) {
             await serverClient.setUser({
-              id: userId,
+              id: trimmedUserId,
               name: userProfile.name,
               image: userProfile.image,
               role: userProfile.role,
@@ -108,7 +125,7 @@ export default async function handler(
         
         // Create post activity data
         const activityData = {
-          actor: userId,
+          actor: trimmedUserId,
           verb: 'post',
           object: postData.text && postData.text.trim() ? 'post' : 'media', // Use 'media' for media-only posts
           text: postData.text || '', // Allow empty text for media-only posts
@@ -121,7 +138,7 @@ export default async function handler(
           },
           // Store complete user profile information in the post
           userProfile: {
-            name: userProfile.name || userId,
+            name: userProfile.name || trimmedUserId,
             image: userProfile.image || undefined,
             role: userProfile.role || 'User',
             company: userProfile.company || undefined,
@@ -130,7 +147,7 @@ export default async function handler(
             family_name: userProfile.family_name || undefined,
             nickname: userProfile.nickname || undefined,
             email: userProfile.email || undefined,
-            sub: userProfile.sub || userId
+            sub: userProfile.sub || trimmedUserId
           }
         };
 
@@ -140,7 +157,7 @@ export default async function handler(
           // Global feed for main feed display
           serverClient.feed('flat', 'global').addActivity(activityData),
           // User's personal feed for profile and follow relationships
-          serverClient.feed('user', userId).addActivity(activityData)
+          serverClient.feed('user', trimmedUserId).addActivity(activityData)
         ]);
 
         console.log('✅ Post created in global feed with ID:', globalActivity.id);
@@ -166,10 +183,10 @@ export default async function handler(
         await serverClient.feed('flat', 'global').removeActivity(postId);
         
         // Remove from user's personal feed
-        await serverClient.feed('user', userId).removeActivity(postId);
+        await serverClient.feed('user', trimmedUserId).removeActivity(postId);
         
         // Remove from user's timeline feed
-        await serverClient.feed('timeline', userId).removeActivity(postId);
+        await serverClient.feed('timeline', trimmedUserId).removeActivity(postId);
 
         return res.json({
           success: true,
@@ -183,8 +200,8 @@ export default async function handler(
 
         console.log('👍 LIKE_POST: Adding like reaction:', { userId, postId });
         
-        // Add reaction using server client for proper attribution (V2 requires user_id)
-        const likeResult = await serverClient.reactions.add('like', postId, {}, { user_id: userId });
+        // Add reaction using server client for proper attribution (V2 requires userId)
+        const likeResult = await serverClient.reactions.add('like', postId, {}, { userId: trimmedUserId });
         
         console.log('✅ LIKE_POST: Like added successfully:', likeResult?.id || 'success');
 
@@ -203,7 +220,7 @@ export default async function handler(
           // Get user's like reactions for this activity using the correct API approach
           const userReactions = await serverClient.reactions.filter({
             kind: 'like',
-            user_id: userId
+            user_id: trimmedUserId
           });
 
           // Filter to find reactions for this specific activity
@@ -236,10 +253,10 @@ export default async function handler(
 
         console.log('💬 ADD_COMMENT: Adding comment reaction:', { userId, postId, text: postData.text.substring(0, 50) });
         
-        // Add comment using server client for proper attribution (V2 requires user_id)
+        // Add comment using server client for proper attribution (V2 requires userId)
         const comment = await serverClient.reactions.add('comment', postId, {
           text: postData.text
-        }, { user_id: userId });
+        }, { userId: trimmedUserId });
         
         console.log('✅ ADD_COMMENT: Comment added successfully:', comment?.id || 'success');
 
@@ -256,8 +273,8 @@ export default async function handler(
 
         console.log('🔖 BOOKMARK_POST: Adding bookmark reaction:', { userId, postId });
         
-        // Add bookmark reaction using server client (V2 requires user_id)
-        const bookmarkResult = await serverClient.reactions.add('bookmark', postId, {}, { user_id: userId });
+        // Add bookmark reaction using server client (V2 requires userId)
+        const bookmarkResult = await serverClient.reactions.add('bookmark', postId, {}, { userId: trimmedUserId });
         
         console.log('✅ BOOKMARK_POST: Bookmark added successfully:', bookmarkResult?.id || 'success');
 
@@ -278,7 +295,7 @@ export default async function handler(
           // Get user's bookmark reactions using the correct API approach
           const userBookmarkReactions = await serverClient.reactions.filter({
             kind: 'bookmark',
-            user_id: userId
+            user_id: trimmedUserId
           });
 
           
@@ -328,7 +345,7 @@ export default async function handler(
         // Get all bookmark reactions for the user with activity data
         const bookmarkReactions = await serverClient.reactions.filter({
           kind: 'bookmark',
-          user_id: userId,
+          user_id: trimmedUserId,
           with_activity_data: true
         });
 
@@ -435,7 +452,7 @@ export default async function handler(
 
       case 'follow_user':
         const { targetUserId } = req.body;
-        console.log(`👥 FOLLOW REQUEST: User ${userId} wants to follow ${targetUserId}`);
+        console.log(`👥 FOLLOW REQUEST: User ${trimmedUserId} wants to follow ${targetUserId}`);
         
         if (!targetUserId) {
           console.error('❌ Missing targetUserId in follow request');
@@ -444,10 +461,10 @@ export default async function handler(
 
         try {
           console.log(`🚀 Initiating follow operation (V2)...`);
-          console.log(`📋 Pattern: timeline:${userId} follows user:${targetUserId}`);
+          console.log(`📋 Pattern: timeline:${trimmedUserId} follows user:${targetUserId}`);
           
           // V2 API follow operation using server-side client
-          const timelineFeed = serverClient.feed('timeline', userId);
+          const timelineFeed = serverClient.feed('timeline', trimmedUserId);
           
           const followResult = await timelineFeed.follow('user', targetUserId);
           console.log(`🎉 Follow operation completed (V2):`, followResult);
@@ -455,7 +472,7 @@ export default async function handler(
           // Verify the follow was created using V2 following()
           try {
             const verification = await timelineFeed.following({ limit: 10 });
-            console.log(`🔍 Verification (V2): timeline:${userId} now follows ${verification.results?.length || 0} feeds`);
+            console.log(`🔍 Verification (V2): timeline:${trimmedUserId} now follows ${verification.results?.length || 0} feeds`);
             if (verification.results?.length > 0) {
               console.log(`🔍 Following relationships:`, verification.results.map(r => ({
                 feed_id: r.feed_id,
@@ -479,34 +496,34 @@ export default async function handler(
             console.warn(`⚠️  Could not verify follow (V2):`, verifyError);
           }
           
-          console.log(`✅ User ${userId} successfully followed ${targetUserId}`);
+          console.log(`✅ User ${trimmedUserId} successfully followed ${targetUserId}`);
 
           return res.json({
             success: true,
             message: 'User followed successfully',
-            followerUserId: userId,
+            followerUserId: trimmedUserId,
             targetUserId: targetUserId,
             timestamp: new Date().toISOString(),
-            followPattern: `timeline:${userId} → user:${targetUserId}`
+            followPattern: `timeline:${trimmedUserId} → user:${targetUserId}`
           });
         } catch (error) {
           console.error('❌ Error following user:', {
             error: error instanceof Error ? error.message : error,
             stack: error instanceof Error ? error.stack : undefined,
-            userId,
+            userId: trimmedUserId,
             targetUserId
           });
           return res.status(500).json({ 
             error: 'Failed to follow user',
             details: error instanceof Error ? error.message : 'Unknown error',
-            userId,
+            userId: trimmedUserId,
             targetUserId
           });
         }
 
       case 'unfollow_user':
         const { targetUserId: unfollowTargetUserId } = req.body;
-        console.log(`👥 UNFOLLOW REQUEST: User ${userId} wants to unfollow ${unfollowTargetUserId}`);
+        console.log(`👥 UNFOLLOW REQUEST: User ${trimmedUserId} wants to unfollow ${unfollowTargetUserId}`);
         
         if (!unfollowTargetUserId) {
           console.error('❌ Missing targetUserId in unfollow request');
@@ -515,20 +532,20 @@ export default async function handler(
 
         try {
           console.log(`🚀 Initiating unfollow operation (V2)...`);
-          console.log(`📋 Pattern: timeline:${userId} unfollows user:${unfollowTargetUserId}`);
+          console.log(`📋 Pattern: timeline:${trimmedUserId} unfollows user:${unfollowTargetUserId}`);
           
           // V2 API unfollow operation using server-side client
-          const timelineUnfollowFeed = serverClient.feed('timeline', userId);
+          const timelineUnfollowFeed = serverClient.feed('timeline', trimmedUserId);
           
           const unfollowResult = await timelineUnfollowFeed.unfollow('user', unfollowTargetUserId);
           console.log(`🎉 Unfollow operation completed (V2):`, unfollowResult);
           
-          console.log(`✅ User ${userId} successfully unfollowed ${unfollowTargetUserId}`);
+          console.log(`✅ User ${trimmedUserId} successfully unfollowed ${unfollowTargetUserId}`);
 
           return res.json({
             success: true,
             message: 'User unfollowed successfully',
-            followerUserId: userId,
+            followerUserId: trimmedUserId,
             targetUserId: unfollowTargetUserId,
             timestamp: new Date().toISOString()
           });
@@ -536,20 +553,20 @@ export default async function handler(
           console.error('❌ Error unfollowing user:', {
             error: error instanceof Error ? error.message : error,
             stack: error instanceof Error ? error.stack : undefined,
-            userId,
+            userId: trimmedUserId,
             unfollowTargetUserId
           });
           return res.status(500).json({ 
             error: 'Failed to unfollow user',
             details: error instanceof Error ? error.message : 'Unknown error',
-            userId,
+            userId: trimmedUserId,
             targetUserId: unfollowTargetUserId
           });
         }
 
       case 'get_followers':
         // Get followers for a user's feed
-        const targetUser = req.body.targetUserId || userId;
+        const targetUser = req.body.targetUserId || trimmedUserId;
         
         try {
           // Use the correct Stream SDK method for getting followers
@@ -577,7 +594,7 @@ export default async function handler(
         // Get users that this user is following
         try {
           // Use the correct Stream SDK method for getting following
-          const timelineFeed = serverClient.feed('timeline', userId);
+          const timelineFeed = serverClient.feed('timeline', trimmedUserId);
           const following = await timelineFeed.following({
             limit: req.body.limit || 20,
             offset: req.body.offset || 0
@@ -606,7 +623,7 @@ export default async function handler(
 
         try {
           // Use the correct Stream SDK method for checking following status
-          const timelineFeed = serverClient.feed('timeline', userId);
+          const timelineFeed = serverClient.feed('timeline', trimmedUserId);
           const following = await timelineFeed.following({
             filter: [`user:${checkTargetUserId}`],
             limit: 1
@@ -631,19 +648,22 @@ export default async function handler(
     }
 
   } catch (error: any) {
+    const { action, userId, targetUserId, postId } = req.body || {};
+    const trimmedUserId = typeof userId === 'string' ? userId.trim() : userId;
+    
     console.error('❌ FEED-ACTIONS: Critical error in feed actions:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      action: req.body?.action,
-      userId: req.body?.userId,
-      targetUserId: req.body?.targetUserId,
-      postId: req.body?.postId
+      action: action,
+      userId: trimmedUserId,
+      targetUserId: targetUserId,
+      postId: postId
     });
     res.status(500).json({ 
       error: 'Failed to process feed action',
       details: error instanceof Error ? error.message : String(error),
-      action: req.body?.action,
-      userId: req.body?.userId
+      action: action,
+      userId: trimmedUserId
     });
   }
 }
