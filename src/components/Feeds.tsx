@@ -1050,19 +1050,45 @@ const Feeds = () => {
       // OPTIMIZED: Add new post to state instead of refetching entire feed
       console.log(`⚡ OPTIMIZED: Adding new post to state instead of full refetch`);
       
-      if (response.ok) {
-        // Use the already parsed result instead of parsing again
+      if (response.ok && result.activity) {
         console.log('✅ Post created successfully:', result);
         
-        // Add the new post to the beginning of posts array (simplified for type safety)
-        console.log('Post created successfully, will appear on next feed refresh');
+        // Transform the new activity to FeedPost format (similar to fetchPosts logic)
+        const activity = result.activity;
+        const actorId = activity.actor;
+        const isOwnPost = actorId === feedsClient.userId;
         
-        // Optional: Refresh feed immediately (uncomment if needed)
-        // setTimeout(() => fetchPosts(feedsClient.userId), 1000);
+        // Use the userProfile data we sent with the post
+        const displayName = userProfile.name || userProfile.email || actorId || 'Anonymous User';
+        const profileImage = userProfile.image;
+        
+        const newPost: FeedPost = {
+          id: activity.id,
+          actor: actorId,
+          text: activity.text && activity.text.trim() && activity.text !== 'media' ? activity.text : '',
+          attachments: activity.attachments || [],
+          custom: activity.custom || {
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            category: 'general'
+          },
+          time: activity.time || activity.created_at,
+          created_at: activity.time || activity.created_at,
+          isOwnPost: isOwnPost,
+          userInfo: {
+            name: displayName,
+            image: profileImage || '',
+            role: isOwnPost ? 'Current User' : undefined,
+            company: userProfile.company || undefined
+          },
+          userProfile: activity.userProfile || userProfile
+        };
+        
+        // Add the new post to the beginning of posts array
+        setPosts(prevPosts => [newPost, ...prevPosts]);
+        console.log('✅ New post added to feed immediately');
       }
-      
-      // Optional: Refresh feed after delay to ensure accuracy (uncomment if needed)
-      // setTimeout(() => fetchPosts(feedsClient.userId), 5000);
       
       setNewPostText('');
       
