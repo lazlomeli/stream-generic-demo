@@ -1051,7 +1051,8 @@ const Feeds = () => {
       console.log(`⚡ OPTIMIZED: Adding new post to state instead of full refetch`);
       
       if (response.ok) {
-        const responseData = await response.json();
+        // Use the already parsed result instead of parsing again
+        console.log('✅ Post created successfully:', result);
         
         // Add the new post to the beginning of posts array (simplified for type safety)
         console.log('Post created successfully, will appear on next feed refresh');

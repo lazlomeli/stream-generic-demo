@@ -181,12 +181,17 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add reaction using server client for proper attribution
-        await serverClient.reactions.add('like', postId);
+        console.log('👍 LIKE_POST: Adding like reaction:', { userId, postId });
+        
+        // Add reaction using server client for proper attribution (V2 requires user_id)
+        const likeResult = await serverClient.reactions.add('like', postId, {}, { user_id: userId });
+        
+        console.log('✅ LIKE_POST: Like added successfully:', likeResult?.id || 'success');
 
         return res.json({
           success: true,
-          message: 'Post liked successfully'
+          message: 'Post liked successfully',
+          reactionId: likeResult?.id
         });
 
       case 'unlike_post':
@@ -229,10 +234,14 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        // Add comment using server client for proper attribution
+        console.log('💬 ADD_COMMENT: Adding comment reaction:', { userId, postId, text: postData.text.substring(0, 50) });
+        
+        // Add comment using server client for proper attribution (V2 requires user_id)
         const comment = await serverClient.reactions.add('comment', postId, {
           text: postData.text
-        });
+        }, { user_id: userId });
+        
+        console.log('✅ ADD_COMMENT: Comment added successfully:', comment?.id || 'success');
 
         return res.json({
           success: true,
@@ -245,12 +254,17 @@ export default async function handler(
           return res.status(400).json({ error: 'postId is required' });
         }
 
-        // Add bookmark reaction using server client
-        await serverClient.reactions.add('bookmark', postId);
+        console.log('🔖 BOOKMARK_POST: Adding bookmark reaction:', { userId, postId });
+        
+        // Add bookmark reaction using server client (V2 requires user_id)
+        const bookmarkResult = await serverClient.reactions.add('bookmark', postId, {}, { user_id: userId });
+        
+        console.log('✅ BOOKMARK_POST: Bookmark added successfully:', bookmarkResult?.id || 'success');
 
         return res.json({
           success: true,
-          message: 'Post bookmarked successfully'
+          message: 'Post bookmarked successfully',
+          reactionId: bookmarkResult?.id
         });
 
       case 'remove_bookmark':
