@@ -7,6 +7,8 @@ import RightSidebar from './components/RightSidebar'
 import LoadingSpinner from './components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
+import ToastContainer from './components/ToastContainer'
+import { ToastProvider } from './contexts/ToastContext'
 import './App.css'
 import Feeds from './components/Feeds'
 import BookmarkedPosts from './pages/BookmarkedPosts'
@@ -31,39 +33,42 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {isAuthenticated && <Header showNavigation={!showSidebars} />}
-      {showSidebars && <Sidebar />}
-      {showSidebars && <RightSidebar />}
-      <main className={`app-main ${showSidebars ? 'with-sidebars' : ''}`}>
-        <Routes>
-          <Route path="/" element={
-            isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />
-          } />
-          <Route path="/login" element={<Login />} />
-          <Route path="/chat" element={
-            <ProtectedRoute>
-              <Chat />
-            </ProtectedRoute>
-          } />
-          <Route path="/feeds" element={
-            <ProtectedRoute>
-              <Feeds />
-            </ProtectedRoute>
-          } />
-          <Route path="/bookmarked" element={
-            <ProtectedRoute>
-              <BookmarkedPosts />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/:userId" element={
-            <ProtectedRoute>
-              <UserProfile />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </main>
-    </div>
+    <ToastProvider>
+      <div className="app">
+        {isAuthenticated && <Header showNavigation={!showSidebars} />}
+        {showSidebars && <Sidebar />}
+        {showSidebars && <RightSidebar />}
+        <main className={`app-main ${showSidebars ? 'with-sidebars' : ''}`}>
+          <Routes>
+            <Route path="/" element={
+              isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />
+            } />
+            <Route path="/login" element={<Login />} />
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            } />
+            <Route path="/feeds" element={
+              <ProtectedRoute>
+                <Feeds />
+              </ProtectedRoute>
+            } />
+            <Route path="/bookmarked" element={
+              <ProtectedRoute>
+                <BookmarkedPosts />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/:userId" element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </main>
+        <ToastContainer />
+      </div>
+    </ToastProvider>
   )
 }
 

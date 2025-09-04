@@ -8,6 +8,7 @@ import { formatRelativeTime } from '../utils/timeUtils';
 import { getAuth0UserId, cacheUserIdMapping, getPublicUserId } from '../utils/idUtils';
 import { apiCache } from '../utils/apiCache';
 import streamFeedsManager from '../utils/streamFeedsClient';
+import { useToast } from '../contexts/ToastContext';
 import HeartIcon from '../icons/heart.svg';
 import HeartFilledIcon from '../icons/heart-filled.svg';
 import MessageIcon from '../icons/message-circle.svg';
@@ -198,6 +199,7 @@ const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { showSuccess, showError } = useToast();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -761,6 +763,9 @@ const UserProfile = () => {
         console.error('❌ USERPROFILE: Error fetching updated counts:', error);
       }
       
+      // Show success toast
+      showSuccess(currentlyFollowing ? 'User unfollowed successfully!' : 'User followed successfully!');
+      
     } catch (err: any) {
       console.error('❌ USERPROFILE: Error updating follow status:', err);
       
@@ -771,7 +776,7 @@ const UserProfile = () => {
         followerCount: prev.followerCount + (currentlyFollowing ? 1 : -1)
       } : null);
       
-      alert(`Failed to ${currentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
+      showError(`Failed to ${currentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
     }
   };
 

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
+import { useToast } from '../contexts/ToastContext';
 import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import '../components/Feeds.css';
@@ -162,6 +163,7 @@ interface BookmarkedPost {
 const BookmarkedPosts = () => {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [bookmarkedPosts, setBookmarkedPosts] = useState<BookmarkedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -338,9 +340,12 @@ const BookmarkedPosts = () => {
 
       // Remove from local state
       setBookmarkedPosts(prev => prev.filter(post => post.id !== postId));
+      
+      // Show success toast
+      showSuccess('Bookmark removed successfully!');
     } catch (err: any) {
       console.error('Error removing bookmark:', err);
-      alert('Failed to remove bookmark. Please try again.');
+      showError('Failed to remove bookmark. Please try again.');
     }
   };
 

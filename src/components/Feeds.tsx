@@ -9,6 +9,7 @@ import { getPublicUserId, cacheUserIdMapping, cacheMultipleUserIdMappings } from
 import { apiCache } from '../utils/apiCache';
 import { apiMonitor } from '../utils/apiMonitor';
 import streamFeedsManager from '../utils/streamFeedsClient';
+import { useToast } from '../contexts/ToastContext';
 import HeartIcon from '../icons/heart.svg';
 import HeartFilledIcon from '../icons/heart-filled.svg';
 import MessageIcon from '../icons/message-circle.svg';
@@ -181,6 +182,7 @@ const Feeds = () => {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [feedsClient, setFeedsClient] = useState<any>(null);
   const [clientReady, setClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1088,6 +1090,9 @@ const Feeds = () => {
         // Add the new post to the beginning of posts array
         setPosts(prevPosts => [newPost, ...prevPosts]);
         console.log('✅ New post added to feed immediately');
+        
+        // Show success toast
+        showSuccess('Post created successfully!');
       }
       
       setNewPostText('');
@@ -1099,7 +1104,7 @@ const Feeds = () => {
       
     } catch (err: any) {
       console.error('❌ Error creating post:', err);
-      alert('Failed to create post. Please try again.');
+      showError('Failed to create post. Please try again.');
     } finally {
       setIsCreatingPost(false);
     }
@@ -1140,11 +1145,12 @@ const Feeds = () => {
       // Close the delete modal
       setShowDeleteModal(null);
       
-
+      // Show success toast
+      showSuccess('Post deleted successfully!');
       
     } catch (err: any) {
       console.error('Error deleting post:', err);
-      alert('Failed to delete post. Please try again.');
+      showError('Failed to delete post. Please try again.');
     } finally {
       setIsDeletingPost(false);
     }
@@ -1202,9 +1208,12 @@ const Feeds = () => {
         })
       );
       
+      // Show success toast
+      showSuccess(isCurrentlyLiked ? 'Post unliked!' : 'Post liked!');
+      
     } catch (err: any) {
       console.error('Error updating like:', err);
-      alert('Failed to update like. Please try again.');
+      showError('Failed to update like. Please try again.');
     }
   };
 
@@ -1253,9 +1262,12 @@ const Feeds = () => {
         return newBookmarked;
       });
       
+      // Show success toast
+      showSuccess(isCurrentlyBookmarked ? 'Bookmark removed!' : 'Post bookmarked!');
+      
     } catch (err: any) {
       console.error('Error updating bookmark:', err);
-      alert('Failed to update bookmark. Please try again.');
+      showError('Failed to update bookmark. Please try again.');
     }
   };
 
@@ -1525,11 +1537,12 @@ const Feeds = () => {
       setCommentText('');
       setShowCommentInput(null);
       
-
+      // Show success toast
+      showSuccess('Comment added successfully!');
       
     } catch (err: any) {
       console.error('Error adding comment:', err);
-      alert('Failed to add comment. Please try again.');
+      showError('Failed to add comment. Please try again.');
     } finally {
       setIsAddingComment(false);
     }
