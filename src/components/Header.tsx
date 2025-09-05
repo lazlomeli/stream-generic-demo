@@ -5,7 +5,7 @@ import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import LogoutIcon from '../icons/logout-2.svg'
 import StreamLogo from '../assets/stream-logo.png'
-import VideoIcon from '../icons/video.svg'
+import CastIcon from '../icons/cast.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
 
 interface HeaderProps {
@@ -88,9 +88,9 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
                   <button
                     onClick={handleVideoClick}
                     className="header-nav-button"
-                    title="Stream Video"
+                    title="Livestream"
                   >
-                    <img src={VideoIcon} alt="Video" />
+                    <img src={CastIcon} alt="Livestream" />
                   </button>
                 )}
                 

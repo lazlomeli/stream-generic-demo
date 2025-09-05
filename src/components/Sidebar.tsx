@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeIcon from '../icons/home.svg';
 import SendIcon from '../icons/send.svg';
-import VideoIcon from '../icons/video.svg';
+import CastIcon from '../icons/cast.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import './Sidebar.css';
 
@@ -59,10 +59,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
         <button
           onClick={handleVideoClick}
           className={`sidebar-button ${isActive('/video') ? 'active' : ''}`}
-          title="Stream Video"
+          title="Livestream"
         >
-          <img src={VideoIcon} alt="Video" className="sidebar-icon" />
-          <span className="sidebar-label">Video</span>
+          <img src={CastIcon} alt="Livestream" className="sidebar-icon" />
+          <span className="sidebar-label">Livestream</span>
         </button>
 
         <button

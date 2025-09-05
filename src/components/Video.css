@@ -2033,7 +2033,10 @@
 /* ===== END OF BACKSTAGE MODE STYLING ===== */
 
 /* ===== CUSTOM MESSAGE INPUT STYLES ===== */
-.custom-message-input {
+/* Only apply dark styling to livestream contexts */
+.video-container .custom-message-input,
+.backstage-container .custom-message-input,
+.enhanced-livestream-layout .custom-message-input {
   padding: 12px;
   background: #1a1a1a;
   border-top: 1px solid #2a2a2a;
@@ -2179,22 +2182,30 @@
 
 /* Mobile adjustments for message components */
 @media (max-width: 768px) {
-  .message-input-field {
+  .video-container .message-input-field,
+  .backstage-container .message-input-field,
+  .enhanced-livestream-layout .message-input-field {
     font-size: 16px; /* Prevent zoom on iOS */
   }
   
-  .send-button {
+  .video-container .send-button,
+  .backstage-container .send-button,
+  .enhanced-livestream-layout .send-button {
     padding: 10px 14px;
     font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
-  .custom-message-input {
+  .video-container .custom-message-input,
+  .backstage-container .custom-message-input,
+  .enhanced-livestream-layout .custom-message-input {
     padding: 8px;
   }
   
-  .message-input-form {
+  .video-container .message-input-form,
+  .backstage-container .message-input-form,
+  .enhanced-livestream-layout .message-input-form {
     gap: 6px;
   }
   
