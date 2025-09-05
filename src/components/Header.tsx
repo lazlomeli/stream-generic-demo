@@ -32,6 +32,10 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
     navigate('/feeds')
   }
 
+  const handleVideoClick = () => {
+    navigate('/video')
+  }
+
   const handleBookmarkedClick = () => {
     navigate('/bookmarked')
   }
@@ -77,12 +81,12 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
                     title="Stream Chat"
                   >
                     <img src={SendIcon} alt="Chat" />
-                  </button>
+                </button>
                 )}
 
                 {isAuthenticated && (
                   <button
-                    onClick={() => {}}
+                    onClick={handleVideoClick}
                     className="header-nav-button"
                     title="Stream Video"
                   >

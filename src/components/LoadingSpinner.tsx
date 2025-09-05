@@ -2,7 +2,11 @@ import React from 'react'
 import { createPortal } from 'react-dom'
 import LoadingIcon from './LoadingIcon'
 
-const LoadingSpinner: React.FC = () => {
+interface LoadingSpinnerProps {
+  darkMode?: boolean
+}
+
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ darkMode = false }) => {
   const overlay = (
     <div 
       className="loading-spinner-container"
@@ -17,7 +21,7 @@ const LoadingSpinner: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
         zIndex: 99999 /* Much higher z-index to ensure it covers everything including sidebars */
       }}
     >

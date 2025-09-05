@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
   };
 
   const handleVideoClick = () => {
-    // Navigate to video page when implemented
+    navigate('/video');
   };
 
   const handleBookmarkedClick = () => {
@@ -58,8 +58,8 @@ const Sidebar: React.FC<SidebarProps> = () => {
 
         <button
           onClick={handleVideoClick}
-          className="sidebar-button"
-          title="Stream Video (Coming Soon)"
+          className={`sidebar-button ${isActive('/video') ? 'active' : ''}`}
+          title="Stream Video"
         >
           <img src={VideoIcon} alt="Video" className="sidebar-icon" />
           <span className="sidebar-label">Video</span>

@@ -23,11 +23,21 @@ body {
   padding-top: 4rem; /* Account for fixed header */
 }
 
+/* Remove padding when header is hidden (fullscreen mode) */
+.app.fullscreen-mode {
+  padding-top: 0;
+}
+
 .app-main {
   position: relative;
   transition: all 0.3s ease;
   min-height: calc(100vh - 4rem);
   /* Content area starts below fixed header */
+}
+
+.app-main.fullscreen {
+  margin-top: 0; /* Remove header margin when in fullscreen */
+  height: 100vh; /* Fill entire viewport */
 }
 
 .app-main.with-sidebars {
@@ -383,13 +393,12 @@ body {
 }
 
 .feature-item {
+  width: 400px;
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.8);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }

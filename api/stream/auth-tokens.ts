@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 // import { FeedsClient } from '@stream-io/feeds-client'; // Disabled - V3 alpha causing issues
 import { StreamChat } from 'stream-chat';
+import { StreamClient } from '@stream-io/node-sdk';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -18,9 +19,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'userId and type are required' });
     }
 
-    if (!['feed', 'chat'].includes(type)) {
+    if (!['feed', 'chat', 'video'].includes(type)) {
       console.error('❌ AUTH-TOKENS: Invalid type:', type);
-      return res.status(400).json({ error: 'type must be "feed" or "chat"' });
+      return res.status(400).json({ error: 'type must be "feed", "chat", or "video"' });
     }
 
     // Get Stream API credentials
@@ -101,6 +102,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('✅ AUTH-TOKENS: Chat token generated successfully');
       return res.status(200).json({
         token: streamToken,
+        apiKey: apiKey,
+        userId: userId
+      });
+    }
+
+    // Handle video token generation
+    if (type === 'video') {
+      console.log('📹 AUTH-TOKENS: Generating video token for:', userId);
+      
+      // Initialize Stream client for video operations
+      const streamClient = new StreamClient(apiKey, apiSecret);
+
+      // Create/update user profile in Stream Video if profile information is provided
+      if (userProfile) {
+        try {
+          console.log('👤 AUTH-TOKENS: Updating video user profile...');
+          await streamClient.upsertUsers([{
+            id: userId,
+            name: userProfile.name,
+            image: userProfile.image
+          }]);
+          console.log(`✅ AUTH-TOKENS: User profile updated for video: ${userId}`);
+        } catch (profileError) {
+          console.warn(`❌ AUTH-TOKENS: Failed to update user profile for video ${userId}:`, profileError);
+          // Continue with token generation even if profile update fails
+        }
+      }
+
+      // Generate Stream video user token
+      console.log('🔑 AUTH-TOKENS: Generating video token...');
+      const videoToken = streamClient.generateUserToken({ user_id: userId });
+
+      console.log('✅ AUTH-TOKENS: Video token generated successfully');
+      return res.status(200).json({
+        token: videoToken,
         apiKey: apiKey,
         userId: userId
       });

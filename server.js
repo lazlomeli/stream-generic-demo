@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { StreamChat } from 'stream-chat';
+import { StreamClient } from '@stream-io/node-sdk';
 import { connect } from 'getstream';
 import multer from 'multer';
 import dotenv from 'dotenv';
@@ -1479,8 +1480,8 @@ app.post('/api/stream/auth-tokens', async (req, res) => {
       return res.status(400).json({ error: 'userId and type are required' });
     }
 
-    if (!['feed', 'chat'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "feed" or "chat"' });
+    if (!['feed', 'chat', 'video'].includes(type)) {
+      return res.status(400).json({ error: 'type must be "feed", "chat", or "video"' });
     }
 
     console.log(`🔐 Generating Stream ${type} token for userId:`, userId);
@@ -1538,6 +1539,36 @@ app.post('/api/stream/auth-tokens', async (req, res) => {
 
       return res.status(200).json({
         token: streamToken,
+        apiKey: process.env.STREAM_API_KEY,
+        userId: userId
+      });
+    }
+
+    // Handle video token generation
+    if (type === 'video') {
+      // Initialize Stream client for video operations
+      const streamClient = new StreamClient(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+
+      // Create/update user profile in Stream Video if profile information is provided
+      if (userProfile) {
+        try {
+          await streamClient.upsertUsers([{
+            id: userId,
+            name: userProfile.name,
+            image: userProfile.image
+          }]);
+          console.log(`✅ User profile updated for video: ${userId}`);
+        } catch (profileError) {
+          console.warn(`Failed to update user profile for video ${userId}:`, profileError);
+          // Continue with token generation even if profile update fails
+        }
+      }
+
+      // Generate Stream video user token
+      const videoToken = streamClient.generateUserToken({ user_id: userId });
+
+      return res.status(200).json({
+        token: videoToken,
         apiKey: process.env.STREAM_API_KEY,
         userId: userId
       });
@@ -1922,7 +1953,7 @@ app.listen(PORT, () => {
   console.log(`💬 Create Channel: http://localhost:${PORT}/api/stream/create-channel`);
   console.log('');
   console.log('📢 IMPORTANT: Use CONSOLIDATED endpoints for production compatibility!');
-  console.log('   Frontend should call /api/stream/auth-tokens with type: "feed" or "chat"');
+  console.log('   Frontend should call /api/stream/auth-tokens with type: "feed", "chat", or "video"');
   console.log('   Legacy endpoints are for local development debugging only.');
   console.log('');
   console.log('🔧 Environment Variables Debug:');
