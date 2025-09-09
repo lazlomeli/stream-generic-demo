@@ -1777,8 +1777,8 @@ app.post('/api/stream/chat-operations', async (req, res) => {
       return res.status(400).json({ error: 'type is required' });
     }
 
-    if (!['create-channel', 'add-to-general'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "create-channel" or "add-to-general"' });
+    if (!['create-channel', 'add-to-general', 'create-livestream-channel'].includes(type)) {
+      return res.status(400).json({ error: 'type must be "create-channel", "add-to-general", or "create-livestream-channel"' });
     }
 
     console.log(`🏗️ Processing chat-operations request of type: ${type}`);
@@ -1911,6 +1911,97 @@ app.post('/api/stream/chat-operations', async (req, res) => {
         return res.status(500).json({
           error: 'Failed to process general channel operation',
           details: error.message,
+          code: error.code || 'unknown'
+        });
+      }
+    }
+
+    // Handle livestream channel creation
+    if (type === 'create-livestream-channel') {
+      const { channelId, userId } = req.body;
+
+      if (!channelId || !userId) {
+        return res.status(400).json({ error: 'channelId and userId are required' });
+      }
+
+      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
+        return res.status(500).json({ error: 'Missing Stream API credentials' });
+      }
+
+      try {
+        console.log(`🔴 Creating livestream channel: ${channelId} for user: ${userId}`);
+        
+        const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+        
+        // Create livestream channel with user as member
+        // Use 'messaging' type with server-side admin permissions
+        const channel = streamClient.channel('messaging', channelId, {
+          members: [userId], // Add user as member with server admin permissions
+          created_by_id: userId,
+        });
+
+        await channel.create();
+        console.log(`✅ Successfully created livestream channel: ${channelId}`);
+
+        return res.status(200).json({
+          success: true,
+          message: 'Livestream channel created successfully',
+          channelId: channelId,
+          channel: {
+            id: channelId,
+            type: 'messaging',
+            members: [userId],
+            created_by_id: userId
+          }
+        });
+
+      } catch (error) {
+        console.error(`❌ Error creating livestream channel ${channelId}:`, error);
+        
+        // If channel already exists, that's OK - just return success
+        if (error.code === 4 || error.message?.includes('already exists')) {
+          console.log(`✅ Livestream channel ${channelId} already exists - adding user as member`);
+          
+          try {
+            // Get existing channel and ensure user is a member
+            const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
+            const existingChannel = streamClient.channel('messaging', channelId);
+            await existingChannel.watch();
+            
+            // Check if user is already a member
+            const currentMembers = Object.keys(existingChannel.state.members || {});
+            if (!currentMembers.includes(userId)) {
+              await existingChannel.addMembers([userId]);
+              console.log(`✅ Added user ${userId} to existing livestream channel`);
+            } else {
+              console.log(`✅ User ${userId} is already a member of livestream channel`);
+            }
+            
+            return res.status(200).json({
+              success: true,
+              message: 'Livestream channel ready (already existed)',
+              channelId: channelId,
+              channel: {
+                id: channelId,
+                type: 'messaging',
+                members: currentMembers.includes(userId) ? currentMembers : [...currentMembers, userId],
+                created_by_id: userId
+              }
+            });
+            
+          } catch (addMemberError) {
+            console.error(`❌ Failed to add user to existing channel:`, addMemberError);
+            return res.status(500).json({
+              error: 'Failed to join existing livestream channel',
+              details: addMemberError.message || String(addMemberError)
+            });
+          }
+        }
+        
+        // For any other error, return failure
+        return res.status(500).json({
+          error: 'Failed to create livestream channel',
+          details: error.message || String(error),
           code: error.code || 'unknown'
         });
       }

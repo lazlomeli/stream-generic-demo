@@ -62,73 +62,22 @@ const generateUserColor = (userId: string): string => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-// Custom Message Component for Twitch/Kick-style chat
-interface TwitchStyleMessageProps {
-  message?: any
-  isHostUser?: boolean // Whether the current viewing user is the host
-  hostUserId?: string  // The actual host's user ID
-  [key: string]: any   // Allow additional props from Stream Chat
+// Custom Message Bubble Component
+interface CustomMessageBubbleProps {
+  message: any
+  hostUserId: string
+  isCurrentUser: boolean
 }
 
-const TwitchStyleMessage: React.FC<TwitchStyleMessageProps> = (props = {}) => {
-  try {
-    console.log('🎨 TwitchStyleMessage render with props:', props)
-    console.log('🎨 Props type:', typeof props, 'Is array:', Array.isArray(props))
-    
-    // Handle case where props might be undefined or the message might be passed differently
-    const safeProps = props || {}
-    
-    // Try different ways Stream Chat might pass the message
-    let message = safeProps.message
-    let isHostUser = safeProps.isHostUser || false
-    let hostUserId = safeProps.hostUserId || ''
-    let restProps = { ...safeProps }
-    
-    // If message is not in props.message, it might be passed as the entire props object
-    if (!message && safeProps.text && safeProps.user) {
-      message = safeProps
-      restProps = {}
-    }
-    
-    // If still no message, check if it's in a nested structure
-    if (!message && safeProps.data) {
-      message = safeProps.data
-    }
-    
-    console.log('🎨 After extraction:', {
-      hasMessage: !!message,
-      messageText: message?.text,
-      messageUser: message?.user?.id,
-      messageType: message?.type,
-      hostUserId,
-      isHostUser,
-      safePropsKeys: Object.keys(safeProps),
-      messageKeys: message ? Object.keys(message) : 'no message'
-    })
-    
-    // If no valid message or missing required data, return the default component
-    if (!message || typeof message !== 'object') {
-      console.log('🎨 No valid message object, falling back to default')
-      return <Message message={message} {...restProps} />
-    }
-    
-    // Check if message has text content
-    const messageText = message.text || message.content || ''
-    if (!messageText || typeof messageText !== 'string') {
-      console.log('🎨 No message text, falling back to default')
-      return <Message message={message} {...restProps} />
+const CustomMessageBubble: React.FC<CustomMessageBubbleProps> = ({ message, hostUserId, isCurrentUser }) => {
+  if (!message || !message.text) {
+    return null
     }
     
     // Extract user data safely
     const messageUser = message.user || {}
-    const messageUserId = messageUser.id || messageUser.userId || 'unknown'
+  const messageUserId = messageUser.id || 'unknown'
     const messageUserName = messageUser.name || messageUser.display_name || messageUserId || 'Unknown'
-    
-    // Validate that we have a user ID
-    if (!messageUserId || messageUserId === 'unknown') {
-      console.log('🎨 No valid user ID, falling back to default')
-      return <Message message={message} {...restProps} />
-    }
     
     // Check if this message is from the host
     const isMessageFromHost = messageUserId === hostUserId
@@ -136,16 +85,8 @@ const TwitchStyleMessage: React.FC<TwitchStyleMessageProps> = (props = {}) => {
     // Generate consistent color for this user
     const userColor = generateUserColor(messageUserId)
     
-    console.log('🎨 Rendering Twitch-style message:', {
-      messageUserId,
-      messageUserName,
-      messageText,
-      isMessageFromHost,
-      userColor
-    })
-    
     return (
-      <div className="twitch-style-message">
+    <div className="custom-message-bubble">
         {/* LIVE badge for host messages */}
         {isMessageFromHost && (
           <span className="live-badge">LIVE</span>
@@ -153,36 +94,456 @@ const TwitchStyleMessage: React.FC<TwitchStyleMessageProps> = (props = {}) => {
         
         {/* Username with color */}
         <span 
-          className="twitch-username" 
+        className="username" 
           style={{ color: userColor }}
         >
           {messageUserName}
         </span>
         
         {/* Message separator */}
-        <span className="message-separator">: </span>
+      <span className="separator">: </span>
         
         {/* Message text */}
-        <span className="twitch-message-text">
-          {messageText}
+      <span className="message-text">
+        {message.text}
         </span>
       </div>
     )
+}
+
+// Custom Message List Component
+interface CustomMessageListProps {
+  channel: StreamChannel | null
+  hostUserId: string
+  currentUserId: string
+}
+
+const CustomMessageList: React.FC<CustomMessageListProps> = ({ channel, hostUserId, currentUserId }) => {
+  const [messages, setMessages] = useState<any[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    if (!channel) return
+
+    // Get initial messages
+    const loadMessages = async () => {
+      try {
+        const result = await channel.query({ messages: { limit: 50 } })
+        setMessages(result.messages || [])
+        setTimeout(scrollToBottom, 100)
   } catch (error) {
-    console.error('🚨 Error in TwitchStyleMessage:', error)
-    console.error('🚨 Error details:', {
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      errorStack: error instanceof Error ? error.stack : 'No stack trace',
-      propsReceived: props
-    })
-    // Return default component if anything fails - with safe prop handling
+        console.error('Failed to load messages:', error)
+      }
+    }
+
+    loadMessages()
+
+    // Listen for new messages
+    const handleNewMessage = (event: any) => {
+      console.log('📨 New message received:', event.message)
+      setMessages(prev => [...prev, event.message])
+      setTimeout(scrollToBottom, 100)
+    }
+
+    const handleMessageUpdated = (event: any) => {
+      console.log('📝 Message updated:', event.message)
+      setMessages(prev => prev.map(msg => 
+        msg.id === event.message.id ? event.message : msg
+      ))
+    }
+
+    const handleMessageDeleted = (event: any) => {
+      console.log('🗑️ Message deleted:', event.message)
+      setMessages(prev => prev.filter(msg => msg.id !== event.message.id))
+    }
+
+    // Set up event listeners
+    channel.on('message.new', handleNewMessage)
+    channel.on('message.updated', handleMessageUpdated)
+    channel.on('message.deleted', handleMessageDeleted)
+
+    // Cleanup
+    return () => {
+      channel.off('message.new', handleNewMessage)
+      channel.off('message.updated', handleMessageUpdated)
+      channel.off('message.deleted', handleMessageDeleted)
+    }
+  }, [channel])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  if (!channel) {
+    return (
+      <div className="custom-message-list loading">
+        <p>Loading chat...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="custom-message-list">
+      <div className="messages-container">
+        {messages.length === 0 ? (
+          <div className="no-messages">
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <CustomMessageBubble
+              key={message.id}
+              message={message}
+              hostUserId={hostUserId}
+              isCurrentUser={message.user?.id === currentUserId}
+            />
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+    </div>
+  )
+}
+
+// Custom Message Input Component
+interface CustomMessageInputProps {
+  channel: StreamChannel | null
+  currentUserId: string
+  isReadOnly?: boolean
+}
+
+const CustomMessageInput: React.FC<CustomMessageInputProps> = ({ channel, currentUserId, isReadOnly = false }) => {
+  const [message, setMessage] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const sendMessage = async () => {
+    if (!channel || !message.trim() || isSending || isReadOnly) return
+
+    setIsSending(true)
     try {
-      return <Message message={props?.message || null} {...(props || {})} />
-    } catch (fallbackError) {
-      console.error('🚨 Even fallback failed:', fallbackError)
-      return <div>Error rendering message</div>
+      await channel.sendMessage({
+        text: message.trim(),
+      })
+      setMessage('')
+      // Focus back on input after sending
+      setTimeout(() => inputRef.current?.focus(), 100)
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    } finally {
+      setIsSending(false)
     }
   }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    sendMessage()
+  }
+
+  if (!channel) {
+    return (
+      <div className="custom-message-input disabled">
+        <input 
+          type="text" 
+          placeholder="Chat unavailable..." 
+          disabled 
+          className="input-field disabled"
+        />
+      </div>
+    )
+  }
+
+  if (isReadOnly) {
+    return (
+      <div className="custom-message-input disabled">
+        <input 
+          type="text" 
+          placeholder="Sign in to chat..." 
+          disabled 
+          className="input-field disabled"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <form className="custom-message-input" onSubmit={handleSubmit}>
+      <div className="input-container">
+        <input
+          ref={inputRef}
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Escribe tu mensaje..."
+          className="input-field"
+          disabled={isSending}
+          maxLength={1000}
+          autoComplete="off"
+        />
+        <button
+          type="submit"
+          className={`send-button ${!message.trim() || isSending ? 'disabled' : ''}`}
+          disabled={!message.trim() || isSending}
+          title="Send message"
+        >
+          {isSending ? (
+            <div className="sending-spinner">⏳</div>
+          ) : (
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                d="M2 21L23 12L2 3V10L17 12L2 14V21Z" 
+                fill="currentColor"
+              />
+            </svg>
+          )}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// Viewer Waiting Room Component - shown when viewers join a backstage livestream
+interface ViewerWaitingRoomProps {
+  chatClient: StreamChat | null
+  channel: StreamChannel | null
+  streamTitle: string
+  callId: string
+  call: any
+  isAnonymousViewer?: boolean
+  isAuthenticatedViewer?: boolean
+}
+
+const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
+  chatClient,
+  channel,
+  streamTitle,
+  callId,
+  call,
+  isAnonymousViewer = false,
+  isAuthenticatedViewer = false
+}) => {
+  const { useParticipants } = useCallStateHooks()
+  const participants = useParticipants()
+  const [syncedParticipants, setSyncedParticipants] = useState<any[]>([])
+
+  // Listen for participant sync events from streamer
+  useEffect(() => {
+    if (!channel) return
+
+    const handleParticipantSync = (event: any) => {
+      if (event.type === 'participants.sync') {
+        console.log('👥 Participants sync received:', event.data)
+        setSyncedParticipants(event.data.participants || [])
+      }
+    }
+
+    // Listen for participant events only
+    channel.on('message.new', (event: any) => {
+      if (event.message?.type === 'system' && event.message?.text) {
+        try {
+          const data = JSON.parse(event.message.text)
+          if (data.type === 'participants.sync') {
+            handleParticipantSync(data)
+          } else if (data.type === 'participant.joined') {
+            // Handle participant joined event for viewers
+            console.log('👥 Participant joined (viewer perspective):', data.data)
+          }
+        } catch (e) {
+          // Not a system message, ignore
+        }
+      }
+    })
+
+    return () => {
+      // Cleanup handled by component unmount
+    }
+  }, [channel])
+
+  // Send participant update when viewer joins
+  useEffect(() => {
+    if (!channel || isAnonymousViewer) return
+
+    const sendParticipantUpdate = async () => {
+      try {
+        await channel.sendMessage({
+          text: JSON.stringify({
+            type: 'participant.joined',
+            data: {
+              userId: chatClient?.userID || '',
+              userName: chatClient?.user?.name || 'Unknown User',
+              timestamp: Date.now()
+            }
+          }),
+          type: 'system'
+        })
+        console.log('📨 Sent participant joined event')
+      } catch (error) {
+        console.warn('Failed to send participant update:', error)
+      }
+    }
+
+    sendParticipantUpdate()
+  }, [channel, chatClient, isAnonymousViewer])
+
+  // Count waiting participants (combine Stream participants and synced participants)
+  const waitingParticipants = [...participants.filter(p => p.isLocalParticipant === false), ...syncedParticipants]
+
+
+  const handleExit = () => {
+    window.location.href = '/feeds'
+  }
+
+  return (
+    <div className="viewer-waiting-room">
+      {/* Background */}
+      <video 
+        className="waiting-room-video-background"
+        autoPlay 
+        loop 
+        muted 
+        playsInline
+      >
+        <source src={videoLoop} type="video/mp4" />
+        <source src={videoLoop} type="video/quicktime" />
+      </video>
+
+      {/* Main Content */}
+      <div className="waiting-room-content">
+        <button className="exit-btn" onClick={handleExit}>
+          Exit
+        </button>
+        
+        <div className="waiting-room-header">
+          <h1>🔴 Waiting for Stream to Start</h1>
+          {streamTitle && <h2>{streamTitle}</h2>}
+          <p>The streamer is getting ready. You'll be able to watch once they go live!</p>
+        </div>
+
+        {/* Stream Status */}
+        <div className="waiting-room-timer">
+          <div className="timer-display">
+            <span className="timer-label">🎬 Stream will start soon</span>
+            <span className="timer-value">
+              Please wait...
+            </span>
+          </div>
+        </div>
+
+        {/* Waiting Room Participants */}
+        <div className="waiting-room-participants">
+          <h3>
+            <img src={ViewersIcon} alt="Waiting" className="section-icon" />
+            Waiting Room ({waitingParticipants.length + 1}) {/* +1 for current viewer */}
+          </h3>
+          
+          <div className="participants-list">
+            {/* Show current user */}
+            <div className="waiting-participant current-user">
+              <div className="participant-avatar">👤</div>
+              <div className="participant-info">
+                <span className="participant-name">You</span>
+                <span className="participant-status">Waiting to watch</span>
+              </div>
+            </div>
+            
+            {/* Show other participants */}
+            {waitingParticipants.map((participant) => (
+              <div key={participant.sessionId} className="waiting-participant">
+                <div className="participant-avatar">
+                  {participant.image ? (
+                    <img src={participant.image} alt={participant.name} />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      {participant.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </div>
+                <div className="participant-info">
+                  <span className="participant-name">
+                    {participant.name || 'Anonymous User'}
+                  </span>
+                  <span className="participant-status">Waiting to watch</span>
+                </div>
+              </div>
+            ))}
+            
+            {waitingParticipants.length === 0 && (
+              <p className="no-other-participants">You're the first viewer waiting!</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Chat Sidebar */}
+      <div className="waiting-room-chat">
+        <h3>
+          <img src={MessageCircleIcon} alt="Chat" className="section-icon" />
+          Pre-stream Chat
+        </h3>
+        {chatClient && channel && chatClient.userID && chatClient.user ? (
+          <div className="stream-chat-container" style={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #333',
+            borderRadius: '8px',
+            overflow: 'hidden'
+          }}>
+            <ChatErrorBoundary>
+              <StreamChatUI client={chatClient} theme="str-chat__theme-dark">
+                <StreamChannelUI channel={channel}>
+                  <Window>
+                    <div style={{ 
+                      flex: 1, 
+                      minHeight: 0,
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      <CustomMessageList
+                        channel={channel}
+                        hostUserId=""
+                        currentUserId={chatClient?.userID || ''}
+                      />
+                    </div>
+                    <CustomMessageInput
+                      channel={channel}
+                      currentUserId={chatClient?.userID || ''}
+                      isReadOnly={isAnonymousViewer}
+                    />
+                  </Window>
+                  <Thread />
+                </StreamChannelUI>
+              </StreamChatUI>
+            </ChatErrorBoundary>
+          </div>
+        ) : (
+          <div className="chat-loading">
+            <LoadingSpinner darkMode />
+            <p>Connecting to chat...</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 // Error Boundary for Stream Chat components
@@ -237,51 +598,6 @@ class ChatErrorBoundary extends React.Component<
   }
 }
 
-// Debug component to show channel state
-const ChatDebugInfo: React.FC<{ channel: StreamChannel | null }> = ({ channel }) => {
-  const [showDebug, setShowDebug] = useState(false)
-  
-  if (!channel) return null
-  
-  return (
-    <div style={{ padding: '8px', borderBottom: '1px solid #333', fontSize: '12px' }}>
-      <button 
-        onClick={() => setShowDebug(!showDebug)}
-        style={{
-          background: 'none',
-          border: '1px solid #666',
-          color: '#aaa',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '10px'
-        }}
-      >
-        {showDebug ? 'Hide' : 'Show'} Debug Info
-      </button>
-      
-      {showDebug && (
-        <div style={{ marginTop: '8px', color: '#aaa', fontSize: '10px' }}>
-          <div>Channel ID: {channel.id}</div>
-          <div>Type: {channel.type}</div>
-          <div>Members: {Object.keys(channel.state.members).length}</div>
-          <div>Messages: {channel.state.messages?.length || 0}</div>
-          <div>Watchers: {Object.keys(channel.state.watchers || {}).length}</div>
-          {channel.state.messages && channel.state.messages.length > 0 && (
-            <div style={{ marginTop: '4px' }}>
-              <div>Latest messages:</div>
-              {channel.state.messages.slice(-3).map(msg => (
-                <div key={msg.id} style={{ fontSize: '9px', opacity: 0.7 }}>
-                  {msg.user?.id}: {msg.text}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 interface VideoProps {}
 
@@ -537,33 +853,61 @@ const Video: React.FC<VideoProps> = () => {
         //   }
         // }
         
-        await call.join()
-        console.log('✅ Joined livestream call')
-
-        // For viewers, determine if stream is live or in backstage
         if (isViewer) {
-          // Check the call state to determine what viewers should see
-          const callState = call.state
-          console.log('📊 Call state for viewer:', {
-            backstage: callState.backstage,
-            callingState: callState.callingState,
-            isBackstage: callState.backstage,
-            members: callState.members?.length || 0,
-            isAnonymousViewer,
-            isAuthenticatedViewer
-          })
+          // For viewers, join the call to receive video streams
+          console.log('👁️ Viewer joining call to receive video streams...')
           
-          // For viewers: always go directly to the livestream view
-          // Let the call state handle whether to show content or waiting
-          console.log('🔴 Viewer joined - showing livestream view')
-          setBackstageMode(false)
-          setLivestreamActive(true)
-          
-          // Set chat as ready for anonymous viewers since they don't use chat
-          // Authenticated viewers will get their chat initialized properly
-          if (isAnonymousViewer) {
-            setChatClientReady(true)
+          try {
+            await call.join()
+            console.log('✅ Viewer joined livestream call successfully')
+            
+            // Check if the stream is currently in backstage mode
+            const callState = call.state
+            console.log('📊 Call state for viewer after joining:', {
+              backstage: callState.backstage,
+              callingState: callState.callingState,
+              isBackstage: callState.backstage,
+              members: callState.members?.length || 0,
+              isAnonymousViewer,
+              isAuthenticatedViewer
+            })
+            
+            const isInBackstage = callState.backstage || false
+            
+            if (isInBackstage) {
+              // Stream is in backstage - show waiting room
+              console.log('⏳ Stream is in backstage mode - showing viewer waiting room')
+              setBackstageMode(true)
+              setLivestreamActive(false)
+            } else {
+              // Stream is live - show livestream view
+              console.log('🔴 Stream is live - showing livestream view')
+              setBackstageMode(false)
+              setLivestreamActive(true)
+            }
+            
+            // Listen for call state changes to detect when stream goes live
+            call.on('call.live_started', () => {
+              console.log('🔴 Stream went live - switching to livestream view')
+              setBackstageMode(false)
+              setLivestreamActive(true)
+            })
+            
+            call.on('call.ended', () => {
+              console.log('🔴 Stream ended')
+              setLivestreamActive(false)
+            })
+            
+          } catch (joinError) {
+            console.warn('⚠️ Failed to join call as viewer:', joinError)
+            // Fallback to showing waiting room without video
+            setBackstageMode(true)
+            setLivestreamActive(false)
           }
+        } else {
+          // For streamers, join the call normally
+          await call.join()
+          console.log('✅ Streamer joined livestream call')
         }
 
       } catch (joinError) {
@@ -580,8 +924,8 @@ const Video: React.FC<VideoProps> = () => {
 
   // --- Initialize Chat Client ---
   const initializeChatClient = useCallback(async (sharedCallId: string) => {
-    // Skip chat initialization for anonymous viewers or if missing requirements
-    if (isAnonymousViewer || !apiKey || !sanitizedUserId || chatClientRef.current) {
+    // Initialize chat for all users (including anonymous viewers for read-only access)
+    if (!apiKey || !sanitizedUserId || chatClientRef.current) {
       console.log('💬 Skipping chat client initialization:', { 
         isAnonymousViewer, 
         isAuthenticatedViewer, 
@@ -629,77 +973,153 @@ const Video: React.FC<VideoProps> = () => {
       
       console.log('💬 Creating/joining chat channel with ID:', channelId)
       
-      // Use 'livestream' type - has proper permissions for livestream chat
-      const channel = chatClient.channel('livestream', channelId, {
-        created_by_id: sanitizedUserId,
-      })
+      // Different logic for streamers vs viewers
+      if (isStreamer) {
+        // Streamers: Create the livestream channel
+        console.log('🎬 Streamer creating livestream channel via API...')
+        
+        const accessToken = await getAccessTokenSilently()
+        
+        const createChannelResponse = await fetch('/api/stream/chat-operations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            type: 'create-livestream-channel',
+            channelId: channelId,
+            userId: sanitizedUserId
+          }),
+        })
 
-      console.log('👀 Watching channel...')
-      await channel.watch()
-      channelRef.current = channel
-      
-      // Force join the channel as a member to ensure proper event delivery
-      try {
-        await channel.addMembers([sanitizedUserId])
-        console.log('👥 Added user as channel member:', sanitizedUserId)
-      } catch (memberError) {
-        console.warn('⚠️ Could not add as member (might already be member):', memberError)
+        if (!createChannelResponse.ok) {
+          const errorText = await createChannelResponse.text()
+          throw new Error(`Failed to create livestream channel: ${createChannelResponse.status} ${errorText}`)
+        }
+
+        const createChannelResult = await createChannelResponse.json()
+        console.log('✅ Livestream channel created by streamer:', createChannelResult)
+        
+      } else if (isAuthenticatedViewer) {
+        // Authenticated viewers: Add themselves to existing channel
+        console.log('👤 Authenticated viewer joining existing livestream channel via API...')
+        
+        const accessToken = await getAccessTokenSilently()
+        
+        const joinChannelResponse = await fetch('/api/stream/chat-operations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            type: 'create-livestream-channel', // This handles both create and join
+            channelId: channelId,
+            userId: sanitizedUserId
+          }),
+        })
+
+        if (!joinChannelResponse.ok) {
+          const errorText = await joinChannelResponse.text()
+          throw new Error(`Failed to join livestream channel: ${joinChannelResponse.status} ${errorText}`)
+        }
+
+        const joinChannelResult = await joinChannelResponse.json()
+        console.log('✅ Authenticated viewer joined livestream channel:', joinChannelResult)
+        
+      } else {
+        // Anonymous viewers: Add themselves to existing channel for read access
+        console.log('👁️ Anonymous viewer joining existing livestream channel for read access...')
+        
+        const joinChannelResponse = await fetch('/api/stream/chat-operations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'create-livestream-channel', // This handles both create and join
+            channelId: channelId,
+            userId: sanitizedUserId // Use anonymous viewer ID
+          }),
+        })
+
+        if (!joinChannelResponse.ok) {
+          const errorText = await joinChannelResponse.text()
+          console.warn(`⚠️ Failed to join livestream channel as anonymous viewer: ${joinChannelResponse.status} ${errorText}`)
+          // Continue anyway - they can still watch the video
+        } else {
+          const joinChannelResult = await joinChannelResponse.json()
+          console.log('✅ Anonymous viewer joined livestream channel for read access:', joinChannelResult)
+        }
       }
-      
-      // Ensure chat client is fully connected before proceeding
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      console.log('✅ Joined livestream chat channel - Stream will handle real-time updates:', {
-        channelId: channel.id,
-        channelType: channel.type,
-        channelCid: channel.cid,
-        memberCount: Object.keys(channel.state.members).length,
-        currentUserId: sanitizedUserId,
-        members: Object.keys(channel.state.members),
-        clientConnected: !!chatClient.userID,
-        clientUser: chatClient.user?.id,
-        initialMessages: channel.state.messages?.length || 0,
-        // channelConfig: channel.state.config, // Commented out due to TS error
-        permissions: channel.state.membership?.channel_role
-      })
-      
-      // Debug: Log any existing messages
-      if (channel.state.messages && channel.state.messages.length > 0) {
-        console.log('📨 Existing messages in channel:', channel.state.messages.map(m => ({
-          id: m.id,
-          text: m.text,
-          user: m.user?.id,
-          created_at: m.created_at
-        })))
-      }
-      
-      // Debug: Set up message event listener to track real-time updates
-      const messageListener = (event: any) => {
-        console.log('🔔 REAL-TIME MESSAGE EVENT:', {
-          type: event.type,
-          messageId: event.message?.id,
-          text: event.message?.text,
-          userId: event.message?.user?.id,
-          channelId: event.channel?.id,
-          totalMessages: channel.state.messages?.length || 0
+
+      // Create chat channel for all users (including anonymous viewers for read access)
+      if (chatClient) {
+        // Now connect to the existing channel (no need to create client-side)
+        const channel = chatClient.channel('livestream', channelId)
+        
+        console.log('👀 Watching existing livestream channel...')
+        await channel.watch() // Watch for real-time updates
+        channelRef.current = channel
+        
+        // Ensure chat client is fully connected before proceeding
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        console.log('✅ Joined livestream chat channel - Stream will handle real-time updates:', {
+          channelId: channel.id,
+          channelType: channel.type,
+          channelCid: channel.cid,
+          memberCount: Object.keys(channel.state.members).length,
+          currentUserId: sanitizedUserId,
+          members: Object.keys(channel.state.members),
+          clientConnected: !!chatClient.userID,
+          clientUser: chatClient.user?.id,
+          initialMessages: channel.state.messages?.length || 0,
+          // channelConfig: channel.state.config, // Commented out due to TS error
+          permissions: channel.state.membership?.channel_role
         })
         
-        // Force a re-render by triggering a state update
-        setChatClientReady(prev => prev) // This will trigger a re-render without changing the value
-      }
-      
-      channel.on('message.new', messageListener)
-      
-      // Store the listener for cleanup
-      ;(channelRef.current as any)._messageListener = messageListener
-      
-      // Force initial query to ensure we have all messages
-      try {
-        console.log('🔄 Force-querying channel for existing messages...')
-        await channel.query({ messages: { limit: 50 } })
-        console.log('✅ Channel query completed, messages should be visible')
-      } catch (queryError) {
-        console.warn('⚠️ Failed to query channel messages:', queryError)
+        // Debug: Log any existing messages
+        if (channel.state.messages && channel.state.messages.length > 0) {
+          console.log('📨 Existing messages in channel:', channel.state.messages.map(m => ({
+            id: m.id,
+            text: m.text,
+            user: m.user?.id,
+            created_at: m.created_at
+          })))
+        }
+        
+        // Debug: Set up message event listener to track real-time updates
+        const messageListener = (event: any) => {
+          console.log('🔔 REAL-TIME MESSAGE EVENT:', {
+            type: event.type,
+            messageId: event.message?.id,
+            text: event.message?.text,
+            userId: event.message?.user?.id,
+            channelId: event.channel?.id,
+            totalMessages: channel.state.messages?.length || 0
+          })
+          
+          // Force a re-render by triggering a state update
+          setChatClientReady(prev => prev) // This will trigger a re-render without changing the value
+        }
+        
+        channel.on('message.new', messageListener)
+        
+        // Store the listener for cleanup
+        ;(channelRef.current as any)._messageListener = messageListener
+        
+        // Force initial query to ensure we have all messages
+        try {
+          console.log('🔄 Force-querying channel for existing messages...')
+          await channel.query({ messages: { limit: 50 } })
+          console.log('✅ Channel query completed, messages should be visible')
+        } catch (queryError) {
+          console.warn('⚠️ Failed to query channel messages:', queryError)
+        }
+      } else {
+        console.log('💬 Skipping chat channel setup (anonymous viewer or no chat client)')
       }
 
     } catch (err) {
@@ -749,16 +1169,11 @@ const Video: React.FC<VideoProps> = () => {
           isAnonymousViewer
         })
 
-        if (isAnonymousViewer) {
-          // For anonymous viewers: only initialize video client (no chat)
-          await initializeVideoClient(sharedCallId)
-        } else {
-          // For authenticated users (streamers and authenticated viewers): initialize both video and chat
-          await Promise.all([
-            initializeVideoClient(sharedCallId),
-            initializeChatClient(sharedCallId)
-          ])
-        }
+        // Initialize video and chat for all users (including anonymous viewers for read-only chat)
+        await Promise.all([
+          initializeVideoClient(sharedCallId),
+          initializeChatClient(sharedCallId)
+        ])
       } catch (err) {
         console.error('❌ Failed to initialize clients:', err)
         setError(err instanceof Error ? err.message : 'Failed to initialize')
@@ -823,9 +1238,9 @@ const Video: React.FC<VideoProps> = () => {
     setHideHeader(true) // Hide header for viewers too
   }
 
-  // Show backstage mode before going live (only for streamers, not viewers)
-  if (backstageMode && !livestreamActive && !isViewer) {
-    if (isConnecting || !videoClientReady || !chatClientReady) {
+  // Show backstage mode before going live (different for streamers vs viewers)
+  if (backstageMode && !livestreamActive) {
+    if (isConnecting || !videoClientReady) {
       return <LoadingSpinner darkMode />
     }
     
@@ -833,7 +1248,37 @@ const Video: React.FC<VideoProps> = () => {
       return <div className="video-error">Error: {error}</div>
     }
 
-    if (!videoClientRef.current || !callRef.current || !chatClientRef.current || !channelRef.current) {
+    if (!videoClientRef.current || !callRef.current) {
+      return <LoadingSpinner darkMode />
+    }
+
+    if (isViewer) {
+      // Show viewer waiting room (no need for chat requirements for anonymous viewers)
+      const needsChat = !isAnonymousViewer
+      if (needsChat && (!chatClientReady || !chatClientRef.current || !channelRef.current)) {
+        return <LoadingSpinner darkMode />
+      }
+
+      return (
+        <div className="video-container">
+          <StreamVideo client={videoClientRef.current}>
+            <StreamCall call={callRef.current}>
+              <ViewerWaitingRoom
+                chatClient={needsChat ? chatClientRef.current : null}
+                channel={needsChat ? channelRef.current : null}
+                streamTitle={streamTitle}
+                callId={callId}
+                call={callRef.current}
+                isAnonymousViewer={isAnonymousViewer}
+                isAuthenticatedViewer={isAuthenticatedViewer}
+              />
+            </StreamCall>
+          </StreamVideo>
+        </div>
+      )
+    } else {
+      // Show streamer backstage mode
+      if (!chatClientReady || !chatClientRef.current || !channelRef.current) {
       return <LoadingSpinner darkMode />
     }
 
@@ -856,35 +1301,20 @@ const Video: React.FC<VideoProps> = () => {
         </StreamVideo>
       </div>
     )
+    }
   }
 
-  // Different loading logic for different user types
-  if (isAnonymousViewer) {
-    // For anonymous viewers: only require video client, not chat
-    if (isConnecting || !videoClientReady) {
-      return <LoadingSpinner darkMode />
-    }
-    
-    if (error) {
-      return <div className="video-error">Error: {error}</div>
-    }
-    
-    if (!videoClientRef.current || !callRef.current) {
-      return <LoadingSpinner darkMode />
-    }
-  } else {
-    // For authenticated users (streamers and authenticated viewers): require both video and chat clients
-    if (isConnecting || !videoClientReady || !chatClientReady) {
-      return <LoadingSpinner darkMode />
-    }
-    
-    if (error) {
-      return <div className="video-error">Error: {error}</div>
-    }
-    
-    if (!videoClientRef.current || !callRef.current || !chatClientRef.current || !channelRef.current) {
-      return <LoadingSpinner darkMode />
-    }
+  // Loading logic for all users (now everyone has chat access)
+  if (isConnecting || !videoClientReady || !chatClientReady) {
+    return <LoadingSpinner darkMode />
+  }
+  
+  if (error) {
+    return <div className="video-error">Error: {error}</div>
+  }
+  
+  if (!videoClientRef.current || !callRef.current || !chatClientRef.current || !channelRef.current) {
+    return <LoadingSpinner darkMode />
   }
 
   return (
@@ -1189,7 +1619,7 @@ const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
             <div className="chat-section">
               {chatClient && channel && chatClient.userID && chatClient.user ? (
                 <div className="stream-chat-container" style={{ 
-                  height: '400px', 
+                  height: '100%', 
                   display: 'flex', 
                   flexDirection: 'column',
                   backgroundColor: '#1a1a1a',
@@ -1198,7 +1628,6 @@ const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
                   overflow: 'hidden'
                 }}>
                   <ChatErrorBoundary>
-                    <ChatDebugInfo channel={channel} />
                     <StreamChatUI client={chatClient} theme="str-chat__theme-dark">
                       <StreamChannelUI channel={channel}>
                         <Window>
@@ -1208,24 +1637,22 @@ const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
                             display: 'flex',
                             flexDirection: 'column'
                           }}>
-                            <MessageList 
-                              messageLimit={50}
-                              hideDeletedMessages={false}
+                            <CustomMessageList
+                              channel={channel}
+                              hostUserId={hostUserId}
+                              currentUserId={isAnonymousViewer ? (anonymousViewerId || '') : (sanitizedUserId || '')}
                             />
                           </div>
-                          <MessageInput 
-                            focus={true}
+                          <CustomMessageInput
+                            channel={channel}
+                            currentUserId={isAnonymousViewer ? (anonymousViewerId || '') : (sanitizedUserId || '')}
+                            isReadOnly={isAnonymousViewer}
                           />
                         </Window>
                         <Thread />
                       </StreamChannelUI>
                     </StreamChatUI>
                   </ChatErrorBoundary>
-                </div>
-              ) : isAnonymousViewer ? (
-                <div className="chat-unavailable">
-                  <p>💬 Chat is not available for anonymous viewers</p>
-                  <p>Sign in to participate in the chat</p>
                 </div>
               ) : (
                 <div className="chat-loading">
@@ -1606,6 +2033,63 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
   const [timeRemaining, setTimeRemaining] = useState(60) // 60 seconds countdown
   const [timerActive, setTimerActive] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [waitingViewers, setWaitingViewers] = useState<any[]>([])
+
+
+  // Listen for participant events
+  useEffect(() => {
+    if (!channel) return
+
+    const handleParticipantJoined = (event: any) => {
+      if (event.type === 'participant.joined') {
+        console.log('👥 Participant joined:', event.data)
+        const newParticipant = {
+          id: event.data.userId,
+          name: event.data.userName,
+          joinedAt: event.data.timestamp
+        }
+        setWaitingViewers(prev => {
+          const exists = prev.find(p => p.id === newParticipant.id)
+          if (exists) return prev
+          return [...prev, newParticipant]
+        })
+        
+        // Send updated participant list to all viewers
+        setTimeout(async () => {
+          try {
+            await channel.sendMessage({
+              text: JSON.stringify({
+                type: 'participants.sync',
+                data: {
+                  participants: [...waitingViewers, newParticipant]
+                }
+              }),
+              type: 'system'
+            })
+          } catch (error) {
+            console.warn('Failed to sync participants:', error)
+          }
+        }, 100)
+      }
+    }
+
+    channel.on('message.new', (event: any) => {
+      if (event.message?.type === 'system' && event.message?.text) {
+        try {
+          const data = JSON.parse(event.message.text)
+          if (data.type === 'participant.joined') {
+            handleParticipantJoined(data)
+          }
+        } catch (e) {
+          // Not a system message, ignore
+        }
+      }
+    })
+
+    return () => {
+      // No specific cleanup needed for message.new listener as it's shared
+    }
+  }, [channel, waitingViewers])
 
   // Determine the host user ID for backstage chat
   // Since we're in backstage mode, the current user (if not a viewer) is likely the host
@@ -1759,8 +2243,16 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  // Count waiting participants (exclude the host)
-  const waitingParticipants = participants.filter(p => p.isLocalParticipant === false)
+  // Count waiting participants (exclude the host + include waiting viewers)
+  const waitingParticipants = [
+    ...participants.filter(p => p.isLocalParticipant === false),
+    ...waitingViewers.map(viewer => ({
+      sessionId: viewer.id,
+      name: viewer.name,
+      image: null,
+      joinedAt: viewer.joinedAt
+    }))
+  ]
 
   return (
     <div className="backstage-container">
@@ -1951,7 +2443,7 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
         </h3>
         {chatClient && channel && chatClient.userID && chatClient.user ? (
           <div className="stream-chat-container" style={{ 
-            height: '300px', 
+            height: '100%', 
             display: 'flex', 
             flexDirection: 'column',
             backgroundColor: '#1a1a1a',
@@ -1960,7 +2452,6 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
             overflow: 'hidden'
           }}>
             <ChatErrorBoundary>
-              <ChatDebugInfo channel={channel} />
               <StreamChatUI client={chatClient} theme="str-chat__theme-dark">
                 <StreamChannelUI channel={channel}>
                   <Window>
@@ -1970,13 +2461,16 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
                       display: 'flex',
                       flexDirection: 'column'
                     }}>
-                      <MessageList 
-                        messageLimit={50}
-                        hideDeletedMessages={false}
+                      <CustomMessageList
+                        channel={channel}
+                        hostUserId={hostUserId}
+                        currentUserId={chatClient?.userID || ''}
                       />
                     </div>
-                    <MessageInput 
-                      focus={true}
+                    <CustomMessageInput
+                      channel={channel}
+                      currentUserId={chatClient?.userID || ''}
+                      isReadOnly={false}
                     />
                   </Window>
                   <Thread />
