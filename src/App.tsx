@@ -70,7 +70,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/video" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowViewers={true}>
                   <Video />
                 </ProtectedRoute>
               } />

@@ -6,7 +6,20 @@ import Auth0Icon from '../icons/brand-auth0.svg'
 import './Login.css'
 
 const Login: React.FC = () => {
-  const { loginWithRedirect, isLoading } = useAuth0()
+  const { loginWithRedirect, isLoading, isAuthenticated } = useAuth0()
+
+  // Redirect authenticated users back to their intended destination
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      const returnUrl = localStorage.getItem('returnUrl')
+      if (returnUrl) {
+        localStorage.removeItem('returnUrl')
+        window.location.href = returnUrl
+      } else {
+        window.location.href = '/feeds'
+      }
+    }
+  }, [isAuthenticated])
 
   const handleLogin = () => {
     loginWithRedirect()

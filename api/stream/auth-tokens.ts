@@ -114,25 +114,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Initialize Stream client for video operations
       const streamClient = new StreamClient(apiKey, apiSecret);
 
-      // Create/update user profile in Stream Video if profile information is provided
-      if (userProfile) {
-        try {
-          console.log('👤 AUTH-TOKENS: Updating video user profile...');
-          await streamClient.upsertUsers([{
-            id: userId,
-            name: userProfile.name,
-            image: userProfile.image
-          }]);
-          console.log(`✅ AUTH-TOKENS: User profile updated for video: ${userId}`);
-        } catch (profileError) {
-          console.warn(`❌ AUTH-TOKENS: Failed to update user profile for video ${userId}:`, profileError);
-          // Continue with token generation even if profile update fails
-        }
+      // Create/update user profile in Stream Video
+      try {
+        const userRole = userProfile?.role || 'user'; // Use provided role or default to 'user'
+        console.log('👤 AUTH-TOKENS: Creating/updating video user...', {
+          userId,
+          name: userProfile?.name || `User ${userId}`,
+          hasImage: !!userProfile?.image,
+          role: userRole
+        });
+        
+        const userData = {
+          id: userId,
+          name: userProfile?.name || `User ${userId}`,
+          image: userProfile?.image,
+          role: userRole // Use the role from userProfile (admin for streamers, user for viewers)
+        };
+        
+        console.log('📋 AUTH-TOKENS: User data being upserted:', userData);
+        await streamClient.upsertUsers([userData]);
+        console.log(`✅ AUTH-TOKENS: User profile updated for video with role ${userRole}: ${userId}`);
+        
+      } catch (profileError) {
+        console.error(`❌ AUTH-TOKENS: Failed to update user profile for video ${userId}:`, profileError);
+        // Continue with token generation even if profile update fails
       }
 
       // Generate Stream video user token
-      console.log('🔑 AUTH-TOKENS: Generating video token...');
-      const videoToken = streamClient.generateUserToken({ user_id: userId });
+      const userRole = userProfile?.role || 'user';
+      console.log('🔑 AUTH-TOKENS: Generating video token for role:', userRole);
+      
+      const tokenOptions: any = { user_id: userId };
+      
+      // Only add admin-specific permissions for admin users
+      if (userRole === 'admin') {
+        tokenOptions.call_cids = ['*']; // Allow access to all calls
+        tokenOptions.role = 'admin';
+      }
+      
+      const videoToken = streamClient.generateUserToken(tokenOptions);
 
       console.log('✅ AUTH-TOKENS: Video token generated successfully');
       return res.status(200).json({
