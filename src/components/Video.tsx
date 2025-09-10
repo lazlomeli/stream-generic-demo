@@ -72,7 +72,22 @@ interface CustomMessageBubbleProps {
 const CustomMessageBubble: React.FC<CustomMessageBubbleProps> = ({ message, hostUserId, isCurrentUser }) => {
   if (!message || !message.text) {
     return null
+  }
+  
+  // Filter out system messages (stream notifications)
+  if (message.type === 'system') {
+    return null
+  }
+  
+  // Also filter out messages that look like system notifications
+  try {
+    const parsed = JSON.parse(message.text)
+    if (parsed.type && parsed.type.startsWith('stream.')) {
+      return null
     }
+  } catch (e) {
+    // Not JSON, continue with normal message display
+  }
     
     // Extract user data safely
     const messageUser = message.user || {}
@@ -329,6 +344,7 @@ interface ViewerWaitingRoomProps {
   call: any
   isAnonymousViewer?: boolean
   isAuthenticatedViewer?: boolean
+  onStreamGoesLive?: () => void
 }
 
 const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
@@ -338,73 +354,59 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
   callId,
   call,
   isAnonymousViewer = false,
-  isAuthenticatedViewer = false
+  isAuthenticatedViewer = false,
+  onStreamGoesLive
 }) => {
   const { useParticipants } = useCallStateHooks()
   const participants = useParticipants()
-  const [syncedParticipants, setSyncedParticipants] = useState<any[]>([])
 
-  // Listen for participant sync events from streamer
+  // Stream automatically handles participant updates through the video call
+
+  // No need for custom participant updates - Stream handles this automatically through video call participants
+
+  // Count waiting participants from Stream's native participant list
+  const waitingParticipants = participants.filter(p => p.isLocalParticipant === false)
+  
+  // Debug logging for waiting room
+  console.log('🚪 WAITING ROOM DEBUG:', {
+    totalParticipants: participants.length,
+    waitingParticipants: waitingParticipants.length,
+    allParticipants: participants.map(p => ({
+      userId: p.userId,
+      name: p.name,
+      isLocal: p.isLocalParticipant,
+      sessionId: p.sessionId
+    })),
+    isAnonymousViewer,
+    isAuthenticatedViewer
+  })
+
+  // Listen for "stream went live" messages from the streamer
   useEffect(() => {
-    if (!channel) return
+    if (!channel || (!isAuthenticatedViewer && !isAnonymousViewer)) return
 
-    const handleParticipantSync = (event: any) => {
-      if (event.type === 'participants.sync') {
-        console.log('👥 Participants sync received:', event.data)
-        setSyncedParticipants(event.data.participants || [])
-      }
-    }
-
-    // Listen for participant events only
-    channel.on('message.new', (event: any) => {
+    const handleStreamEvent = (event: any) => {
       if (event.message?.type === 'system' && event.message?.text) {
         try {
           const data = JSON.parse(event.message.text)
-          if (data.type === 'participants.sync') {
-            handleParticipantSync(data)
-          } else if (data.type === 'participant.joined') {
-            // Handle participant joined event for viewers
-            console.log('👥 Participant joined (viewer perspective):', data.data)
+          if (data.type === 'stream.went_live') {
+            console.log('🔴 Received stream went live notification')
+            if (onStreamGoesLive) {
+              onStreamGoesLive()
+            }
           }
         } catch (e) {
           // Not a system message, ignore
         }
       }
-    })
+    }
 
+    channel.on('message.new', handleStreamEvent)
+    
     return () => {
-      // Cleanup handled by component unmount
+      channel.off('message.new', handleStreamEvent)
     }
-  }, [channel])
-
-  // Send participant update when viewer joins
-  useEffect(() => {
-    if (!channel || isAnonymousViewer) return
-
-    const sendParticipantUpdate = async () => {
-      try {
-        await channel.sendMessage({
-          text: JSON.stringify({
-            type: 'participant.joined',
-            data: {
-              userId: chatClient?.userID || '',
-              userName: chatClient?.user?.name || 'Unknown User',
-              timestamp: Date.now()
-            }
-          }),
-          type: 'system'
-        })
-        console.log('📨 Sent participant joined event')
-      } catch (error) {
-        console.warn('Failed to send participant update:', error)
-      }
-    }
-
-    sendParticipantUpdate()
-  }, [channel, chatClient, isAnonymousViewer])
-
-  // Count waiting participants (combine Stream participants and synced participants)
-  const waitingParticipants = [...participants.filter(p => p.isLocalParticipant === false), ...syncedParticipants]
+  }, [channel, isAnonymousViewer, isAuthenticatedViewer, onStreamGoesLive])
 
 
   const handleExit = () => {
@@ -466,19 +468,19 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
             
             {/* Show other participants */}
             {waitingParticipants.map((participant) => (
-              <div key={participant.sessionId} className="waiting-participant">
+              <div key={participant.sessionId || participant.userId} className="waiting-participant">
                 <div className="participant-avatar">
                   {participant.image ? (
                     <img src={participant.image} alt={participant.name} />
                   ) : (
                     <div className="avatar-placeholder">
-                      {participant.name?.[0]?.toUpperCase() || 'U'}
+                      {(participant.name || participant.userId)?.[0]?.toUpperCase() || 'U'}
                     </div>
                   )}
                 </div>
                 <div className="participant-info">
                   <span className="participant-name">
-                    {participant.name || 'Anonymous User'}
+                    {participant.name || participant.userId || 'Anonymous User'}
                   </span>
                   <span className="participant-status">Waiting to watch</span>
                 </div>
@@ -829,70 +831,53 @@ const Video: React.FC<VideoProps> = () => {
       const call = videoClient.call('livestream', sharedCallId)
       callRef.current = call
 
-      // Create the call - temporarily removing settings_override to test permissions
+      // Create the call with backstage explicitly disabled to avoid permission issues for viewers
       try {
-        console.log('🔧 Creating/joining call without settings override (testing permissions)...')
-        await call.getOrCreate()
-        console.log('✅ Call created/joined successfully')
-        
-        // TODO: Re-enable backstage settings once permissions are working
-        // if (!isViewer) {
-        //   // Try to enable backstage mode after call creation
-        //   try {
-        //     await call.update({
-        //       settings_override: {
-        //         backstage: {
-        //           enabled: true,
-        //           join_ahead_time_seconds: 300,
-        //         },
-        //       },
-        //     })
-        //     console.log('✅ Backstage settings applied')
-        //   } catch (settingsError) {
-        //     console.warn('⚠️ Failed to apply backstage settings:', settingsError)
-        //   }
-        // }
+        console.log('🔧 Creating/joining call with backstage disabled...')
+        await call.getOrCreate({
+          data: {
+            settings_override: {
+              backstage: {
+                enabled: false, // Explicitly disable backstage
+              },
+            },
+          },
+        })
+        console.log('✅ Call created/joined successfully with backstage disabled')
         
         if (isViewer) {
-          // For viewers, join the call to receive video streams
+          // For viewers, join the call with viewer-specific options to avoid backstage permissions
           console.log('👁️ Viewer joining call to receive video streams...')
           
           try {
+            // Join as viewer - should work now that backstage is disabled
             await call.join()
             console.log('✅ Viewer joined livestream call successfully')
             
-            // Check if the stream is currently in backstage mode
-            const callState = call.state
-            console.log('📊 Call state for viewer after joining:', {
-              backstage: callState.backstage,
-              callingState: callState.callingState,
-              isBackstage: callState.backstage,
-              members: callState.members?.length || 0,
-              isAnonymousViewer,
-              isAuthenticatedViewer
-            })
+            // Debug: Check participants after joining
+            setTimeout(() => {
+              const currentParticipants = call.state.participants
+              console.log('🔍 POST-JOIN PARTICIPANT CHECK:', {
+                participantCount: currentParticipants?.length || 0,
+                participants: currentParticipants?.map(p => ({
+                  userId: p.userId,
+                  name: p.name,
+                  isLocal: p.isLocalParticipant,
+                  sessionId: p.sessionId
+                })) || []
+              })
+            }, 1000)
             
-            const isInBackstage = callState.backstage || false
+            // Since we're not using Stream's backstage mode, determine state based on our UI state
+            console.log('📊 Viewer joined call successfully - checking current stream state')
             
-            if (isInBackstage) {
-              // Stream is in backstage - show waiting room
-              console.log('⏳ Stream is in backstage mode - showing viewer waiting room')
-              setBackstageMode(true)
-              setLivestreamActive(false)
-            } else {
-              // Stream is live - show livestream view
-              console.log('🔴 Stream is live - showing livestream view')
-              setBackstageMode(false)
-              setLivestreamActive(true)
-            }
+            // For viewers, start in waiting room mode by default
+            // The streamer's UI state will determine when to transition to live
+            console.log('⏳ Starting in waiting room - will transition when streamer goes live')
+            setBackstageMode(true)
+            setLivestreamActive(false)
             
-            // Listen for call state changes to detect when stream goes live
-            call.on('call.live_started', () => {
-              console.log('🔴 Stream went live - switching to livestream view')
-              setBackstageMode(false)
-              setLivestreamActive(true)
-            })
-            
+            // Listen for call ended events
             call.on('call.ended', () => {
               console.log('🔴 Stream ended')
               setLivestreamActive(false)
@@ -1271,6 +1256,11 @@ const Video: React.FC<VideoProps> = () => {
                 call={callRef.current}
                 isAnonymousViewer={isAnonymousViewer}
                 isAuthenticatedViewer={isAuthenticatedViewer}
+                onStreamGoesLive={() => {
+                  console.log('🔴 Viewer transitioning from waiting room to live stream')
+                  setBackstageMode(false)
+                  setLivestreamActive(true)
+                }}
               />
             </StreamCall>
           </StreamVideo>
@@ -2033,63 +2023,7 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
   const [timeRemaining, setTimeRemaining] = useState(60) // 60 seconds countdown
   const [timerActive, setTimerActive] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
-  const [waitingViewers, setWaitingViewers] = useState<any[]>([])
-
-
-  // Listen for participant events
-  useEffect(() => {
-    if (!channel) return
-
-    const handleParticipantJoined = (event: any) => {
-      if (event.type === 'participant.joined') {
-        console.log('👥 Participant joined:', event.data)
-        const newParticipant = {
-          id: event.data.userId,
-          name: event.data.userName,
-          joinedAt: event.data.timestamp
-        }
-        setWaitingViewers(prev => {
-          const exists = prev.find(p => p.id === newParticipant.id)
-          if (exists) return prev
-          return [...prev, newParticipant]
-        })
-        
-        // Send updated participant list to all viewers
-        setTimeout(async () => {
-          try {
-            await channel.sendMessage({
-              text: JSON.stringify({
-                type: 'participants.sync',
-                data: {
-                  participants: [...waitingViewers, newParticipant]
-                }
-              }),
-              type: 'system'
-            })
-          } catch (error) {
-            console.warn('Failed to sync participants:', error)
-          }
-        }, 100)
-      }
-    }
-
-    channel.on('message.new', (event: any) => {
-      if (event.message?.type === 'system' && event.message?.text) {
-        try {
-          const data = JSON.parse(event.message.text)
-          if (data.type === 'participant.joined') {
-            handleParticipantJoined(data)
-          }
-        } catch (e) {
-          // Not a system message, ignore
-        }
-      }
-    })
-
-    return () => {
-      // No specific cleanup needed for message.new listener as it's shared
-    }
-  }, [channel, waitingViewers])
+  // Use Stream's native participant management instead of custom messaging
 
   // Determine the host user ID for backstage chat
   // Since we're in backstage mode, the current user (if not a viewer) is likely the host
@@ -2218,15 +2152,25 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
       setTimerActive(false)
       console.log('🚀 Going live...')
       
-      // Use Stream's built-in goLive method
-      if (call) {
-        await call.goLive({
-          start_hls: true, // Start HLS broadcast
-          start_recording: true, // Start recording
-        })
-        console.log('✅ Successfully went live!')
+      // Notify viewers via chat that the stream has gone live (hidden system message)
+      if (channel) {
+        try {
+          await channel.sendMessage({
+            text: JSON.stringify({
+              type: 'stream.went_live',
+              timestamp: Date.now()
+            }),
+            silent: true, // Don't show notification
+            type: 'system' // Mark as system message
+          })
+          console.log('📢 Notified viewers that stream went live (hidden)')
+        } catch (error) {
+          console.warn('⚠️ Failed to notify viewers:', error)
+        }
       }
       
+      // Update local UI state to show the live stream
+      console.log('✅ Transitioning to live mode via UI state')
       onGoLive()
     } catch (error) {
       console.error('❌ Failed to go live:', error)
@@ -2243,16 +2187,22 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  // Count waiting participants (exclude the host + include waiting viewers)
-  const waitingParticipants = [
-    ...participants.filter(p => p.isLocalParticipant === false),
-    ...waitingViewers.map(viewer => ({
-      sessionId: viewer.id,
-      name: viewer.name,
-      image: null,
-      joinedAt: viewer.joinedAt
-    }))
-  ]
+  // Count waiting participants (exclude the host, use Stream's native participants)
+  const waitingParticipants = participants.filter(p => p.isLocalParticipant === false)
+  
+  // Debug logging for backstage waiting room
+  console.log('🎬 BACKSTAGE WAITING ROOM DEBUG:', {
+    totalParticipants: participants.length,
+    waitingParticipants: waitingParticipants.length,
+    allParticipants: participants.map(p => ({
+      userId: p.userId,
+      name: p.name,
+      isLocal: p.isLocalParticipant,
+      sessionId: p.sessionId
+    })),
+    isViewer,
+    isStreamer
+  })
 
   return (
     <div className="backstage-container">
@@ -2408,19 +2358,19 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
           {waitingParticipants.length > 0 ? (
             <div className="waiting-participants">
               {waitingParticipants.map((participant) => (
-                <div key={participant.sessionId} className="waiting-participant">
+                <div key={participant.sessionId || participant.userId} className="waiting-participant">
                   <div className="participant-avatar">
                     {participant.image ? (
                       <img src={participant.image} alt={participant.name} />
                     ) : (
                       <div className="avatar-placeholder">
-                        {participant.name?.[0]?.toUpperCase() || 'U'}
+                        {(participant.name || participant.userId)?.[0]?.toUpperCase() || 'U'}
                       </div>
                     )}
                   </div>
                   <div className="participant-info">
                     <span className="participant-name">
-                      {participant.name || 'Anonymous User'}
+                      {participant.name || participant.userId || 'Anonymous User'}
                     </span>
                     <span className="participant-status">Waiting to join</span>
                   </div>
