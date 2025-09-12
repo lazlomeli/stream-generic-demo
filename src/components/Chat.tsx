@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { StreamChat, Channel as StreamChannel } from 'stream-chat'
 import { useAuth0 } from '@auth0/auth0-react'
+import { useParams } from 'react-router-dom'
 import {
   Chat as ChatComponent,
   Channel,
@@ -29,6 +30,7 @@ interface ChatProps {}
 
 const Chat: React.FC<ChatProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { channelId } = useParams<{ channelId?: string }>();
 
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
 
@@ -265,6 +267,7 @@ const Chat: React.FC<ChatProps> = () => {
           filters={filters}
           sort={sort}
           options={options}
+          initialChannelId={channelId}
         />
         <Channel Attachment={CustomAttachment}>
           <Window>

@@ -12,9 +12,11 @@ interface CustomChannelListProps {
   filters: any;
   sort: any;
   options: any;
+  initialChannelId?: string;
 }
 
 const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
+  const { filters, sort, options, initialChannelId } = props;
   const { client, setActiveChannel } = useChatContext();
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showCreateDMModal, setShowCreateDMModal] = useState(false);
@@ -45,25 +47,75 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       setChannels(channelData);
       setFilteredChannels(channelData); // Initialize filtered channels
       
-      // If no channel is selected and we have channels, select the first one
-      if (!selectedChannelId && channelData.length > 0) {
-        const firstChannel = channelData[0];
-        setSelectedChannelId(firstChannel.id);
+      // Handle channel selection priority: initialChannelId > current selection > first channel
+      let channelToSelect = null;
+      
+      if (initialChannelId) {
+        // Priority 1: Try to select the channel from URL parameter
+        channelToSelect = channelData.find(ch => ch.id === initialChannelId);
+        if (channelToSelect) {
+          console.log(`✅ Found initial channel from URL: ${channelToSelect.name}`);
+        } else {
+          // If initial channel not found in loaded channels, try to watch it directly
+          try {
+            const channel = client.channel('messaging', initialChannelId);
+            await channel.watch();
+            setSelectedChannelId(initialChannelId);
+            setActiveChannel(channel);
+            console.log(`✅ Opened initial channel from URL: ${initialChannelId}`);
+            
+            // Add the channel to our local state optimistically
+            const newChannelItem: ChannelItem = {
+              id: initialChannelId,
+              name: (channel.data as any)?.name || 'Direct Message',
+              type: (channel.data as any)?.isDM ? 'dm' : 'group',
+              image: (channel.data as any)?.image,
+              lastMessage: undefined,
+              lastMessageTime: undefined,
+              status: 'offline',
+              onlineCount: 0,
+            };
+            
+            setChannels(prev => [newChannelItem, ...prev]);
+            setFilteredChannels(prev => [newChannelItem, ...prev]);
+            console.log(`⚡ Added initial channel to list: ${initialChannelId}`);
+            
+            // Trigger a refresh after a short delay to get the most up-to-date channel data
+            setTimeout(() => {
+              console.log('🔄 Refreshing channel list to get accurate data for initial channel');
+              setRefreshKey(prev => prev + 1);
+            }, 1000);
+            
+            return; // Exit early since we found and set the channel
+          } catch (error) {
+            console.warn(`⚠️ Could not open initial channel ${initialChannelId}:`, error);
+            // Fall through to select first available channel
+          }
+        }
+      }
+      
+      if (!channelToSelect && !selectedChannelId && channelData.length > 0) {
+        // Priority 2: Select first available channel if no channel is currently selected
+        channelToSelect = channelData[0];
+      }
+      
+      if (channelToSelect) {
+        setSelectedChannelId(channelToSelect.id);
         
-        // Set the first channel as active
+        // Set the channel as active
         try {
-          const channel = client.channel('messaging', firstChannel.id);
+          const channel = client.channel('messaging', channelToSelect.id);
           await channel.watch();
           setActiveChannel(channel);
-          console.log(`✅ Auto-selected first channel: ${firstChannel.name}`);
+          console.log(`✅ Auto-selected channel: ${channelToSelect.name}`);
         } catch (error) {
-          console.error('❌ Error auto-selecting first channel:', error);
+          console.error('❌ Error auto-selecting channel:', error);
         }
       }
     } catch (error) {
       console.error('❌ Error loading channels:', error);
     }
-  }, [client, selectedChannelId, setActiveChannel]);
+  }, [client, selectedChannelId, setActiveChannel, initialChannelId]);
 
   // Function to search channels and users
   const performSearch = useCallback(async (query: string) => {
@@ -191,6 +243,21 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
     loadChannels();
   }, [loadChannels, refreshKey]);
 
+  // Effect to handle when initialChannelId changes (e.g., from URL navigation)
+  useEffect(() => {
+    if (initialChannelId && channels.length > 0) {
+      // Check if the initial channel is not in our current list
+      const channelExists = channels.some(ch => ch.id === initialChannelId);
+      if (!channelExists) {
+        console.log(`🔄 Initial channel ${initialChannelId} not found in list, triggering refresh`);
+        // Force a refresh to ensure we have the latest channels
+        setTimeout(() => {
+          setRefreshKey(prev => prev + 1);
+        }, 500);
+      }
+    }
+  }, [initialChannelId, channels]);
+
   // Listen for real-time channel updates
   useEffect(() => {
     if (!client.userID) return;
@@ -198,7 +265,11 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
     const handleChannelUpdated = (event: any) => {
       console.log('📡 Real-time channel update received:', event.type);
       // Refresh channel list when channels are updated
-      if (event.type === 'channel.updated' || event.type === 'notification.added_to_channel') {
+      if (event.type === 'channel.updated' || 
+          event.type === 'notification.added_to_channel' ||
+          event.type === 'channel.created' ||
+          event.type === 'notification.removed_from_channel' ||
+          event.type === 'channel.deleted') {
         console.log('🔄 Auto-refreshing channel list due to real-time update');
         refreshChannelList();
       }
@@ -207,12 +278,47 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
     // Listen for channel events that might affect our channel list
     client.on('channel.updated', handleChannelUpdated);
     client.on('notification.added_to_channel', handleChannelUpdated);
+    client.on('channel.created', handleChannelUpdated);
+    client.on('notification.removed_from_channel', handleChannelUpdated);
+    client.on('channel.deleted', handleChannelUpdated);
 
     return () => {
       client.off('channel.updated', handleChannelUpdated);
       client.off('notification.added_to_channel', handleChannelUpdated);
+      client.off('channel.created', handleChannelUpdated);
+      client.off('notification.removed_from_channel', handleChannelUpdated);
+      client.off('channel.deleted', handleChannelUpdated);
     };
   }, [client, refreshChannelList]);
+
+  // Listen for custom mute status change events
+  useEffect(() => {
+    const handleMuteStatusChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { channelId, muted } = customEvent.detail;
+      console.log('🔇 Mute status change received:', { channelId, muted });
+      
+      // Update the specific channel's muted status in local state
+      setChannels(prev => prev.map(channel => 
+        channel.id === channelId 
+          ? { ...channel, muted }
+          : channel
+      ));
+      
+      setFilteredChannels(prev => prev.map(channel => 
+        channel.id === channelId 
+          ? { ...channel, muted }
+          : channel
+      ));
+    };
+
+    window.addEventListener('channelMuteStatusChanged', handleMuteStatusChange);
+    
+    return () => {
+      window.removeEventListener('channelMuteStatusChanged', handleMuteStatusChange);
+    };
+  }, []);
+
 
   // Handle channel selection
   const handleChannelSelect = useCallback(async (channelId: string) => {

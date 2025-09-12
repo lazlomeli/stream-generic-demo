@@ -640,6 +640,47 @@ const UserProfile = () => {
     }
   };
 
+  const handleMessageUser = async () => {
+    if (!feedsClient?.userId || !profile?.userId) return;
+
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      // Create or get existing DM channel
+      const response = await fetch('/api/stream/chat-operations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: 'create-channel',
+          currentUserId: feedsClient.userId,
+          isDM: true,
+          selectedUsers: JSON.stringify([profile.userId]),
+          channelName: `${profile.name}` // DM channel name
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create channel');
+      }
+
+      const result = await response.json();
+      console.log('✅ DM Channel created/found:', result);
+      
+      showSuccess('Opening message...');
+      
+      // Navigate to chat with the specific channel ID
+      navigate(`/chat/${result.channelId}`);
+      
+    } catch (err: any) {
+      console.error('❌ Error creating DM channel:', err);
+      showError('Failed to start conversation. Please try again.');
+    }
+  };
+
   const handleFollow = async () => {
     if (!feedsClient?.userId || !profile?.userId) return;
 
@@ -825,15 +866,25 @@ const UserProfile = () => {
             )}
           </div>
           {!isOwnProfile && (
-            <button 
-              className={`profile-follow-button ${isFollowing ? 'following' : ''}`}
-              onClick={handleFollow}
-            >
-              {(() => {
-                console.log(`🔘 USERPROFILE: Rendering follow button, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
-                return isFollowing ? 'Following' : 'Follow';
-              })()}
-            </button>
+            <div className="profile-action-buttons">
+              <button 
+                className="profile-message-button"
+                onClick={handleMessageUser}
+                title="Send message"
+              >
+                <img src={MessageIcon} alt="Message" className="button-icon" />
+                Message
+              </button>
+              <button 
+                className={`profile-follow-button ${isFollowing ? 'following' : ''}`}
+                onClick={handleFollow}
+              >
+                {(() => {
+                  console.log(`🔘 USERPROFILE: Rendering follow button, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
+                  return isFollowing ? 'Following' : 'Follow';
+                })()}
+              </button>
+            </div>
           )}
         </div>
         <div className="profile-details">

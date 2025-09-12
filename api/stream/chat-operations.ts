@@ -16,8 +16,8 @@ export default async function handler(
       return res.status(400).json({ error: 'type is required' });
     }
 
-    if (!['create-channel', 'add-to-general', 'create-livestream-channel'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "create-channel", "add-to-general", or "create-livestream-channel"' });
+    if (!['create-channel', 'add-to-general', 'create-livestream-channel', 'leave-channel'].includes(type)) {
+      return res.status(400).json({ error: 'type must be "create-channel", "add-to-general", "create-livestream-channel", or "leave-channel"' });
     }
 
     // Get Stream API credentials
@@ -246,6 +246,69 @@ export default async function handler(
         // For any other error, return failure
         return res.status(500).json({
           error: 'Failed to create livestream channel',
+          details: error.message || String(error),
+          code: error.code || 'unknown'
+        });
+      }
+    }
+
+    // Handle leaving a channel
+    if (type === 'leave-channel') {
+      const { channelId, userId } = req.body;
+
+      if (!channelId || !userId) {
+        return res.status(400).json({ error: 'channelId and userId are required' });
+      }
+
+      try {
+        console.log(`👋 User ${userId} leaving channel: ${channelId}`);
+        
+        // Get the channel
+        const channel = streamClient.channel('messaging', channelId);
+        await channel.watch();
+        
+        // Check if user is a member of the channel
+        const members = channel.state?.members || {};
+        if (!members[userId]) {
+          return res.status(400).json({ 
+            error: 'User is not a member of this channel',
+            channelId,
+            userId
+          });
+        }
+        
+        // Check if this is the last member
+        const memberCount = Object.keys(members).length;
+        if (memberCount === 1) {
+          // If this is the last member, delete the channel entirely
+          console.log(`🗑️ Deleting channel ${channelId} as ${userId} is the last member`);
+          await channel.delete();
+          
+          return res.status(200).json({
+            success: true,
+            message: 'Channel deleted as you were the last member',
+            channelId,
+            deleted: true
+          });
+        } else {
+          // Remove the user from the channel
+          await channel.removeMembers([userId]);
+          console.log(`✅ Successfully removed user ${userId} from channel ${channelId}`);
+          
+          return res.status(200).json({
+            success: true,
+            message: 'Successfully left the channel',
+            channelId,
+            deleted: false,
+            remainingMembers: memberCount - 1
+          });
+        }
+        
+      } catch (error: any) {
+        console.error(`❌ Error leaving channel ${channelId}:`, error);
+        
+        return res.status(500).json({
+          error: 'Failed to leave channel',
           details: error.message || String(error),
           code: error.code || 'unknown'
         });

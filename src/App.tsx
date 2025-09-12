@@ -69,6 +69,11 @@ function App() {
                   <Chat />
                 </ProtectedRoute>
               } />
+              <Route path="/chat/:channelId" element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } />
               <Route path="/video" element={
                 <ProtectedRoute allowViewers={true}>
                   <Video />

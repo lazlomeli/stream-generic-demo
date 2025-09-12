@@ -11,6 +11,7 @@ export type ChannelItem = {
   lastMessageTime?: string;
   status?: 'online' | 'away' | 'offline';
   onlineCount?: number;
+  muted?: boolean;
 };
 
 export async function listMyChannels(client: StreamChat, me: string): Promise<ChannelItem[]> {
@@ -89,6 +90,7 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       lastMessageTime: last?.created_at ? new Date(last.created_at).toLocaleTimeString() : undefined,
       status: getChannelStatus(),
       onlineCount: onlineCount,
+      muted: c.muteStatus()?.muted || false,
     };
     
     return channelItem;

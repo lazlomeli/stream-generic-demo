@@ -3,6 +3,7 @@ import { ChannelItem } from '../hooks/listMyChannels'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingIcon from './LoadingIcon'
 import ChannelTypingIndicator from './ChannelTypingIndicator'
+import VolumeOffIcon from '../icons/volume-off.svg'
 import './ChannelList.css'
 
 interface ChannelListProps {
@@ -60,7 +61,17 @@ const ChannelList: React.FC<ChannelListProps> = ({
                   <div className="channel-item-text">
                     <div className="channel-item-header">
                       <h3 className="channel-item-name">{channelItem.name}</h3>
-                      <span className="channel-item-time">{channelItem.lastMessageTime}</span>
+                      <div className="channel-item-meta">
+                        {channelItem.muted && (
+                          <img 
+                            src={VolumeOffIcon} 
+                            alt="Muted" 
+                            className="channel-item-mute-icon"
+                            title="Channel is muted"
+                          />
+                        )}
+                        <span className="channel-item-time">{channelItem.lastMessageTime}</span>
+                      </div>
                     </div>
                     <div className="channel-item-message">
                       <ChannelTypingIndicator

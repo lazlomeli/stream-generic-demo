@@ -107,6 +107,45 @@
   margin: 0;
 }
 
+.profile-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.profile-message-button {
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid #10b981;
+  background-color: white;
+  color: #10b981;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  width: 140px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.profile-message-button:hover {
+  background-color: #10b981;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.profile-message-button .button-icon {
+  width: 18px;
+  height: 18px;
+  filter: currentColor;
+}
+
 .profile-follow-button {
   padding: 0.75rem 2rem;
   border-radius: 9999px;
@@ -206,6 +245,11 @@
     font-size: 1.25rem;
   }
 
+  .profile-action-buttons {
+    gap: 0.75rem;
+  }
+
+  .profile-message-button,
   .profile-follow-button {
     width: 140px;
   }
