@@ -904,6 +904,7 @@
   order: 2 !important;
 }
 
+
 /* Remove border from textarea container */
 .mobile-view .str-chat__message-textarea-container {
   border: none !important;
@@ -1116,7 +1117,6 @@
   gap: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
-  overflow: hidden !important;
   box-sizing: border-box !important;
 }
 
@@ -1164,39 +1164,258 @@
   max-height: 16px !important;
 }
 
-/* ===== CUSTOM SEND BUTTON - DESKTOP & MOBILE ===== */
-.custom-send-button {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  margin: 0 0 0 0.5rem;
-  border: none;
-  border-radius: 18px;
-  background: #3b82f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.custom-send-button:hover {
-  background: #2563eb;
-}
-
-.custom-send-button svg,
-.custom-send-button img {
-  width: 16px;
-  height: 16px;
-  color: white;
-  filter: brightness(0) invert(1);
-}
+/* Old custom send button styles removed - now defined in desktop section below */
 
 /* Hide native Stream Chat send button everywhere */
 .str-chat__message-input .str-chat__send-button {
   display: none !important;
+}
+
+/* ===== DESKTOP MESSAGE INPUT STYLING ===== */
+.str-chat__message-input {
+  padding: 0.75rem !important;
+  background: white !important;
+  border-top: 1px solid #e5e7eb !important;
+  border-radius: 0 !important;
+}
+
+.str-chat__message-input .str-chat__message-input-inner {
+  min-height: 44px !important;
+  max-height: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 5px;
+  flex-wrap: nowrap !important;
+}
+
+/* Order the elements properly in the desktop input */
+.str-chat__message-input .str-chat__input-icons {
+  order: 1 !important;
+}
+
+.str-chat__message-input .str-chat__textarea {
+  width: 350px !important;
+  min-width: 350px !important;
+  max-width: 350px !important;
+  flex: none !important;
+  background: #f1f3f4 !important;
+  border: none !important;
+  border-radius: 22px !important;
+  padding: 0.75rem 1rem !important;
+  margin: 0 !important;
+  min-height: 44px !important;
+  max-height: 150px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  order: 2 !important;
+}
+
+/* Remove border from textarea container on desktop */
+.str-chat__message-textarea-container {
+  border: none !important;
+  border-radius: 22px !important;
+  background: #f1f3f4 !important;
+}
+
+/* Remove padding from textarea container on desktop */
+.str-chat__message-textarea-with-emoji-picker {
+  padding: 0 !important;
+}
+
+.str-chat__message-input .str-chat__textarea__textarea {
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  min-height: 24px !important;
+  max-height: 100px !important;
+  width: 100% !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  resize: none !important;
+  outline: none !important;
+  overflow-y: auto !important;
+  text-align: left !important;
+  direction: ltr !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  height: auto !important;
+}
+
+.str-chat__message-input .str-chat__textarea__textarea::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Desktop input icons styling */
+.str-chat__message-input .str-chat__input-icons {
+  display: flex !important;
+  position: static !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  height: 44px !important;
+  align-items: center !important;
+  order: 1 !important;
+}
+
+.str-chat__message-input .str-chat__input-icons button {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 22px !important;
+  background: #f1f3f4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: static !important;
+  flex-shrink: 0 !important;
+}
+
+/* Specific fix for attachment selector menu button on desktop */
+.str-chat__attachment-selector__menu-button {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 22px !important;
+  background: #f1f3f4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Desktop voice recording button */
+.voice-record-button-integrated {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  border-radius: 22px !important;
+  background: #6b7280 !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  order: 3 !important;
+}
+
+.voice-record-button-integrated:hover {
+  background: #4b5563 !important;
+}
+
+.voice-record-button-integrated svg,
+.voice-record-button-integrated img {
+  width: 18px !important;
+  height: 18px !important;
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Desktop message input wrapper */
+.message-input-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.message-input-wrapper .str-chat__message-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Remove border from textarea container on desktop */
+.str-chat__message-textarea-container {
+  border: none !important;
+  border-radius: 22px !important;
+  background: #f1f3f4 !important;
+}
+
+/* Update desktop custom send button size */
+.custom-send-button {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  margin: 0 0 0 0.75rem !important;
+  border: none !important;
+  border-radius: 22px !important;
+  background: #3b82f6 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+  order: 4 !important;
+}
+
+.custom-send-button:hover {
+  background: #2563eb !important;
+}
+
+.custom-send-button svg,
+.custom-send-button img {
+  width: 18px !important;
+  height: 18px !important;
+  color: white !important;
+  filter: brightness(0) invert(1) !important;
+}
+
+/* ===== ATTACHMENT SELECTOR MODAL Z-INDEX FIX ===== */
+.str-chat__attachment-selector {
+  z-index: 1000 !important;
+}
+
+.str-chat__attachment-selector__list {
+  z-index: 1000 !important;
+  position: relative !important;
+}
+
+.str-chat__attachment-selector__list-container {
+  z-index: 1000 !important;
+  position: relative !important;
+}
+
+/* Mobile attachment selector fixes */
+.mobile-view .str-chat__attachment-selector {
+  z-index: 1000 !important;
+}
+
+.mobile-view .str-chat__attachment-selector__list {
+  z-index: 1000 !important;
+  position: relative !important;
+}
+
+.mobile-view .str-chat__attachment-selector__list-container {
+  z-index: 1000 !important;
+  position: relative !important;
+}
+
+/* General attachment popover/tooltip fixes */
+.str-chat [role="tooltip"] {
+  z-index: 1000 !important;
+}
+
+.str-chat [role="dialog"] {
+  z-index: 1000 !important;
 }
 
 /* ===== MOBILE THREAD FULL SCREEN OVERRIDES ===== */
