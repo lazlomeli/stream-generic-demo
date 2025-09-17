@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import FallbackAvatar from './FallbackAvatar';
 import { useToast } from '../contexts/ToastContext';
 import OptionsIcon from '../icons/options.svg';
+import PhoneIcon from '../icons/phone.svg';
+import VideoIcon from '../icons/video.svg';
 import './CustomChannelHeader.css';
 
 const CustomChannelHeader: React.FC = () => {
@@ -204,6 +206,30 @@ const CustomChannelHeader: React.FC = () => {
     return channel?.muteStatus().muted || false;
   }, [channel, muteToggleKey]);
 
+  // Handle audio call
+  const handleAudioCall = () => {
+    if (!channel || !channel.id) return;
+    
+    // Generate a valid call ID (only a-z, 0-9, _, - allowed)
+    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const callId = `audio_${sanitizedChannelId}_${Date.now()}`;
+    
+    // Navigate to call page with audio mode
+    navigate(`/call/${callId}?type=audio&channel=${channel.id}`);
+  };
+
+  // Handle video call
+  const handleVideoCall = () => {
+    if (!channel || !channel.id) return;
+    
+    // Generate a valid call ID (only a-z, 0-9, _, - allowed)
+    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const callId = `video_${sanitizedChannelId}_${Date.now()}`;
+    
+    // Navigate to call page with video mode
+    navigate(`/call/${callId}?type=video&channel=${channel.id}`);
+  };
+
 
   return (
     <>
@@ -228,8 +254,26 @@ const CustomChannelHeader: React.FC = () => {
           </div>
         </div>
         
-        {/* Options Menu */}
+        {/* Call buttons and Options Menu */}
         <div className="str-chat__header-livestream-right">
+          {/* Call Buttons */}
+          <div className="call-buttons-container">
+            <button
+              className="call-button audio-call-button"
+              onClick={handleAudioCall}
+              title="Start audio call"
+            >
+              <img src={PhoneIcon} alt="Audio call" width="20" height="20" />
+            </button>
+            <button
+              className="call-button video-call-button"
+              onClick={handleVideoCall}
+              title="Start video call"
+            >
+              <img src={VideoIcon} alt="Video call" width="20" height="20" />
+            </button>
+          </div>
+          
           <div className="options-menu-container">
             <button
               ref={optionsButtonRef}

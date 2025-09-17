@@ -7,6 +7,9 @@ import LogoutIcon from '../icons/logout-2.svg'
 import StreamLogo from '../assets/stream-logo.png'
 import CastIcon from '../icons/cast.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
+import DeviceDesktopIcon from '../icons/device-desktop.svg'
+import PhoneIcon from '../icons/phone.svg'
+import { useResponsive } from '../contexts/ResponsiveContext'
 
 interface HeaderProps {
   showNavigation?: boolean;
@@ -15,6 +18,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
   const { isAuthenticated, user, logout } = useAuth0()
   const navigate = useNavigate()
+  const { isMobileView, toggleView } = useResponsive()
 
   const handleLogout = () => {
     logout({ logoutParams: { returnTo: window.location.origin } })
@@ -106,6 +110,19 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
               </div>
             )}
           </div>
+          
+          {/* Center - Responsive Toggle Button */}
+          <div className="header-center">
+            <button
+              onClick={toggleView}
+              className="responsive-toggle-button"
+              title={isMobileView ? 'Switch to Desktop View' : 'Switch to Mobile View'}
+            >
+              <img src={isMobileView ? DeviceDesktopIcon : PhoneIcon} alt={isMobileView ? 'Desktop' : 'Mobile'} />
+              <span>{isMobileView ? 'Desktop' : 'Mobile'}</span>
+            </button>
+          </div>
+          
           {/* Right side - User info and logout */}
           <div className="header-right">
             {isAuthenticated && (

@@ -144,17 +144,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userRole = userProfile?.role || 'user';
       console.log('🔑 AUTH-TOKENS: Generating video token for role:', userRole);
       
-      const tokenOptions: any = { user_id: userId };
+      // Create JWT token directly like chat tokens, but with video-specific payload
+      const tokenPayload: any = {
+        user_id: userId,
+        iss: 'stream-video',
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+        iat: Math.floor(Date.now() / 1000),
+        // Add video publishing capabilities
+        capabilities: [
+          'join-call',
+          'send-audio', 
+          'send-video',
+          'mute-users'
+        ]
+      };
       
-      // Only add admin-specific permissions for admin users
+      // For admin users, add additional capabilities
       if (userRole === 'admin') {
-        tokenOptions.call_cids = ['*']; // Allow access to all calls
-        tokenOptions.role = 'admin';
+        tokenPayload.capabilities.push(
+          'remove-call-member',
+          'update-call-settings',
+          'end-call'
+        );
+        tokenPayload.call_cids = ['*']; // Allow access to all calls
       }
       
-      const videoToken = streamClient.generateUserToken(tokenOptions);
+      console.log('🔧 AUTH-TOKENS: Video token payload:', JSON.stringify(tokenPayload, null, 2));
+      
+      // Generate JWT token directly using the same method as chat
+      const videoToken = jwt.sign(tokenPayload, apiSecret, {
+        algorithm: 'HS256'
+      });
 
       console.log('✅ AUTH-TOKENS: Video token generated successfully');
+      console.log('🔧 AUTH-TOKENS: Generated token (first 50 chars):', videoToken.substring(0, 50) + '...');
       return res.status(200).json({
         token: videoToken,
         apiKey: apiKey,

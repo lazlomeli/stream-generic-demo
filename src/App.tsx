@@ -8,8 +8,10 @@ import LoadingSpinner from './components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
 import Video from './components/Video'
+import CallPage from './components/CallPage'
 import ToastContainer from './components/ToastContainer'
 import { ToastProvider } from './contexts/ToastContext'
+import { ResponsiveProvider, useResponsive } from './contexts/ResponsiveContext'
 import './App.css'
 import Feeds from './components/Feeds'
 import BookmarkedPosts from './pages/BookmarkedPosts'
@@ -32,16 +34,21 @@ export const useUILayout = () => {
   return context
 }
 
-function App() {
+function AppContent() {
   const { isLoading, error, isAuthenticated } = useAuth0()
   const location = useLocation()
   const [hideHeader, setHideHeader] = useState(false)
+  const { isMobileView } = useResponsive()
 
   // Determine if we should show the sidebars (feeds, bookmarked, and profile pages)
-  const showSidebars = isAuthenticated && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname.startsWith('/profile/'))
+  const showSidebars = isAuthenticated && !isMobileView && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname.startsWith('/profile/'))
   
-  // Video page should use full layout without sidebars, similar to chat
+  // Video and call pages should use full layout without sidebars, similar to chat
   const isVideoPage = location.pathname === '/video'
+  const isCallPage = location.pathname.startsWith('/call/')
+  
+  // Hide header in mobile view for chat
+  const shouldHideHeader = hideHeader || (isMobileView && location.pathname.startsWith('/chat'))
 
   if (error) {
     return <div>Authentication Error: {error.message}</div>
@@ -53,12 +60,11 @@ function App() {
 
   return (
     <UILayoutContext.Provider value={{ hideHeader, setHideHeader }}>
-      <ToastProvider>
-        <div className={`app ${hideHeader ? 'fullscreen-mode' : ''}`}>
-          {isAuthenticated && !hideHeader && <Header showNavigation={!showSidebars && !isVideoPage} />}
-          {showSidebars && <Sidebar />}
-          {showSidebars && <RightSidebar />}
-          <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${hideHeader ? 'fullscreen' : ''}`}>
+      <div className={`app ${shouldHideHeader ? 'fullscreen-mode' : ''} ${isMobileView ? 'mobile-app' : ''}`}>
+        {isAuthenticated && !shouldHideHeader && <Header showNavigation={!showSidebars && !isVideoPage && !isCallPage} />}
+        {showSidebars && <Sidebar />}
+        {showSidebars && <RightSidebar />}
+        <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${shouldHideHeader ? 'fullscreen' : ''} ${isMobileView ? 'mobile-main' : ''}`}>
             <Routes>
               <Route path="/" element={
                 isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />
@@ -77,6 +83,11 @@ function App() {
               <Route path="/video" element={
                 <ProtectedRoute allowViewers={true}>
                   <Video />
+                </ProtectedRoute>
+              } />
+              <Route path="/call/:callId" element={
+                <ProtectedRoute>
+                  <CallPage />
                 </ProtectedRoute>
               } />
               <Route path="/feeds" element={
@@ -98,8 +109,17 @@ function App() {
           </main>
           <ToastContainer />
         </div>
-      </ToastProvider>
     </UILayoutContext.Provider>
+  )
+}
+
+function App() {
+  return (
+    <ResponsiveProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ResponsiveProvider>
   )
 }
 

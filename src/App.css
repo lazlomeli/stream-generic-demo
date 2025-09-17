@@ -28,6 +28,16 @@ body {
   padding-top: 0;
 }
 
+/* Mobile app layout */
+.app.mobile-app {
+  background: #f0f0f0;
+  padding-top: 4rem; /* Keep header space for mobile toggle */
+}
+
+.app.mobile-app.fullscreen-mode {
+  padding-top: 0; /* Full screen mobile view */
+}
+
 .app-main {
   position: relative;
   transition: all 0.3s ease;
@@ -38,6 +48,16 @@ body {
 .app-main.fullscreen {
   margin-top: 0; /* Remove header margin when in fullscreen */
   height: 100vh; /* Fill entire viewport */
+}
+
+.app-main.mobile-main {
+  margin-left: 0;
+  margin-right: 0;
+  min-height: calc(100vh - 4rem);
+}
+
+.app-main.mobile-main.fullscreen {
+  height: 100vh;
 }
 
 .app-main.with-sidebars {
@@ -124,6 +144,7 @@ body {
   display: flex;
   align-items: center;
   gap: 2rem;
+  flex: 1;
 }
 
 .header-icons {
@@ -162,11 +183,49 @@ body {
   height: 2rem;
 }
 
+/* Center - Responsive Toggle Button */
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.responsive-toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.responsive-toggle-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.responsive-toggle-button img {
+  width: 1rem;
+  height: 1rem;
+  filter: brightness(0) invert(1); /* Make icons white */
+}
+
 /* Right side - User info and actions */
 .header-right {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .user-section {

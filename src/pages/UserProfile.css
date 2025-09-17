@@ -146,6 +146,54 @@
   filter: currentColor;
 }
 
+.profile-call-button {
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 54px;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: white;
+}
+
+.profile-call-button.audio-call {
+  background-color: #22c55e;
+  border-color: #22c55e;
+}
+
+.profile-call-button.audio-call:hover {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.profile-call-button.video-call {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.profile-call-button.video-call:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.profile-call-button .button-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1);
+}
+
 .profile-follow-button {
   padding: 0.75rem 2rem;
   border-radius: 9999px;
@@ -250,6 +298,7 @@
   }
 
   .profile-message-button,
+  .profile-call-button,
   .profile-follow-button {
     width: 140px;
   }

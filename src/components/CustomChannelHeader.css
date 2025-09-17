@@ -45,6 +45,59 @@
   gap: 0.75rem;
 }
 
+/* Call buttons container */
+.call-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+}
+
+/* Call button styling */
+.call-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: var(--str-chat__primary-color);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.call-button:hover {
+  background-color: var(--str-chat__primary-color-low-emphasis);
+  transform: translateY(-1px);
+}
+
+.call-button:active {
+  transform: translateY(0);
+}
+
+.call-button img {
+  filter: brightness(0) invert(1); /* Make icons white */
+}
+
+/* Specific call button colors */
+.audio-call-button {
+  background-color: #22c55e; /* Green for audio */
+}
+
+.audio-call-button:hover {
+  background-color: #16a34a;
+}
+
+.video-call-button {
+  background-color: #3b82f6; /* Blue for video */
+}
+
+.video-call-button:hover {
+  background-color: #2563eb;
+}
+
 .options-menu-container {
   position: relative;
 }

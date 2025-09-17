@@ -17,6 +17,7 @@ import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import CameraIcon from '../icons/camera.svg';
 import VideoIcon from '../icons/video.svg';
+import PhoneIcon from '../icons/phone.svg';
 import PollIcon from '../icons/poll.svg';
 import '../components/Feeds.css';
 import './UserProfile.css';
@@ -681,6 +682,86 @@ const UserProfile = () => {
     }
   };
 
+  // Handle audio call from user profile
+  const handleAudioCall = async () => {
+    if (!feedsClient?.userId || !profile?.userId) return;
+
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      // Create or get existing DM channel
+      const response = await fetch('/api/stream/chat-operations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: 'create-channel',
+          currentUserId: feedsClient.userId,
+          isDM: true,
+          selectedUsers: JSON.stringify([profile.userId]),
+          channelName: `${profile.name}` // DM channel name
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create channel for call');
+      }
+
+      const result = await response.json();
+      
+      // Generate a valid call ID (only a-z, 0-9, _, - allowed)
+      const sanitizedUserId = profile.userId.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const callId = `audio_profile_${sanitizedUserId}_${Date.now()}`;
+      navigate(`/call/${callId}?type=audio&channel=${result.channelId}`);
+      
+    } catch (error: any) {
+      console.error('❌ USERPROFILE: Error starting audio call:', error);
+      showError('Failed to start audio call. Please try again.');
+    }
+  };
+
+  // Handle video call from user profile
+  const handleVideoCall = async () => {
+    if (!feedsClient?.userId || !profile?.userId) return;
+
+    try {
+      const accessToken = await getAccessTokenSilently();
+      
+      // Create or get existing DM channel
+      const response = await fetch('/api/stream/chat-operations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: 'create-channel',
+          currentUserId: feedsClient.userId,
+          isDM: true,
+          selectedUsers: JSON.stringify([profile.userId]),
+          channelName: `${profile.name}` // DM channel name
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create channel for call');
+      }
+
+      const result = await response.json();
+      
+      // Generate a valid call ID (only a-z, 0-9, _, - allowed)
+      const sanitizedUserId = profile.userId.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const callId = `video_profile_${sanitizedUserId}_${Date.now()}`;
+      navigate(`/call/${callId}?type=video&channel=${result.channelId}`);
+      
+    } catch (error: any) {
+      console.error('❌ USERPROFILE: Error starting video call:', error);
+      showError('Failed to start video call. Please try again.');
+    }
+  };
+
   const handleFollow = async () => {
     if (!feedsClient?.userId || !profile?.userId) return;
 
@@ -874,6 +955,22 @@ const UserProfile = () => {
               >
                 <img src={MessageIcon} alt="Message" className="button-icon" />
                 Message
+              </button>
+              <button 
+                className="profile-call-button audio-call"
+                onClick={handleAudioCall}
+                title="Start audio call"
+              >
+                <img src={PhoneIcon} alt="Audio call" className="button-icon" />
+                Call
+              </button>
+              <button 
+                className="profile-call-button video-call"
+                onClick={handleVideoCall}
+                title="Start video call"
+              >
+                <img src={VideoIcon} alt="Video call" className="button-icon" />
+                Video
               </button>
               <button 
                 className={`profile-follow-button ${isFollowing ? 'following' : ''}`}

@@ -18,7 +18,12 @@ import VoiceMessageHandler from './VoiceMessageHandler'
 import CustomChannelList from './CustomChannelList'
 import CustomChannelHeader from './CustomChannelHeader'
 import PinnedMessages from './PinnedMessages'
+import MobileBottomNav from './MobileBottomNav'
+import MobileChannelList from './MobileChannelList'
+import MobileChatView from './MobileChatView'
 import { getSanitizedUserId } from '../utils/userUtils'
+import { useResponsive } from '../contexts/ResponsiveContext'
+import { useLocation } from 'react-router-dom'
 import 'stream-chat-react/dist/css/v2/index.css'
 
 import "./VoiceRecording.css";
@@ -31,18 +36,117 @@ interface ChatProps {}
 const Chat: React.FC<ChatProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { channelId } = useParams<{ channelId?: string }>();
+  const { isMobileView } = useResponsive();
+  const location = useLocation();
 
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
 
   const [clientReady, setClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  
+  // Mobile-specific state for WhatsApp-style navigation
+  const [mobileViewState, setMobileViewState] = useState<'channelList' | 'chat'>('channelList');
+  const [selectedMobileChannel, setSelectedMobileChannel] = useState<StreamChannel | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Shared state for users (used by both desktop and mobile)
+  const [availableUsers, setAvailableUsers] = useState<Array<{
+    id: string;
+    name: string;
+    image?: string;
+  }>>([]);
 
   // Keep a single client instance per tab
   const clientRef = useRef<StreamChat | null>(null);
 
   // Memoize current user id once using shared utility
   const sanitizedUserId = useMemo(() => getSanitizedUserId(user), [user]);
+
+  // Mobile navigation functions
+  const handleMobileChannelSelect = (channel: StreamChannel) => {
+    setSelectedMobileChannel(channel);
+    setMobileViewState('chat');
+  };
+
+  const handleMobileBackToList = () => {
+    setMobileViewState('channelList');
+    setSelectedMobileChannel(null);
+  };
+
+  // Reset mobile state when switching views or channels change
+  useEffect(() => {
+    if (!isMobileView) {
+      setMobileViewState('channelList');
+      setSelectedMobileChannel(null);
+    }
+  }, [isMobileView]);
+
+  // Handle URL channel selection in mobile
+  useEffect(() => {
+    if (isMobileView && channelId && clientRef.current) {
+      const channel = clientRef.current.channel('messaging', channelId);
+      setSelectedMobileChannel(channel);
+      setMobileViewState('chat');
+    }
+  }, [channelId, isMobileView, clientReady]);
+
+  // Fetch available users for channel creation (matches desktop implementation)
+  const fetchUsers = useCallback(async () => {
+    if (!clientRef.current) return;
+    
+    try {
+      const accessToken = await getAccessTokenSilently();
+      console.log('📱 Mobile: Fetching available users...');
+      
+      const response = await fetch('/api/stream/chat-operations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: 'list-users'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      console.log(`✅ Mobile: Fetched ${data.users?.length || 0} users`);
+      setAvailableUsers(data.users || []);
+    } catch (error) {
+      console.error('❌ Mobile: Error fetching users:', error);
+      // Fallback: create a minimal user list for testing
+      setAvailableUsers([
+        {
+          id: 'test-user-1',
+          name: 'Test User 1',
+          image: undefined
+        },
+        {
+          id: 'test-user-2', 
+          name: 'Test User 2',
+          image: undefined
+        }
+      ]);
+    }
+  }, [getAccessTokenSilently]);
+
+  // Fetch users when client is ready
+  useEffect(() => {
+    if (clientReady && clientRef.current) {
+      fetchUsers();
+    }
+  }, [clientReady, fetchUsers]);
+
+  // Handle channel created callback for mobile
+  const handleMobileChannelCreated = useCallback(async (channelId: string) => {
+    console.log('Mobile channel created:', channelId);
+    // Refresh might be needed depending on how the desktop handles this
+  }, []);
 
   // --- helpers ---
   const getStreamToken = useCallback(
@@ -250,38 +354,73 @@ const Chat: React.FC<ChatProps> = () => {
     state: true
   };
 
+  // Render mobile view
+  if (isMobileView) {
+    return (
+      <div className={`chat-container mobile-view`}>
+        <div className="iphone-overlay" />
+        <div className={`chat-content mobile-content`}>
+          <ChatComponent
+            client={client}
+            theme="str-chat__theme-light"
+            key={`chat-${client.userID || "disconnected"}`}
+          >
+            {mobileViewState === 'channelList' ? (
+              <MobileChannelList
+                filters={filters}
+                sort={sort}
+                options={options}
+                onChannelSelect={handleMobileChannelSelect}
+                onBackToList={handleMobileBackToList}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                availableUsers={availableUsers}
+                onChannelCreated={handleMobileChannelCreated}
+              />
+            ) : selectedMobileChannel ? (
+              <MobileChatView
+                channel={selectedMobileChannel}
+                onBack={handleMobileBackToList}
+              />
+            ) : (
+              <div className="mobile-no-channel">Select a chat to start messaging</div>
+            )}
+          </ChatComponent>
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+      </div>
+    );
+  }
+
+  // Render desktop view
   return (
-    <div style={{
-      height: 'calc(100vh - 4rem)', // Fixed height minus header
-      maxHeight: '800px', // Max height for desktop
-      minHeight: '600px', // Min height for usability
-      backgroundColor: 'white',
-      display: 'flex'
-    }}>
-      <ChatComponent
-        client={client}
-        theme="str-chat__theme-light"
-        key={`chat-${client.userID || "disconnected"}`}
-      >
-        <CustomChannelList 
-          filters={filters}
-          sort={sort}
-          options={options}
-          initialChannelId={channelId}
-        />
-        <Channel Attachment={CustomAttachment}>
-          <Window>
-            <CustomChannelHeader />
-            <div className="message-area-container">
-              <PinnedMessages />
-              <MessageList />
-            </div>
-            <CustomMessageInput />
-          </Window>
-          <Thread />
-          <VoiceMessageHandler />
-        </Channel>
-      </ChatComponent>
+    <div className={`chat-container desktop-view`}>
+      <div className={`chat-content desktop-content`}>
+        <ChatComponent
+          client={client}
+          theme="str-chat__theme-light"
+          key={`chat-${client.userID || "disconnected"}`}
+        >
+          <CustomChannelList 
+            filters={filters}
+            sort={sort}
+            options={options}
+            initialChannelId={channelId}
+          />
+          <Channel Attachment={CustomAttachment}>
+            <Window>
+              <CustomChannelHeader />
+              <div className="message-area-container">
+                <PinnedMessages />
+                <MessageList />
+              </div>
+              <CustomMessageInput />
+            </Window>
+            <Thread />
+            <VoiceMessageHandler />
+          </Channel>
+        </ChatComponent>
+      </div>
     </div>
   );
 };
