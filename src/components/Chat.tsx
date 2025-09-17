@@ -91,49 +91,62 @@ const Chat: React.FC<ChatProps> = () => {
     }
   }, [channelId, isMobileView, clientReady]);
 
-  // Fetch available users for channel creation (matches desktop implementation)
+  // Fetch available users for channel creation (exact same as desktop implementation)
   const fetchUsers = useCallback(async () => {
     if (!clientRef.current) return;
     
     try {
-      const accessToken = await getAccessTokenSilently();
       console.log('📱 Mobile: Fetching available users...');
       
-      const response = await fetch('/api/stream/chat-operations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          type: 'list-users'
-        }),
-      });
+      const users = await clientRef.current.queryUsers(
+        {},
+        { id: 1 },
+        { limit: 100 }
+      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
+      const userList = users.users
+        .filter(user => user.id !== clientRef.current!.userID)
+        .map(user => ({
+          id: user.id,
+          name: user.name || user.id,
+          image: user.image
+        }));
 
-      const data = await response.json();
-      console.log(`✅ Mobile: Fetched ${data.users?.length || 0} users`);
-      setAvailableUsers(data.users || []);
+      console.log(`✅ Mobile: Fetched ${userList.length} users`);
+      setAvailableUsers(userList);
     } catch (error) {
       console.error('❌ Mobile: Error fetching users:', error);
-      // Fallback: create a minimal user list for testing
-      setAvailableUsers([
+      // Fallback to demo users if we can't fetch from Stream (same as desktop)
+      const fallbackUsers = [
         {
-          id: 'test-user-1',
-          name: 'Test User 1',
-          image: undefined
+          id: 'alice_smith',
+          name: 'Alice Smith',
+          image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
         },
         {
-          id: 'test-user-2', 
-          name: 'Test User 2',
-          image: undefined
+          id: 'bob_johnson',
+          name: 'Bob Johnson',
+          image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+        },
+        {
+          id: 'carol_williams',
+          name: 'Carol Williams',
+          image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+        },
+        {
+          id: 'david_brown',
+          name: 'David Brown',
+          image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+        },
+        {
+          id: 'emma_davis',
+          name: 'Emma Davis',
+          image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
         }
-      ]);
+      ];
+      setAvailableUsers(fallbackUsers);
     }
-  }, [getAccessTokenSilently]);
+  }, []);
 
   // Fetch users when client is ready
   useEffect(() => {

@@ -6,6 +6,8 @@ import CreateChannelModal from './CreateChannelModal'
 import { listMyChannels, ChannelItem } from '../hooks/listMyChannels'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingIcon from './LoadingIcon'
+import UsersGroupIcon from '../icons/users-group.svg'
+import SendIcon from '../icons/send.svg'
 
 interface MobileChannelListProps {
   filters: any
@@ -128,10 +130,10 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         <h2>Chats</h2>
         <div className="mobile-channel-actions">
           <button onClick={handleCreateGroupClick} className="create-channel-btn" title="New Group Chat">
-            +
+            <img src={UsersGroupIcon} alt="Group" />
           </button>
-          <button onClick={handleCreateDMClick} className="create-dm-btn" title="New Direct Message">
-            DM
+          <button onClick={handleCreateDMClick} className="create-channel-btn create-dm-btn" title="New Direct Message">
+            <img src={SendIcon} alt="DM" />
           </button>
         </div>
       </div>

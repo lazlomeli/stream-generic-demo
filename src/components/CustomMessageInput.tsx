@@ -1,11 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MessageInput, useMessageInputContext, AttachmentPreviewList, useChannelStateContext } from 'stream-chat-react';
+import { MessageInput, useMessageInputContext, AttachmentPreviewList, useChannelStateContext, useChatContext } from 'stream-chat-react';
+import { useResponsive } from '../contexts/ResponsiveContext';
 import './VoiceRecording.css';
 
 // Import SVG icons
 import MicrophoneIcon from '../icons/microphone.svg';
 import StopIcon from '../icons/stop.svg';
 import SendIcon from '../icons/send.svg';
+import SendMsgIcon from '../icons/send-msg.svg';
 import CubePlusIcon from '../icons/cube-plus.svg';
 
 // Import custom attachment images
@@ -30,8 +32,10 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Get channel from channel state context
+  // Get channel from channel state context and responsive context
   const { channel } = useChannelStateContext();
+  const { client } = useChatContext();
+  const { isMobileView } = useResponsive();
 
   // Helper function to get or upload image to Stream (with caching)
   const getOrUploadImageToStream = useCallback(async (attachmentNumber: 1 | 2) => {
@@ -184,6 +188,28 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
     }
   }, [isRecording]);
 
+  // Custom send message handler
+  const handleSendMessage = useCallback(() => {
+    // Get the message text from the input
+    const messageInputElement = containerRef.current?.querySelector('.str-chat__textarea__textarea') as HTMLTextAreaElement;
+    const messageText = messageInputElement?.value?.trim();
+    
+    if (!messageText || !channel) return;
+    
+    // Send the message through Stream Chat
+    channel.sendMessage({
+      text: messageText,
+    });
+    
+    // Clear the input
+    if (messageInputElement) {
+      messageInputElement.value = '';
+      // Trigger input event to update Stream's internal state
+      const event = new Event('input', { bubbles: true });
+      messageInputElement.dispatchEvent(event);
+    }
+  }, [channel]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -196,7 +222,7 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
         <MessageInput 
           {...props} 
           additionalTextareaProps={{
-            placeholder: "Type a message or record voice message..."
+            placeholder: "Type a message..."
           }}
         />
         
@@ -204,9 +230,9 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
         <button
           className="custom-attachment-button-external"
           onClick={handleCustomAttachment}
-          title="Custom Attachment"
+          title={isMobileView ? undefined : "Custom Attachment"}
           type="button"
-          data-tooltip="Custom Attachment!"
+          data-tooltip={isMobileView ? undefined : "Custom Attachment"}
         >
           <img 
             src={CubePlusIcon} 
@@ -215,10 +241,8 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
             height={20}
           />
         </button>
-      </div>
-      
-      {/* Voice Recording Controls - Integrated into MessageInput */}
-      <div className="voice-recording-controls-integrated">
+
+        {/* Voice Recording Button - Integrated into message input structure */}
         {!isRecording && !audioBlob && (
           <button
             className="voice-record-button-integrated"
@@ -228,49 +252,69 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
             <img 
               src={MicrophoneIcon} 
               alt="Microphone" 
-              width={20} 
-              height={20} 
+              width={16} 
+              height={16} 
               style={{ filter: 'brightness(0) invert(1)' }}
             />
           </button>
         )}
 
-        {isRecording && (
-          <div className="recording-controls-integrated">
-            <div className="recording-timer-integrated">{formatTime(recordingTime)}</div>
-            <button
-              className="stop-recording-button-integrated"
-              onClick={stopRecording}
-              title="Stop recording"
-            >
-              <img src={StopIcon} alt="Stop" width={20} height={20} />
-            </button>
-          </div>
-        )}
-
-        {audioBlob && !isRecording && (
-          <div className="voice-preview-controls-integrated">
-            <div className="voice-preview-info-integrated">
-              <span className="voice-duration-integrated">{formatTime(recordingTime)}</span>
-              <span className="voice-size-integrated">{(audioBlob.size / 1024).toFixed(1)} KB</span>
-            </div>
-            <button
-              className="send-voice-button-integrated"
-              onClick={sendVoiceMessage}
-              title="Send voice message"
-            >
-              <img src={SendIcon} alt="Send" width={16} height={16} />
-            </button>
-            <button
-              className="cancel-voice-button-integrated"
-              onClick={cancelRecording}
-              title="Cancel voice message"
-            >
-              ×
-            </button>
-          </div>
-        )}
+        {/* Custom Send Button */}
+        <button
+          className="custom-send-button"
+          onClick={handleSendMessage}
+          title="Send message"
+          type="button"
+        >
+          <img 
+            src={SendMsgIcon} 
+            alt="Send" 
+            width={16} 
+            height={16}
+          />
+        </button>
       </div>
+      
+      {/* Voice Recording Controls - For recording states */}
+      {(isRecording || audioBlob) && (
+        <div className="voice-recording-controls-integrated">
+          {isRecording && (
+            <div className="recording-controls-integrated">
+              <div className="recording-timer-integrated">{formatTime(recordingTime)}</div>
+              <button
+                className="stop-recording-button-integrated"
+                onClick={stopRecording}
+                title="Stop recording"
+              >
+                <img src={StopIcon} alt="Stop" width={20} height={20} />
+              </button>
+            </div>
+          )}
+
+          {audioBlob && !isRecording && (
+            <div className="voice-preview-controls-integrated">
+              <div className="voice-preview-info-integrated">
+                <span className="voice-duration-integrated">{formatTime(recordingTime)}</span>
+                <span className="voice-size-integrated">{(audioBlob.size / 1024).toFixed(1)} KB</span>
+              </div>
+              <button
+                className="send-voice-button-integrated"
+                onClick={sendVoiceMessage}
+                title="Send voice message"
+              >
+                <img src={SendIcon} alt="Send" width={16} height={16} />
+              </button>
+              <button
+                className="cancel-voice-button-integrated"
+                onClick={cancelRecording}
+                title="Cancel voice message"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );
