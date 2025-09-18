@@ -315,7 +315,10 @@ const CallPage: React.FC<CallPageProps> = () => {
         return;
       }
       
-      const demoUserId = `demo_user_${Math.random().toString(36).substr(2, 9)}`;
+      // Reuse existing sample user instead of creating random ones
+      const demoUserId = 'bob_johnson';
+      const demoUserName = 'Bob Johnson';
+      const demoUserImage = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
       
       // Get token for demo user
       const accessToken = await getAccessTokenSilently();
@@ -329,7 +332,7 @@ const CallPage: React.FC<CallPageProps> = () => {
           type: 'video',
           userId: demoUserId,
           userProfile: {
-            name: 'Demo User',
+            name: demoUserName,
             role: 'user'
           },
         }),
@@ -346,8 +349,8 @@ const CallPage: React.FC<CallPageProps> = () => {
         apiKey,
         user: {
           id: demoUserId,
-          name: 'Demo User',
-          image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'
+          name: demoUserName,
+          image: demoUserImage
         },
         token: tokenData.token,
       });

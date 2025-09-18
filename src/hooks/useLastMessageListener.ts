@@ -17,7 +17,7 @@ export function useLastMessageListener(
 
       setChannels((prev) =>
         prev.map((c) =>
-          c.id === chId ? { ...c, lastMessage: text, lastMessageTime: new Date(time).toLocaleTimeString() } : c
+          c.id === chId ? { ...c, lastMessage: text, lastMessageTime: new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) } : c
         )
       );
     };

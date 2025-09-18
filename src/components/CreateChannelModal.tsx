@@ -33,6 +33,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -150,9 +151,15 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       setSelectedUsers(new Set());
       setError(null);
       setSuccess(null);
+      setUserSearchQuery('');
       onClose();
     }
   };
+
+  // Filter users based on search query
+  const filteredUsers = availableUsers.filter(user =>
+    user.name.toLowerCase().includes(userSearchQuery.toLowerCase())
+  );
 
   return (
     <div className="create-channel-modal-overlay" onClick={handleClose}>
@@ -199,30 +206,50 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
           <div className="form-group">
             <label>{isDM ? 'Select User to Message *' : 'Add Members *'}</label>
+            
+            {/* Search input for users */}
+            <div className="user-search-container">
+              <input
+                type="text"
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                placeholder="Search users..."
+                className="user-search-input"
+                disabled={isCreating}
+              />
+            </div>
+
             <div className="users-selection">
-              {availableUsers.map((user) => (
-                <label key={user.id} className="user-checkbox">
-                  <input
-                    type={isDM ? "radio" : "checkbox"}
-                    name={isDM ? "dmUser" : undefined}
-                    checked={selectedUsers.has(user.id)}
-                    onChange={() => handleUserToggle(user.id)}
-                    disabled={isCreating}
-                  />
-                  <div className="user-info">
-                    <img 
-                      src={user.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDkgMTYgMTEgMTQgMTQgMTEgMTIgMTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTJDMTAuMzQzMSAxMiA5IDEzLjM0MzEgOSAxNVYxN0gxNVYxNUMxNSAxMy4zNDMxIDEzLjY1NjkgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+'} 
-                      alt={user.name}
-                      className="user-avatar"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDkgMTYgMTEgMTQgMTQgMTEgMTIgMTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTJDMTAuMzQzMSAxMiA5IDEzLjM0MzEgOSAxNVYxN0gxNVYxNUMxNSAxMy4zNDMxIDEzLjY1NjkgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+';
-                      }}
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <label key={user.id} className="user-checkbox">
+                    <input
+                      type={isDM ? "radio" : "checkbox"}
+                      name={isDM ? "dmUser" : undefined}
+                      checked={selectedUsers.has(user.id)}
+                      onChange={() => handleUserToggle(user.id)}
+                      disabled={isCreating}
+                      className="user-checkbox-input"
                     />
-                    <span className="user-name">{user.name}</span>
-                  </div>
-                </label>
-              ))}
+                    <div className="user-info">
+                      <img 
+                        src={user.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDkgMTYgMTEgMTQgMTQgMTEgMTIgMTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTJDMTAuMzQzMSAxMiA5IDEzLjM0MzEgOSAxNVYxN0gxNVYxNUMxNSAxMy4zNDMxIDEzLjY1NjkgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+'} 
+                        alt={user.name}
+                        className="user-avatar"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDkgMTYgMTEgMTQgMTQgMTEgMTIgMTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTJDMTAuMzQzMSAxMiA5IDEzLjM0MzEgOSAxNVYxN0gxNVYxNUMxNSAxMy4zNDMxIDEzLjY1NjkgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+';
+                        }}
+                      />
+                      <span className="user-name">{user.name}</span>
+                    </div>
+                  </label>
+                ))
+              ) : (
+                <div className="no-users-found">
+                  {userSearchQuery ? `No users found matching "${userSearchQuery}"` : 'No users available'}
+                </div>
+              )}
             </div>
             <p className="help-text">{isDM ? 'Select one user to start a direct message' : 'Select at least one user to add to the channel'}</p>
           </div>

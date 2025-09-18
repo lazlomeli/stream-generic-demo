@@ -87,7 +87,7 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       type: isDM ? "dm" : "group",
       image: channelImage,
       lastMessage: lastMessage,
-      lastMessageTime: last?.created_at ? new Date(last.created_at).toLocaleTimeString() : undefined,
+      lastMessageTime: last?.created_at ? new Date(last.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
       status: getChannelStatus(),
       onlineCount: onlineCount,
       muted: c.muteStatus()?.muted || false,
