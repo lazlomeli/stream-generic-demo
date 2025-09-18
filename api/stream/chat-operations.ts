@@ -16,8 +16,8 @@ export default async function handler(
       return res.status(400).json({ error: 'type is required' });
     }
 
-    if (!['create-channel', 'add-to-general', 'create-livestream-channel', 'leave-channel'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "create-channel", "add-to-general", "create-livestream-channel", or "leave-channel"' });
+    if (!['create-channel', 'add-to-general', 'create-livestream-channel', 'leave-channel', 'cleanup-livestream-channel'].includes(type)) {
+      return res.status(400).json({ error: 'type must be "create-channel", "add-to-general", "create-livestream-channel", "leave-channel", or "cleanup-livestream-channel"' });
     }
 
     // Get Stream API credentials
@@ -309,6 +309,61 @@ export default async function handler(
         
         return res.status(500).json({
           error: 'Failed to leave channel',
+          details: error.message || String(error),
+          code: error.code || 'unknown'
+        });
+      }
+    }
+
+    // Handle livestream channel cleanup (destroy when stream ends)
+    if (type === 'cleanup-livestream-channel') {
+      const { channelId, userId } = req.body;
+
+      if (!channelId || !userId) {
+        return res.status(400).json({ error: 'channelId and userId are required' });
+      }
+
+      try {
+        console.log(`🧹 Cleaning up livestream channel: ${channelId} for user: ${userId}`);
+        
+        // Get the livestream channel
+        const channel = streamClient.channel('livestream', channelId);
+        
+        // Check if user is the creator/owner before allowing deletion
+        const channelData = await channel.query();
+        if (channelData.channel?.created_by_id !== userId) {
+          console.log(`⚠️ User ${userId} is not the creator of channel ${channelId}, skipping cleanup`);
+          return res.status(403).json({ 
+            error: 'Only the channel creator can cleanup the livestream channel' 
+          });
+        }
+        
+        // Delete the channel completely
+        await channel.delete();
+        console.log(`✅ Successfully deleted livestream channel: ${channelId}`);
+
+        return res.status(200).json({
+          success: true,
+          message: 'Livestream channel deleted successfully',
+          channelId: channelId
+        });
+
+      } catch (error: any) {
+        console.error(`❌ Error cleaning up livestream channel ${channelId}:`, error);
+        
+        // If channel doesn't exist, that's OK - already cleaned up
+        if (error.code === 16 || error.message?.includes('does not exist')) {
+          console.log(`⚠️ Livestream channel ${channelId} doesn't exist, already cleaned up`);
+          return res.status(200).json({
+            success: true,
+            message: 'Livestream channel already cleaned up (did not exist)',
+            channelId: channelId
+          });
+        }
+        
+        // For any other error, return failure but don't block the user
+        return res.status(500).json({
+          error: 'Failed to cleanup livestream channel',
           details: error.message || String(error),
           code: error.code || 'unknown'
         });

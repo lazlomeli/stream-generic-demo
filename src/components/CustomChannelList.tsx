@@ -32,6 +32,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   const [filteredChannels, setFilteredChannels] = useState<ChannelItem[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
 
   // Function to load channels
   const loadChannels = useCallback(async (forceRefresh = false) => {
@@ -83,7 +84,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
             // Trigger a refresh after a short delay to get the most up-to-date channel data
             setTimeout(() => {
               console.log('🔄 Refreshing channel list to get accurate data for initial channel');
-              setRefreshKey(prev => prev + 1);
+              refreshChannelList(true); // Force refresh for initial channel
             }, 1000);
             
             return; // Exit early since we found and set the channel
@@ -136,19 +137,19 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       );
       setFilteredChannels(localFiltered);
 
-      // Search for additional channels and users from Stream
+      // Search for additional channels and users from Stream (with reduced limits to minimize API usage)
       const [channelSearchResults, userSearchResults] = await Promise.all([
-        // Search channels
-        client.queryChannels(
+        // Search channels - reduced limit and only search own channels
+        client.userID ? client.queryChannels(
           {
             type: 'messaging',
             name: { $autocomplete: query },
-            ...(client.userID && { members: { $in: [client.userID] } })
+            members: { $in: [client.userID] } // Only search channels user is a member of
           },
           { last_message_at: -1 },
-          { limit: 10 }
-        ).catch(() => []),
-        // Search users
+          { limit: 5 } // Reduced from 10 to 5
+        ).catch(() => []) : Promise.resolve([]),
+        // Search users - reduced limit
         client.queryUsers(
           {
             $or: [
@@ -157,7 +158,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
             ]
           },
           { id: 1 },
-          { limit: 10 }
+          { limit: 5 } // Reduced from 10 to 5
         ).catch(() => ({ users: [] }))
       ]);
 
@@ -189,12 +190,22 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   }, [channels, client]);
 
   // Function to force refresh the channel list when a new channel is created
-  const refreshChannelList = useCallback(() => {
+  const refreshChannelList = useCallback((force = false) => {
+    const now = Date.now();
+    const timeSinceLastRefresh = now - lastRefreshTime;
+    
+    // Prevent refresh storms: only refresh if it's been at least 2 seconds since last refresh (unless forced)
+    if (!force && timeSinceLastRefresh < 2000) {
+      console.log('🚫 Skipping refresh - too soon since last refresh');
+      return;
+    }
+    
     console.log('🔄 Refreshing channel list...');
+    setLastRefreshTime(now);
     setRefreshKey(prev => prev + 1);
     // Force reload channels with fresh data
     loadChannels(true);
-  }, [loadChannels]);
+  }, [loadChannels, lastRefreshTime]);
 
   // Handle search result selection
   const handleSearchResultSelect = useCallback(async (result: any) => {
@@ -217,7 +228,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         await channel.watch();
         setActiveChannel(channel);
         setSelectedChannelId(channel.id || '');
-        refreshChannelList(); // Refresh to show new channel
+        refreshChannelList(true); // Force refresh to show new channel
       } catch (error) {
         console.error('❌ Error creating DM with user:', error);
       }
@@ -233,7 +244,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       performSearch(searchQuery);
-    }, 300); // Debounce search
+    }, 800); // Increased debounce to reduce API calls
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, performSearch]);
@@ -252,42 +263,55 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         console.log(`🔄 Initial channel ${initialChannelId} not found in list, triggering refresh`);
         // Force a refresh to ensure we have the latest channels
         setTimeout(() => {
-          setRefreshKey(prev => prev + 1);
+          refreshChannelList(true); // Force refresh for missing initial channel
         }, 500);
       }
     }
   }, [initialChannelId, channels]);
 
-  // Listen for real-time channel updates
+  // Listen for real-time channel updates (optimized to reduce API calls)
   useEffect(() => {
     if (!client.userID) return;
 
+    let refreshTimeout: NodeJS.Timeout | null = null;
+
     const handleChannelUpdated = (event: any) => {
       console.log('📡 Real-time channel update received:', event.type);
-      // Refresh channel list when channels are updated
-      if (event.type === 'channel.updated' || 
-          event.type === 'notification.added_to_channel' ||
-          event.type === 'channel.created' ||
-          event.type === 'notification.removed_from_channel' ||
-          event.type === 'channel.deleted') {
-        console.log('🔄 Auto-refreshing channel list due to real-time update');
-        refreshChannelList();
+      
+      // Only refresh for critical events and throttle the calls
+      const criticalEvents = ['channel.created', 'channel.deleted', 'notification.added_to_channel'];
+      
+      if (criticalEvents.includes(event.type)) {
+        console.log('🔄 Scheduling throttled refresh for critical event:', event.type);
+        
+        // Clear any pending refresh
+        if (refreshTimeout) {
+          clearTimeout(refreshTimeout);
+        }
+        
+        // Throttle refreshes: wait 1 second before refreshing, cancel if another event comes in
+        refreshTimeout = setTimeout(() => {
+          console.log('🔄 Executing throttled refresh');
+          refreshChannelList();
+          refreshTimeout = null;
+        }, 1000);
+      } else {
+        console.log('📡 Non-critical event, skipping refresh:', event.type);
       }
     };
 
-    // Listen for channel events that might affect our channel list
-    client.on('channel.updated', handleChannelUpdated);
-    client.on('notification.added_to_channel', handleChannelUpdated);
+    // Listen only for essential channel events
     client.on('channel.created', handleChannelUpdated);
-    client.on('notification.removed_from_channel', handleChannelUpdated);
     client.on('channel.deleted', handleChannelUpdated);
+    client.on('notification.added_to_channel', handleChannelUpdated);
 
     return () => {
-      client.off('channel.updated', handleChannelUpdated);
-      client.off('notification.added_to_channel', handleChannelUpdated);
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
       client.off('channel.created', handleChannelUpdated);
-      client.off('notification.removed_from_channel', handleChannelUpdated);
       client.off('channel.deleted', handleChannelUpdated);
+      client.off('notification.added_to_channel', handleChannelUpdated);
     };
   }, [client, refreshChannelList]);
 
@@ -340,13 +364,20 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
 
 
 
-  // Fetch users for both group and DM creation
+  // Fetch users for both group and DM creation (cached to avoid repeated API calls)
   const fetchUsers = useCallback(async () => {
+    // If we already have users cached, don't fetch again
+    if (availableUsers.length > 0) {
+      console.log('📋 Using cached user list');
+      return availableUsers;
+    }
+    
     try {
+      console.log('👥 Fetching users from Stream API...');
       const users = await client.queryUsers(
         {},
         { id: 1 },
-        { limit: 100 }
+        { limit: 50 } // Reduced from 100 to 50
       );
 
       const userList = users.users
@@ -357,6 +388,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           image: user.image
         }));
 
+      console.log(`✅ Fetched ${userList.length} users`);
       setAvailableUsers(userList);
       return userList;
     } catch (error) {
@@ -392,17 +424,23 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       setAvailableUsers(fallbackUsers);
       return fallbackUsers;
     }
-  }, [client]);
+  }, [client, availableUsers]);
 
   const handleCreateGroupClick = useCallback(async () => {
-    await fetchUsers();
+    // Only fetch users if we don't have them cached
+    if (availableUsers.length === 0) {
+      await fetchUsers();
+    }
     setShowCreateGroupModal(true);
-  }, [fetchUsers]);
+  }, [fetchUsers, availableUsers.length]);
 
   const handleCreateDMClick = useCallback(async () => {
-    await fetchUsers();
+    // Only fetch users if we don't have them cached
+    if (availableUsers.length === 0) {
+      await fetchUsers();
+    }
     setShowCreateDMModal(true);
-  }, [fetchUsers]);
+  }, [fetchUsers, availableUsers.length]);
 
     const handleChannelCreated = useCallback(async (channelId: string) => {
     console.log('🎉 Channel created, ID:', channelId);
@@ -436,20 +474,20 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       setSelectedChannelId(channelId);
       setActiveChannel(newChannel);
 
-      // Add a small delay to ensure Stream has fully processed the channel
-      // then refresh the channel list to get the accurate data
-      setTimeout(() => {
-        console.log('🔄 Refreshing channel list for accurate data');
-        refreshChannelList();
-      }, 500);
+        // Add a small delay to ensure Stream has fully processed the channel
+        // then refresh the channel list to get the accurate data (forced refresh)
+        setTimeout(() => {
+          console.log('🔄 Refreshing channel list for accurate data');
+          refreshChannelList(true); // Force refresh for new channels
+        }, 500);
 
     } catch (error) {
       console.error('❌ Error setting up new channel:', error);
-      // Fallback to refreshing with delay if watching fails
-      setTimeout(() => {
-        console.log('🔄 Fallback: Refreshing channel list after error');
-        refreshChannelList();
-      }, 500);
+        // Fallback to refreshing with delay if watching fails
+        setTimeout(() => {
+          console.log('🔄 Fallback: Refreshing channel list after error');
+          refreshChannelList(true); // Force refresh for error recovery
+        }, 500);
     }
   }, [refreshChannelList, client, setActiveChannel]);
 

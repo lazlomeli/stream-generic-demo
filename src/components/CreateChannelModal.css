@@ -121,7 +121,7 @@
 
 .form-input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid #d1d5db !important; /* Ensure border is visible */
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -227,7 +227,7 @@
 
 .user-search-input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -251,7 +251,7 @@
   display: flex;
   flex-direction: column;
   flex: 1; /* Take remaining space in form group */
-  min-height: 300px; /* Minimum height */
+  min-height: 220px; /* Minimum height */
   max-height: none; /* Remove max-height constraint */
   overflow-y: auto;
   border: 1px solid #e5e7eb;
@@ -307,6 +307,8 @@
   gap: 0.75rem;
   flex: 1;
   order: 2; /* Ensure user info comes after checkbox */
+  min-width: 0; /* Allow flex items to shrink below content size */
+  overflow: hidden; /* Prevent content from overflowing */
 }
 
 /* No users found message */
@@ -329,6 +331,11 @@
   font-size: 0.875rem;
   color: #374151;
   font-weight: 500;
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: hidden; /* Hide overflowing text */
+  text-overflow: ellipsis; /* Show ellipsis for truncated text */
+  flex: 1; /* Take remaining space */
+  min-width: 0; /* Allow shrinking below content size */
 }
 
 .help-text {
@@ -341,7 +348,6 @@
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
-  margin-top: auto; /* Push to bottom */
   padding: 1rem;
   border-top: 1px solid #e5e7eb;
   flex-shrink: 0; /* Don't shrink */
@@ -395,98 +401,130 @@
   transform: none;
 }
 
-/* Mobile responsiveness */
+/* Mobile responsiveness - Optimized for 600px height constraint */
 @media (max-width: 640px) {
   .create-channel-modal {
     margin: 0.5rem;
     max-width: none;
-    height: 95vh; /* Fixed height on mobile */
-    max-height: none;
+    height: 90vh; /* Reduced from 95vh */
+    max-height: 650px; /* Enforced 600px max height */
+  }
+
+  /* Make DM modal smaller since it has less content */
+  .create-channel-modal.dm-modal {
+    height: auto; /* Auto height for DM modal */
+    max-height: 500px; /* Smaller max height for DM */
+    min-height: 400px; /* Ensure minimum usable height */
   }
   
-  .modal-header,
+  /* Reduce header padding and make title smaller */
+  .modal-header {
+    padding: 0.75rem 1rem 0.5rem; /* Reduced padding */
+  }
+  
+  .modal-header h3 {
+    font-size: 1.1rem !important; /* Smaller title */
+    font-weight: 600;
+  }
+  
   .modal-content {
-    padding: 1rem;
+    padding: 0.75rem 1rem; /* Reduced padding */
+    overflow-y: auto;
   }
   
   .modal-actions {
     flex-direction: column;
-    padding: 1rem;
+    padding: 0.75rem 1rem; /* Consistent padding */
+    margin-top: 0 !important;
+    gap: 0.5rem; /* Reduced gap */
   }
   
   .modal-cancel-button,
   .modal-submit-button {
     width: 100%;
     justify-content: center;
+    padding: 0.6rem !important; /* Smaller buttons */
+    font-size: 0.9rem;
   }
 
-  /* Make users selection area even bigger on mobile since it's the main interaction */
-  .users-selection {
-    flex: 1; /* Take all available space */
-    max-height: none; /* Remove height constraint */
-    min-height: 200px; /* Minimum for usability */
-  }
-
-
-  /* Make Channel Name and Add Members sections smaller on mobile */
+  /* Make form groups more compact */
   .form-group {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem; /* Reduced spacing */
+  }
+  
+  .form-group label {
+    font-size: small !important; /* Smaller labels */
+    margin-bottom: 0.25rem;
+    color: black !important
   }
 
+  /* User search more compact */
   .user-search-container {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem; /* Reduced spacing */
   }
 
-  /* Fix form input padding on mobile - override stacked declarations */
-  .form-input {
-    padding: 0.5rem !important;
+  /* Make users selection area fit within constraints */
+  .users-selection {
+    flex: 1;
+    max-height: 160px; /* Constrain height to fit in modal */
+    min-height: 100px; /* Minimum usability */
+    overflow-y: auto;
   }
 
-  /* Fix user search input padding on mobile */
-  .user-search-input {
-    padding: 0.5rem !important;
-  }
-
-  /* Remove margin-top from modal actions on mobile */
-  .modal-actions {
-    margin-top: 0 !important;
+  /* Make user items more compact */
+  .user-checkbox {
+    padding: 0.4rem 0.5rem !important; /* Reduced padding */
+    margin-bottom: 0.2rem; /* Reduced margin */
   }
 
   .user-avatar {
-    width: 2rem !important; /* Smaller avatar to fit better */
-    height: 2rem !important;
-    flex-shrink: 0 !important; /* Prevent shrinking */
+    width: 1.75rem !important; /* Smaller avatars */
+    height: 1.75rem !important;
+    flex-shrink: 0 !important;
   }
 
   .user-name {
-    font-size: 0.875rem !important; /* Smaller font to fit better */
-    white-space: nowrap !important; /* Prevent text wrapping */
+    font-size: 0.8rem !important; /* Smaller font */
+    white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    flex: 1 !important; /* Take remaining space */
-    min-width: 0 !important; /* Allow flex shrinking */
+    flex: 1 !important;
+    min-width: 0 !important;
   }
 
-  /* Ensure checkbox doesn't shrink and stays consistent */
+  /* Make checkboxes smaller */
   .user-checkbox-input {
-    width: 1rem !important;
-    height: 1rem !important;
+    width: 0.9rem !important; /* Smaller checkboxes */
+    height: 0.9rem !important;
     flex-shrink: 0 !important;
-    margin-right: 0.5rem !important;
+    margin-right: 0.4rem !important;
   }
 
   .user-checkbox input[type="checkbox"],
   .user-checkbox input[type="radio"] {
-    width: 1rem !important;
-    height: 1rem !important;
+    width: 0.9rem !important;
+    height: 0.9rem !important;
     flex-shrink: 0 !important;
   }
 
-  /* Ensure user-info takes remaining space efficiently */
   .user-info {
-    gap: 0.5rem !important;
+    gap: 0.4rem !important; /* Reduced gap */
     flex: 1 !important;
     min-width: 0 !important;
     overflow: hidden !important;
+  }
+  
+  /* Make help text smaller */
+  .help-text {
+    font-size: 0.75rem !important; /* Smaller help text */
+    margin-top: 0.25rem;
+  }
+  
+  /* Make error/success messages more compact */
+  .error-message,
+  .success-message {
+    padding: 0.5rem !important; /* Reduced padding */
+    font-size: 0.8rem !important; /* Smaller text */
+    margin-bottom: 0.5rem !important; /* Reduced margin */
   }
 }

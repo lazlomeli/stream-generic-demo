@@ -329,11 +329,11 @@ body:has(.livestream-setup) .app {
   margin: 0 0 1.5rem 0;
 }
 
-.form-group {
+.livestream-form-group {
   margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.livestream-form-group label {
   display: block;
   font-size: 1rem;
   font-weight: 500;
@@ -341,7 +341,7 @@ body:has(.livestream-setup) .app {
   margin-bottom: 0.5rem;
 }
 
-.form-input {
+.livestream-form-input {
   width: 100%;
   padding: 0.875rem 1rem;
   font-size: 1rem;
@@ -352,13 +352,13 @@ body:has(.livestream-setup) .app {
   transition: border-color 0.2s ease;
 }
 
-.form-input:focus {
+.livestream-form-input:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.form-input::placeholder {
+.livestream-form-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 

@@ -1543,7 +1543,7 @@
 
 .mobile-view .create-channel-modal {
   max-width: 320px !important;
-  max-height: 600px !important;
+  max-height: 650px !important;
   margin: 2rem 1rem !important;
   width: calc(100% - 2rem) !important;
 }

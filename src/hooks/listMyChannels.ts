@@ -19,7 +19,29 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
 
   const channels = await client.queryChannels(filters, { last_message_at: -1 }, { watch: false, state: true });
 
-  return channels.map((c) => {
+  // Filter out livestream channels to prevent them from appearing in regular chat
+  const regularChannels = channels.filter(channel => {
+    const channelId = channel.id || '';
+    
+    // Exclude livestream channels based on their ID patterns:
+    // 1. Channels starting with 'live-' (generated livestream channels)
+    // 2. URL-based livestream IDs (usually contain specific patterns)
+    const isLivestreamChannel = 
+      channelId.startsWith('live-') || 
+      channelId.includes('livestream') ||
+      channelId.includes('stream-') ||
+      // Additional pattern: check if channel has specific livestream metadata
+      (channel.data?.isLivestreamChannel === true);
+    
+    if (isLivestreamChannel) {
+      console.log(`🚫 Excluding livestream channel from chat list: ${channelId}`);
+      return false;
+    }
+    
+    return true;
+  });
+
+  return regularChannels.map((c) => {
     const last = c.state.messages.at(-1);
     // Fix: Use Object.keys to count members instead of relying on size property
     const memberCount = Object.keys(c.state?.members || {}).length;

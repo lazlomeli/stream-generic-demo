@@ -1171,10 +1171,54 @@ const Video: React.FC<VideoProps> = () => {
     initialize()
   }, [isAuthenticated, user, apiKey, sanitizedUserId, initializationAttempted, setupCompleted, initializeVideoClient, initializeChatClient, isAnonymousViewer, liveStreamId])
 
+  // --- Cleanup livestream channel function ---
+  const cleanupLivestreamChannel = useCallback(async (channelId: string) => {
+    // Only cleanup if user is authenticated and is the streamer (creator)
+    if (!isAuthenticated || !user || !isStreamer || !sanitizedUserId) {
+      console.log('🚫 Skipping livestream cleanup - not authenticated streamer');
+      return;
+    }
+
+    try {
+      console.log(`🧹 Cleaning up livestream channel: ${channelId}`);
+      
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/chat-operations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: 'cleanup-livestream-channel',
+          channelId: channelId,
+          userId: sanitizedUserId
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Successfully cleaned up livestream channel: ${channelId}`);
+      } else {
+        console.warn(`⚠️ Failed to cleanup livestream channel: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Error cleaning up livestream channel:', error);
+      // Don't throw - cleanup failures shouldn't block user navigation
+    }
+  }, [isAuthenticated, user, isStreamer, sanitizedUserId, getAccessTokenSilently]);
+
   // --- Cleanup effect ---
   useEffect(() => {
     return () => {
       console.log('🧹 Cleaning up video clients...')
+      
+      // Cleanup livestream channel if this is a streamer
+      if (callId && isStreamer) {
+        console.log('🧹 Cleaning up livestream channel on component unmount...');
+        cleanupLivestreamChannel(callId);
+      }
+      
       if (callRef.current) {
         callRef.current.leave().catch(console.warn)
         callRef.current = null
@@ -1201,7 +1245,7 @@ const Video: React.FC<VideoProps> = () => {
       setError(null)
       setHideHeader(false) // Show header again when leaving
     }
-  }, [setHideHeader])
+  }, [setHideHeader, callId, isStreamer, cleanupLivestreamChannel])
 
   // --- Render helpers ---
   // Only require authentication for streamers, not anonymous viewers

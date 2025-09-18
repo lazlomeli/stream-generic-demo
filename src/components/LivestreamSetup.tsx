@@ -139,7 +139,7 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
         {selectedType === 'rtmp' && (
           <div className="rtmp-config">
             <h3>RTMP Configuration</h3>
-            <div className="form-group">
+            <div className="livestream-form-group">
               <label htmlFor="streamUrl">Stream URL</label>
               <input
                 id="streamUrl"
@@ -147,10 +147,10 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
                 value={streamUrl}
                 onChange={(e) => setStreamUrl(e.target.value)}
                 placeholder="rtmp://your-stream-server.com/live"
-                className="form-input"
+                className="livestream-form-input"
               />
             </div>
-            <div className="form-group">
+            <div className="livestream-form-group">
               <label htmlFor="streamKey">Stream Key</label>
               <input
                 id="streamKey"
@@ -158,7 +158,7 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
                 value={streamKey}
                 onChange={(e) => setStreamKey(e.target.value)}
                 placeholder="Your stream key"
-                className="form-input"
+                className="livestream-form-input"
               />
             </div>
             <div className="rtmp-help">

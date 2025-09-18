@@ -25,7 +25,7 @@
   width: 32px;
   height: 32px;
   padding: 8px;
-  margin-right: 20px;
+  margin-right: 25px;
   
   background: transparent;
   border: none;
@@ -501,6 +501,10 @@
 @media (max-width: 768px) {
   .voice-recording-controls-integrated {
     right: 50px; /* Adjust position for mobile */
+  }
+  
+  .custom-attachment-button-external {
+    margin-right: 0; /* Remove margin-right on mobile */
   }
   
   .voice-recording-controls {

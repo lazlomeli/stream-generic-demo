@@ -163,7 +163,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
   return (
     <div className="create-channel-modal-overlay" onClick={handleClose}>
-      <div className="create-channel-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`create-channel-modal ${isDM ? 'dm-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{isDM ? 'Start Direct Message' : 'Create New Channel'}</h3>
           <button 
@@ -190,7 +190,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
           {!isDM && (
             <div className="form-group">
-              <label htmlFor="channelName">Channel Name *</label>
+              <label style={{ fontSize: 'small' }} className='form-group-label' htmlFor="channelName">Channel Name *</label>
               <input
                 id="channelName"
                 type="text"
@@ -205,7 +205,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
           )}
 
           <div className="form-group">
-            <label>{isDM ? 'Select User to Message *' : 'Add Members *'}</label>
+            <label style={{ fontSize: 'small' }} className='form-group-label'>{isDM ? 'Select User to Message *' : 'Add Members *'}</label>
             
             {/* Search input for users */}
             <div className="user-search-container">
