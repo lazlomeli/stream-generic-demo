@@ -28,24 +28,26 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
   const handleAudioCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a valid call ID (only a-z, 0-9, _, - allowed)
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const callId = `audio_${sanitizedChannelId}_${Date.now()}`;
+    // Generate a short, unique call ID (max 64 chars for Stream Video)
+    const shortId = Math.random().toString(36).substring(2, 15);
+    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+    const callId = `audio_${shortId}_${timestamp}`;
     
-    // Navigate to call page with audio mode
-    navigate(`/call/${callId}?type=audio&channel=${channel.id}`);
+    // Navigate to call page with audio mode and mobile flag
+    navigate(`/call/${callId}?type=audio&channel=${channel.id}&mobile=true`);
   };
 
   // Handle video call
   const handleVideoCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a valid call ID (only a-z, 0-9, _, - allowed)
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const callId = `video_${sanitizedChannelId}_${Date.now()}`;
+    // Generate a short, unique call ID (max 64 chars for Stream Video)
+    const shortId = Math.random().toString(36).substring(2, 15);
+    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+    const callId = `video_${shortId}_${timestamp}`;
     
-    // Navigate to call page with video mode
-    navigate(`/call/${callId}?type=video&channel=${channel.id}`);
+    // Navigate to call page with video mode and mobile flag
+    navigate(`/call/${callId}?type=video&channel=${channel.id}&mobile=true`);
   };
 
   return (
@@ -79,9 +81,6 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
               <img src={VideoIcon} alt="Video call" width="18" height="18" />
             </button>
           </div>
-          <button className="mobile-chat-options" title="Options">
-            ⋮
-          </button>
         </div>
       </div>
 

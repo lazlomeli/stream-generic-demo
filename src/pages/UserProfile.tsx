@@ -9,6 +9,7 @@ import { getAuth0UserId, cacheUserIdMapping, getPublicUserId } from '../utils/id
 import { apiCache } from '../utils/apiCache';
 import streamFeedsManager from '../utils/streamFeedsClient';
 import { useToast } from '../contexts/ToastContext';
+import { useResponsive } from '../contexts/ResponsiveContext';
 import HeartIcon from '../icons/heart.svg';
 import HeartFilledIcon from '../icons/heart-filled.svg';
 import MessageIcon from '../icons/message-circle.svg';
@@ -201,6 +202,7 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { showSuccess, showError } = useToast();
+  const { isMobileView } = useResponsive();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -711,10 +713,12 @@ const UserProfile = () => {
 
       const result = await response.json();
       
-      // Generate a valid call ID (only a-z, 0-9, _, - allowed)
-      const sanitizedUserId = profile.userId.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const callId = `audio_profile_${sanitizedUserId}_${Date.now()}`;
-      navigate(`/call/${callId}?type=audio&channel=${result.channelId}`);
+      // Generate a short, unique call ID (max 64 chars for Stream Video)
+      const shortId = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+      const callId = `audio_${shortId}_${timestamp}`;
+      const mobileParam = window.innerWidth <= 768 ? '&mobile=true' : '';
+      navigate(`/call/${callId}?type=audio&channel=${result.channelId}${mobileParam}`);
       
     } catch (error: any) {
       console.error('❌ USERPROFILE: Error starting audio call:', error);
@@ -751,10 +755,12 @@ const UserProfile = () => {
 
       const result = await response.json();
       
-      // Generate a valid call ID (only a-z, 0-9, _, - allowed)
-      const sanitizedUserId = profile.userId.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const callId = `video_profile_${sanitizedUserId}_${Date.now()}`;
-      navigate(`/call/${callId}?type=video&channel=${result.channelId}`);
+      // Generate a short, unique call ID (max 64 chars for Stream Video)
+      const shortId = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+      const callId = `video_${shortId}_${timestamp}`;
+      const mobileParam = window.innerWidth <= 768 ? '&mobile=true' : '';
+      navigate(`/call/${callId}?type=video&channel=${result.channelId}${mobileParam}`);
       
     } catch (error: any) {
       console.error('❌ USERPROFILE: Error starting video call:', error);

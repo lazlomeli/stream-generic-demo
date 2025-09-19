@@ -602,6 +602,76 @@
 }
 
 .mobile-channel-item {
+  border-radius: 0.75rem;
+  margin: 0.125rem 0;
+  background: white;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-channel-item:hover {
+  background: #f3f4f6;
+}
+
+.mobile-channel-item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+/* Mobile channel row with time and options */
+.mobile-channel-time-options {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-channel-options-container {
+  position: relative;
+}
+
+.mobile-channel-options-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.mobile-channel-options-btn:hover {
+  background: #f3f4f6;
+  opacity: 1;
+}
+
+.mobile-channel-options-btn img {
+  filter: brightness(0.5);
+}
+
+/* Options dropdown menu */
+.mobile-channel-options-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 120px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.mobile-channel-option-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -609,15 +679,39 @@
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: 0.75rem;
-  transition: all 0.2s ease;
-  text-align: left;
   width: 100%;
-  margin: 0.125rem 0;
+  text-align: left;
+  transition: background-color 0.2s ease;
+  font-size: 0.875rem;
 }
 
-.mobile-channel-item:hover {
+.mobile-channel-option-item:hover {
   background: #f3f4f6;
+}
+
+.mobile-channel-option-item.delete-option:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.option-text {
+  font-weight: 500;
+}
+
+.delete-option .option-text {
+  color: inherit;
+}
+
+.delete-option:hover .option-text {
+  color: #dc2626;
 }
 
 .mobile-channel-avatar {
@@ -801,20 +895,6 @@
   background-color: #2563eb;
 }
 
-.mobile-chat-options {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-}
-
-.mobile-chat-options:hover {
-  background: #f9fafb;
-}
 
 /* Mobile Message Area */
 .mobile-message-area {

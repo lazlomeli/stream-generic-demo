@@ -89,8 +89,6 @@
 
 .call-header {
   padding: 1rem 2rem;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +104,6 @@
 }
 
 .participant-count {
-  font-size: 0.875rem;
   font-weight: 400;
   color: #9ca3af;
 }
@@ -135,13 +132,6 @@
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.call-controls-container {
-  padding: 1rem 2rem 2rem;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
   justify-content: center;
 }
 
@@ -206,7 +196,7 @@
 .str-video__participant-view {
   border-radius: 0.75rem !important;
   overflow: hidden !important;
-  background-color: #374151 !important;
+  background-color: #1e2124 !important;
 }
 
 /* Participant list styling for audio calls */
@@ -215,31 +205,22 @@
   padding: 2rem !important;
 }
 
-.str-video__participant-details {
+/* .str-video__participant-details {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border-radius: 1rem !important;
   padding: 1.5rem !important;
   margin-bottom: 1rem !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: white !important;
-}
+} */
 
-/* Custom Call Controls */
-.custom-call-controls {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-}
 
 .call-controls-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
-  background-color: rgba(0, 0, 0, 0.7);
-  border-radius: 2rem;
-  padding: 0.75rem 1.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0rem 1rem 0rem 1rem;
 }
 
 .call-control-btn {
@@ -297,20 +278,6 @@
   transform: rotate(135deg);
 }
 
-/* Debug indicator */
-.debug-indicator {
-  position: absolute;
-  bottom: -1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.75rem;
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  white-space: nowrap;
-}
-
 /* Disabled button state */
 .call-control-btn:disabled {
   opacity: 0.5;
@@ -336,17 +303,8 @@
     padding: 0.5rem;
   }
   
-  .call-controls-container {
-    padding: 0.75rem 1rem 1.5rem;
-  }
-  
   .audio-call-layout {
     padding: 1rem;
-  }
-  
-  .call-controls-row {
-    gap: 0.75rem;
-    padding: 0.5rem 1rem;
   }
   
   .call-control-btn {

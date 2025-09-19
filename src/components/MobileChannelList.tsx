@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useChatContext } from 'stream-chat-react'
 import { ChannelList, ChannelPreviewMessenger } from 'stream-chat-react'
 import { Channel as StreamChannel } from 'stream-chat'
+import { useAuth0 } from '@auth0/auth0-react'
 import CreateChannelModal from './CreateChannelModal'
 import { listMyChannels, ChannelItem } from '../hooks/listMyChannels'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingIcon from './LoadingIcon'
+import { useToast } from '../contexts/ToastContext'
 import UsersGroupIcon from '../icons/users-group.svg'
 import SendIcon from '../icons/send.svg'
+import TrashIcon from '../icons/trash.svg'
+import OptionsIcon from '../icons/options.svg'
 
 interface MobileChannelListProps {
   filters: any
@@ -41,6 +45,10 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
   const [channels, setChannels] = useState<ChannelItem[]>([])
   const [filteredChannels, setFilteredChannels] = useState<ChannelItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showOptionsMenu, setShowOptionsMenu] = useState<string | null>(null)
+  const { getAccessTokenSilently } = useAuth0()
+  const { showSuccess, showError } = useToast()
+  const optionsButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleCreateGroupClick = () => {
     setShowCreateGroupModal(true)
@@ -123,6 +131,116 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
     onChannelCreated(channelId)
   }
 
+  // Handle options menu toggle
+  const handleOptionsClick = (e: React.MouseEvent, channelId: string) => {
+    e.stopPropagation()
+    setShowOptionsMenu(showOptionsMenu === channelId ? null : channelId)
+  }
+
+  // Handle delete channel
+  const handleDeleteChannel = async (channelId: string) => {
+    console.log('🔥 DELETE CLICKED:', { channelId, userID: client.userID })
+    
+    if (!client.userID) {
+      console.log('🔥 No userID, aborting delete')
+      return
+    }
+    
+    try {
+      console.log('🔥 Getting access token...')
+      const accessToken = await getAccessTokenSilently()
+      console.log('🔥 Access token obtained, making API call...')
+      
+      const response = await fetch('/api/stream/chat-operations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: 'leave-channel',
+          channelId: channelId,
+          userId: client.userID
+        }),
+      })
+
+      console.log('🔥 API Response:', { status: response.status, ok: response.ok })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.log('🔥 API Error:', errorText)
+        throw new Error(`Failed to delete channel: ${errorText}`)
+      }
+
+      const result = await response.json()
+      console.log('🔥 Delete successful:', result)
+
+      showSuccess('Channel deleted successfully')
+      setShowOptionsMenu(null)
+      await loadChannels() // Refresh the list
+      
+    } catch (error) {
+      console.error('🔥 Error deleting channel:', error)
+      showError(`Failed to delete channel: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  // Handle mute/unmute channel
+  const handleMuteChannel = async (channelId: string) => {
+    console.log('🔥 MUTE CLICKED:', { channelId })
+    
+    try {
+      console.log('🔥 Getting channel...')
+      const channel = client.channel('messaging', channelId)
+      await channel.watch()
+      
+      // Toggle mute status
+      const isMuted = channel.muteStatus().muted
+      console.log('🔥 Current mute status:', { isMuted })
+      
+      if (isMuted) {
+        console.log('🔥 Unmuting channel...')
+        await channel.unmute()
+        showSuccess('Channel unmuted')
+      } else {
+        console.log('🔥 Muting channel...')
+        await channel.mute()
+        showSuccess('Channel muted')
+      }
+      
+      console.log('🔥 Mute operation successful')
+      setShowOptionsMenu(null)
+      await loadChannels() // Refresh to update mute status
+      
+    } catch (error) {
+      console.error('🔥 Error toggling mute:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      showError(`Failed to update mute settings: ${errorMessage}`)
+    }
+  }
+
+  // Close options menu when clicking outside
+  const handleOverlayClick = () => {
+    setShowOptionsMenu(null)
+  }
+
+  // Close options menu when clicking outside - useEffect for document click
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (optionsButtonRef.current && !optionsButtonRef.current.contains(event.target as Node)) {
+        setShowOptionsMenu(null)
+      }
+    }
+
+    if (showOptionsMenu) {
+      document.addEventListener('mousedown', handleDocumentClick)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick)
+    }
+  }, [showOptionsMenu])
+
   return (
     <div className="mobile-channel-list">
       {/* Header with search and actions */}
@@ -161,36 +279,83 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
             {searchQuery ? 'No chats found' : 'No chats yet. Create your first chat!'}
           </div>
         ) : (
-          <div className="mobile-channel-items">
-            {filteredChannels.map((channelItem) => (
-              <button
-                key={channelItem.id}
-                onClick={() => handleChannelItemClick(channelItem.id)}
-                className="mobile-channel-item"
-              >
-                <div className="mobile-channel-avatar">
-                  <FallbackAvatar
-                    src={channelItem.image}
-                    alt={channelItem.name || 'Channel'}
-                    className="mobile-channel-avatar-image"
-                    size={48}
-                    channelType={channelItem.type}
-                    channelName={channelItem.name}
-                  />
-                  <div className={`mobile-channel-status ${channelItem.status}`}></div>
-                </div>
-                
-                <div className="mobile-channel-content">
-                  <div className="mobile-channel-row">
-                    <h3 className="mobile-channel-name">{channelItem.name}</h3>
-                    <span className="mobile-channel-time">{channelItem.lastMessageTime}</span>
+          <div className="mobile-channel-items" onClick={handleOverlayClick}>
+            {filteredChannels.map((channelItem) => {
+              const isChannelMuted = client.channel('messaging', channelItem.id).muteStatus().muted
+              const isOptionsOpen = showOptionsMenu === channelItem.id
+              
+              return (
+                <div key={channelItem.id} className="mobile-channel-item">
+                  <div
+                    onClick={() => handleChannelItemClick(channelItem.id)}
+                    className="mobile-channel-item-content"
+                  >
+                    <div className="mobile-channel-avatar">
+                      <FallbackAvatar
+                        src={channelItem.image}
+                        alt={channelItem.name || 'Channel'}
+                        className="mobile-channel-avatar-image"
+                        size={48}
+                        channelType={channelItem.type}
+                        channelName={channelItem.name}
+                      />
+                      <div className={`mobile-channel-status ${channelItem.status}`}></div>
+                    </div>
+                    
+                    <div className="mobile-channel-content">
+                      <div className="mobile-channel-row">
+                        <h3 className="mobile-channel-name">{channelItem.name}</h3>
+                        <div className="mobile-channel-time-options">
+                          <span className="mobile-channel-time">{channelItem.lastMessageTime}</span>
+                          <div className="mobile-channel-options-container">
+                            <button
+                              ref={isOptionsOpen ? optionsButtonRef : null}
+                              className="mobile-channel-options-btn"
+                              onClick={(e) => handleOptionsClick(e, channelItem.id)}
+                              title="Channel options"
+                            >
+                              <img src={OptionsIcon} alt="Options" width="16" height="16" />
+                            </button>
+                            
+                            {isOptionsOpen && (
+                              <div className="mobile-channel-options-menu">
+                                <button
+                                  className="mobile-channel-option-item mute-option"
+                                  onClick={(e) => {
+                                    console.log('🔥 Mute button clicked')
+                                    e.stopPropagation()
+                                    handleMuteChannel(channelItem.id)
+                                  }}
+                                >
+                                  <span className="option-icon">{isChannelMuted ? '🔊' : '🔇'}</span>
+                                  <span className="option-text">{isChannelMuted ? 'Unmute' : 'Mute'}</span>
+                                </button>
+                                <button
+                                  className="mobile-channel-option-item delete-option"
+                                  onClick={(e) => {
+                                    console.log('🔥 Delete button clicked')
+                                    e.stopPropagation()
+                                    handleDeleteChannel(channelItem.id)
+                                  }}
+                                >
+                                  <span className="option-icon">
+                                    <img src={TrashIcon} alt="Delete" width="14" height="14" />
+                                  </span>
+                                  <span className="option-text">Delete</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mobile-channel-message">
+                        {channelItem.lastMessage || 'No messages yet'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mobile-channel-message">
-                    {channelItem.lastMessage || 'No messages yet'}
-                  </div>
                 </div>
-              </button>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

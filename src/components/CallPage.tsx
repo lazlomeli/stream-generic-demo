@@ -13,11 +13,14 @@ import {
   CallParticipantsList,
   useCall,
   OwnCapability,
+  ParticipantView,
 } from '@stream-io/video-react-sdk';
 import LoadingSpinner from './LoadingSpinner';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { useToast } from '../contexts/ToastContext';
 import { useUILayout } from '../App';
+import { useResponsive } from '../contexts/ResponsiveContext';
+import { getFirstName } from '../utils/nameUtils';
 
 // Import icons
 import PhoneIcon from '../icons/phone.svg';
@@ -25,10 +28,12 @@ import VideoIcon from '../icons/video.svg';
 import VideoOffIcon from '../icons/video-off.svg';
 import MicrophoneIcon from '../icons/microphone.svg';
 import MicrophoneOffIcon from '../icons/microphone-off.svg';
+import iPhoneOverlay from '../assets/iphone-overlay.png';
 
 // Import Stream Video CSS
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import './CallPage.css';
+import './CallPage-mobile.css';
 
 interface CallPageProps {}
 
@@ -39,9 +44,11 @@ const CallPage: React.FC<CallPageProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently, isLoading } = useAuth0();
   const { showSuccess, showError } = useToast();
   const { setHideHeader } = useUILayout();
+  const { isMobileView } = useResponsive();
 
   const callType = searchParams.get('type') || 'video'; // 'audio' or 'video'
   const channelId = searchParams.get('channel');
+  const mobileParam = searchParams.get('mobile') === 'true';
   
   const [videoClientReady, setVideoClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +77,14 @@ const CallPage: React.FC<CallPageProps> = () => {
     setHideHeader(true);
     return () => setHideHeader(false);
   }, [setHideHeader]);
+
+  // Force mobile view if the mobile parameter is passed
+  useEffect(() => {
+    if (mobileParam) {
+      console.log('📱 Mobile call detected, enabling mobile view')
+      // The mobile parameter indicates this call was initiated from mobile view
+    }
+  }, [mobileParam]);
 
   // Get Stream token function
   const getStreamToken = useCallback(
@@ -502,12 +517,103 @@ const CallPage: React.FC<CallPageProps> = () => {
   }
 
   return (
-    <div className="call-page">
+    <div className={`call-page ${isMobileView || mobileParam ? 'mobile-call' : ''}`}>
+      {(isMobileView || mobileParam) && (
+        <div className="iphone-overlay" />
+      )}
       <StreamVideo client={videoClientRef.current!}>
         <StreamCall call={callRef.current}>
-          <CallInterface callType={callType} onEndCall={handleEndCall} userId={sanitizedUserId} />
+          <CallInterface 
+            callType={callType} 
+            onEndCall={handleEndCall} 
+            userId={sanitizedUserId}
+            isMobileCall={mobileParam || isMobileView}
+          />
         </StreamCall>
       </StreamVideo>
+    </div>
+  );
+};
+
+
+// Custom mobile video layout component for WhatsApp/FaceTime style
+interface MobileVideoLayoutProps {
+  participants: any[];
+}
+
+const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) => {
+  // Find local and remote participants
+  const localParticipant = participants.find(p => p.isLocalParticipant);
+  const remoteParticipants = participants.filter(p => !p.isLocalParticipant);
+
+  console.log('📱 Mobile Video Layout:', {
+    totalParticipants: participants.length,
+    hasLocal: !!localParticipant,
+    remoteCount: remoteParticipants.length
+  });
+
+
+  if (participants.length === 0) {
+    return (
+      <div className="mobile-video-waiting">
+        <div className="waiting-message">
+          <h3>Waiting for participants to join...</h3>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mobile-video-container">
+      {/* Main full-screen video (local participant's video) */}
+      {localParticipant && (
+        <div className="mobile-main-video">
+          <ParticipantView 
+            participant={localParticipant} 
+            trackType="videoTrack"
+            className="mobile-local-video"
+          />
+        </div>
+      )}
+
+      {/* Picture-in-Picture overlay for remote participant(s) */}
+      {remoteParticipants.length > 0 && (
+        <div className="mobile-pip-container">
+          {remoteParticipants.slice(0, 1).map((participant, index) => (
+            <div key={participant.sessionId} className="mobile-pip-video">
+              <ParticipantView 
+                participant={participant} 
+                trackType="videoTrack"
+                className="mobile-remote-video"
+              />
+            </div>
+          ))}
+          
+          {/* Show additional participants count if more than 1 remote */}
+          {remoteParticipants.length > 1 && (
+            <div className="mobile-additional-count">
+              +{remoteParticipants.length - 1} more
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Audio-only fallback for participants without video */}
+      {remoteParticipants.length === 0 && localParticipant && (
+        <div className="mobile-audio-only">
+          <div className="mobile-avatar-large">
+            <img 
+              src={localParticipant.image || `https://getstream.io/random_png/?id=${localParticipant.userId}&name=${localParticipant.name || localParticipant.userId}`}
+              alt={localParticipant.name || localParticipant.userId}
+              className="avatar-image"
+            />
+          </div>
+          <h3 className="mobile-participant-name">
+            {getFirstName(localParticipant.name || localParticipant.userId)}
+          </h3>
+          <p className="mobile-call-status">Waiting for others to join...</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -517,12 +623,14 @@ interface CallInterfaceProps {
   callType: string;
   onEndCall: () => void;
   userId: string;
+  isMobileCall?: boolean;
 }
 
-const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, userId }) => {
+const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, userId, isMobileCall = false }) => {
   const { useCallCallingState, useParticipants } = useCallStateHooks();
   const callingState = useCallCallingState();
   const participants = useParticipants();
+  const { isMobileView } = useResponsive();
 
   console.log('🔍 Call Interface - State:', callingState, 'Participants:', participants.length);
   
@@ -548,7 +656,7 @@ const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, user
   }
 
   return (
-    <div className="call-interface">
+    <div className={`call-interface ${isMobileView || isMobileCall ? 'mobile-call-interface' : ''}`}>
       <div className="call-header">
         <h2>
           {callType === 'audio' ? 'Audio Call' : 'Video Call'} 
@@ -563,7 +671,9 @@ const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, user
           </div>
         ) : (
           <div className="video-call-layout">
-            {participants.length <= 2 ? (
+            {isMobileView || isMobileCall ? (
+              <MobileVideoLayout participants={participants} />
+            ) : participants.length <= 2 ? (
               <SpeakerLayout />
             ) : (
               <PaginatedGridLayout />
@@ -572,7 +682,7 @@ const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, user
         )}
       </div>
 
-      <div className="call-controls-container">
+      <div className={`call-controls-container ${isMobileView || isMobileCall ? 'mobile-call-controls' : ''}`}>
         <CustomCallControls callType={callType} onEndCall={onEndCall} userId={userId} />
       </div>
     </div>
@@ -796,10 +906,6 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
               alt={isActuallyOff ? 'Camera Off' : 'Camera On'} 
               className="control-icon"
             />
-            {/* Debug indicator */}
-            <span className="debug-indicator">
-              {camera ? (isActuallyOff ? 'OFF' : 'ON') : 'NO CAM'}
-            </span>
           </button>
         )}
 
@@ -819,5 +925,6 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
     </div>
   );
 };
+
 
 export default CallPage;
