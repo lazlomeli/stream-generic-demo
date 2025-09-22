@@ -949,7 +949,7 @@ const Feeds = () => {
     const newPoll = {
       type: 'poll' as const,
       url: '', // Polls don't need URLs
-      name: `Poll: ${question}`,
+      name: `Poll`,
       question: question,
       options: options,
       votes: demoVotes
@@ -1625,7 +1625,7 @@ const Feeds = () => {
                       <div className="file-preview-poll">
                         <div className="poll-preview-header">
                           <img src={PollIcon} alt="Poll" width={20} height={20} />
-                          <span>Poll Preview</span>
+                          <span>Poll</span>
                         </div>
                         <div className="poll-question">{attachment.question}</div>
                         <div className="poll-options">

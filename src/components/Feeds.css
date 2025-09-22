@@ -1161,6 +1161,7 @@
   cursor: pointer;
   transition: background-color 0.2s;
   flex-shrink: 0;
+  max-height: 25px;
 }
 
 .mobile-view .create-post-submit:hover {
@@ -1170,7 +1171,6 @@
 .mobile-view .create-post-submit:disabled {
   background: #94a3b8;
   cursor: not-allowed;
-  height: 25px;
 }
 
 /* Mobile typography adjustments - compact like Twitter */
@@ -1363,45 +1363,127 @@
 /* Mobile file preview adjustments - prevent clipping */
 .mobile-view .file-preview-container {
   margin-top: 0.5rem;
-  max-width: 100%;
+  max-width: calc(100% - 2rem); /* Account for padding */
+  width: calc(100% - 2rem);
   overflow: hidden;
+  padding-right: 0;
 }
 
 .mobile-view .file-preview-item {
   margin-bottom: 0.5rem;
   border-radius: 8px;
   max-width: 100%;
+  width: 100%;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.mobile-view .file-preview-content {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-view .file-preview-image,
 .mobile-view .file-preview-video-element {
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 6px;
 }
 
 .mobile-view .file-preview-info {
+  flex: 1;
   font-size: 0.8125rem;
-  padding: 0.25rem 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
-/* Mobile poll preview adjustments */
+.mobile-view .file-name {
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-view .file-size {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+/* Mobile poll preview - simple icon and text only */
+.mobile-view .file-preview-poll {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background-color: #f3f4f6;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
 .mobile-view .poll-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.8125rem;
-  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
 }
 
-.mobile-view .poll-question {
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+.mobile-view .poll-preview-header img {
+  width: 16px;
+  height: 16px;
 }
 
-.mobile-view .poll-option-preview {
-  padding: 0.25rem 0.5rem;
-  margin-bottom: 0.25rem;
-  background: #f3f4f6;
-  border-radius: 4px;
-  font-size: 0.8125rem;
+/* Hide poll question and options in mobile - show only icon and text */
+.mobile-view .poll-question,
+.mobile-view .poll-options {
+  display: none;
+}
+
+/* Mobile file remove button */
+.mobile-view .file-remove-button {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.mobile-view .file-remove-button:hover {
+  background: rgba(239, 68, 68, 0.8);
 }
 
 /* Mobile user posts section adjustments */
