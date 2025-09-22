@@ -36,6 +36,9 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
   const { channel } = useChannelStateContext();
   const { client } = useChatContext();
   const { isMobileView } = useResponsive();
+  
+  // Get Stream Chat's message input context for proper state management
+  const messageInputContext = useMessageInputContext();
 
   // Helper function to get or upload image to Stream (with caching)
   const getOrUploadImageToStream = useCallback(async (attachmentNumber: 1 | 2) => {
@@ -188,27 +191,46 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
     }
   }, [isRecording]);
 
-  // Custom send message handler
-  const handleSendMessage = useCallback(() => {
-    // Get the message text from the input
-    const messageInputElement = containerRef.current?.querySelector('.str-chat__textarea__textarea') as HTMLTextAreaElement;
-    const messageText = messageInputElement?.value?.trim();
-    
-    if (!messageText || !channel) return;
-    
-    // Send the message through Stream Chat
-    channel.sendMessage({
-      text: messageText,
-    });
-    
-    // Clear the input
-    if (messageInputElement) {
-      messageInputElement.value = '';
-      // Trigger input event to update Stream's internal state
-      const event = new Event('input', { bubbles: true });
-      messageInputElement.dispatchEvent(event);
+  // Custom send message handler that finds and clicks Stream Chat's native send button
+  const handleSendMessage = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
     }
-  }, [channel]);
+    
+    // Look for Stream Chat's native send button (which is hidden by CSS)
+    const nativeSendButton = containerRef.current?.querySelector('.str-chat__send-button');
+    if (nativeSendButton) {
+      console.log('Found native send button, clicking it');
+      (nativeSendButton as HTMLButtonElement).click();
+      return;
+    }
+    
+    // Alternative: look for any button with type="submit" inside the MessageInput
+    const submitButton = containerRef.current?.querySelector('button[type="submit"]');
+    if (submitButton) {
+      console.log('Found submit button, clicking it');
+      (submitButton as HTMLButtonElement).click();
+      return;
+    }
+    
+    // Fallback: try to simulate Enter key press on the textarea
+    const textarea = containerRef.current?.querySelector('.str-chat__textarea__textarea');
+    if (textarea) {
+      console.log('Simulating Enter key press');
+      const enterEvent = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true
+      });
+      textarea.dispatchEvent(enterEvent);
+      return;
+    }
+    
+    console.warn('Could not find any way to send the message');
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
