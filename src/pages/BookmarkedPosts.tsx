@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import MobileBottomNav from '../components/MobileBottomNav';
 import { getSanitizedUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useToast } from '../contexts/ToastContext';
+import { useResponsive } from '../contexts/ResponsiveContext';
 import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import '../components/Feeds.css';
@@ -163,7 +165,9 @@ interface BookmarkedPost {
 const BookmarkedPosts = () => {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSuccess, showError } = useToast();
+  const { isMobileView, toggleView } = useResponsive();
   const [bookmarkedPosts, setBookmarkedPosts] = useState<BookmarkedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -361,7 +365,7 @@ const BookmarkedPosts = () => {
     return <div>Error: {error}</div>;
   }
 
-  return (
+  const bookmarkedContent = (
     <div className="feeds-container">
       <div className="feeds-header">
         <h1 style={{ marginBottom: '12px'}}>Bookmarked Posts</h1>
@@ -488,6 +492,29 @@ const BookmarkedPosts = () => {
       )}
     </div>
   );
+
+  // Mobile view wrapper
+  if (isMobileView) {
+    return (
+      <div className="feeds-container mobile-view">
+        <div className="iphone-overlay"></div>
+        <div className="feeds-content mobile-content">
+          {bookmarkedContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          🖥️ Desktop
+        </button>
+      </div>
+    );
+  }
+
+  // Desktop view
+  return bookmarkedContent;
 };
 
 export default BookmarkedPosts;

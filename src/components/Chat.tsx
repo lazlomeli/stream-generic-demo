@@ -36,7 +36,7 @@ interface ChatProps {}
 const Chat: React.FC<ChatProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { channelId } = useParams<{ channelId?: string }>();
-  const { isMobileView } = useResponsive();
+  const { isMobileView, toggleView } = useResponsive();
   const location = useLocation();
 
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
@@ -401,6 +401,13 @@ const Chat: React.FC<ChatProps> = () => {
           </ChatComponent>
           <MobileBottomNav currentPath={location.pathname} />
         </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          🖥️ Desktop
+        </button>
       </div>
     );
   }

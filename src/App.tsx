@@ -47,8 +47,8 @@ function AppContent() {
   const isVideoPage = location.pathname === '/video'
   const isCallPage = location.pathname.startsWith('/call/')
   
-  // Hide header in mobile view for chat
-  const shouldHideHeader = hideHeader || (isMobileView && location.pathname.startsWith('/chat'))
+  // Hide header in mobile view for all pages
+  const shouldHideHeader = hideHeader || isMobileView
 
   if (error) {
     return <div>Authentication Error: {error.message}</div>

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import LoadingIcon from '../components/LoadingIcon';
+import MobileBottomNav from '../components/MobileBottomNav';
 import { getSanitizedUserId, sanitizeUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { getAuth0UserId, cacheUserIdMapping, getPublicUserId } from '../utils/idUtils';
@@ -200,9 +201,10 @@ const formatUserId = (userId: string): string => {
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { showSuccess, showError } = useToast();
-  const { isMobileView } = useResponsive();
+  const { isMobileView, toggleView } = useResponsive();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -928,7 +930,7 @@ const UserProfile = () => {
 
   const isOwnProfile = feedsClient?.userId === profile?.userId;
 
-  return (
+  const profileContent = (
     <div className="feeds-container">
       {/* User Profile Header */}
       <div className="user-profile-header">
@@ -1138,6 +1140,29 @@ const UserProfile = () => {
       </div>
     </div>
   );
+
+  // Mobile view wrapper
+  if (isMobileView) {
+    return (
+      <div className="feeds-container mobile-view">
+        <div className="iphone-overlay"></div>
+        <div className="feeds-content mobile-content">
+          {profileContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          🖥️ Desktop
+        </button>
+      </div>
+    );
+  }
+
+  // Desktop view
+  return profileContent;
 };
 
 export default UserProfile;

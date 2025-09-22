@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 import LoadingIcon from './LoadingIcon';
+import MobileBottomNav from './MobileBottomNav';
 import { getSanitizedUserId, sanitizeUserId } from '../utils/userUtils';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { getPublicUserId, cacheUserIdMapping, cacheMultipleUserIdMappings } from '../utils/idUtils';
@@ -10,6 +11,7 @@ import { apiCache } from '../utils/apiCache';
 import { apiMonitor } from '../utils/apiMonitor';
 import streamFeedsManager from '../utils/streamFeedsClient';
 import { useToast } from '../contexts/ToastContext';
+import { useResponsive } from '../contexts/ResponsiveContext';
 import HeartIcon from '../icons/heart.svg';
 import HeartFilledIcon from '../icons/heart-filled.svg';
 import MessageIcon from '../icons/message-circle.svg';
@@ -182,7 +184,9 @@ const Feeds = () => {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSuccess, showError } = useToast();
+  const { isMobileView, toggleView } = useResponsive();
   const [feedsClient, setFeedsClient] = useState<any>(null);
   const [clientReady, setClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1570,7 +1574,7 @@ const Feeds = () => {
   }
 
   // Render feeds when client is ready and posts are loaded
-  return (
+  const feedsContent = (
     <div className="feeds-container">
       {/* Inline Post Creation */}
       <div className="create-post-inline">
@@ -2093,6 +2097,29 @@ const Feeds = () => {
       )}
     </div>
   );
+
+  // Mobile view wrapper
+  if (isMobileView) {
+    return (
+      <div className="feeds-container mobile-view">
+        <div className="iphone-overlay"></div>
+        <div className="feeds-content mobile-content">
+          {feedsContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          🖥️ Desktop
+        </button>
+      </div>
+    );
+  }
+
+  // Desktop view
+  return feedsContent;
 };
 
 export default Feeds;
