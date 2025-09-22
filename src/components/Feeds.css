@@ -586,20 +586,27 @@
   border: none;
   padding: 0.5rem;
   cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .delete-post-button:hover {
-  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .delete-icon {
   width: 16px;
   height: 16px;
+  /* Grey color by default */
+  filter: brightness(0) saturate(100%) invert(60%) sepia(8%) saturate(8%) hue-rotate(314deg) brightness(96%) contrast(86%);
+  transition: filter 0.2s ease;
+}
+
+/* Red color on hover */
+.delete-post-button:hover .delete-icon {
   filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
 }
 
@@ -964,7 +971,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3680bc 0%, #133d5f 100%);
   position: relative;
 }
 
@@ -1425,9 +1432,20 @@
   height: 28px;
 }
 
+.mobile-view .delete-post-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
 .mobile-view .delete-icon {
   width: 14px;
   height: 14px;
+  /* Grey color by default (inherits from parent) */
+  filter: brightness(0) saturate(100%) invert(60%) sepia(8%) saturate(8%) hue-rotate(314deg) brightness(96%) contrast(86%);
+  transition: filter 0.2s ease;
+}
+
+.mobile-view .delete-post-button:hover .delete-icon {
+  filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
 }
 
 /* Mobile hover modals - hide on mobile to prevent clipping */
