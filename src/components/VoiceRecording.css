@@ -12,6 +12,10 @@
   align-items: center;
 }
 
+.mobile-view .custom-attachment-button-external {
+  margin-right: 0px;
+}
+
 .custom-attachment-button-external {
   position: absolute;
   right: 100px; /* Position it to the left of the voice recording button */

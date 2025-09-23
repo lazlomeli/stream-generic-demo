@@ -91,8 +91,7 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
           </div>
 
           <div 
-            className={`setup-option ${selectedType === 'rtmp' ? 'selected' : ''}`}
-            onClick={() => handleOptionSelect('rtmp')}
+            className={`setup-option rtmp-disabled`}
           >
             <div className="option-badge rtmp-badge">
               SLOWER + MORE SETUP

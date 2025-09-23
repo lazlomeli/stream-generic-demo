@@ -51,6 +51,20 @@
   z-index: 9999 !important;
 }
 
+/* Force message actions modal to open to the left */
+.str-chat__message-actions-box.str-chat__message-actions-box--open,
+.str-chat__message-actions-box {
+  right: auto !important;
+  left: 0 !important;
+  transform: translateX(0) !important;
+}
+
+/* Additional specificity for left positioning */
+.str-chat__message .str-chat__message-actions-box {
+  right: auto !important;
+  left: 0 !important;
+}
+
 /* Ensure modals don't get clipped */
 .str-chat__message-simple {
   position: relative !important;
@@ -98,7 +112,8 @@
 .str-chat__message-actions-box__dropdown {
   position: absolute !important;
   top: 100% !important;
-  right: 0 !important;
+  right: auto !important;
+  left: 0 !important;
   z-index: 10000 !important;
   transform: none !important;
   bottom: auto !important;
@@ -499,6 +514,8 @@
   color: #2563eb;
 }
 
+/* Remove old logout button styling from bottom nav */
+
 /* Mobile Channel List */
 .mobile-channel-list {
   height: 100%;
@@ -896,36 +913,36 @@
   transition: all 0.2s ease;
   padding: 0;
   position: relative;
+  background-color: transparent;
 }
 
 .mobile-call-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: rgba(156, 163, 175, 0.1);
 }
 
 .mobile-call-button:active {
-  transform: translateY(0);
+  background-color: rgba(156, 163, 175, 0.15);
 }
 
 .mobile-call-button img {
-  filter: brightness(0) invert(1); /* Make icons white */
+  filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%); /* Grey color */
 }
 
-/* Specific mobile call button colors */
-.mobile-audio-call-button {
-  background-color: #22c55e; /* Green for audio */
-}
-
+/* Specific mobile call button hover effects */
 .mobile-audio-call-button:hover {
-  background-color: #16a34a;
+  background-color: rgba(34, 197, 94, 0.1);
 }
 
-.mobile-video-call-button {
-  background-color: #3b82f6; /* Blue for video */
+.mobile-audio-call-button:hover img {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(119%) contrast(119%); /* Green on hover */
 }
 
 .mobile-video-call-button:hover {
-  background-color: #2563eb;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.mobile-video-call-button:hover img {
+  filter: brightness(0) saturate(100%) invert(40%) sepia(100%) saturate(1240%) hue-rotate(217deg) brightness(95%) contrast(98%); /* Blue on hover */
 }
 
 

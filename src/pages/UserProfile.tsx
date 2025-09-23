@@ -21,6 +21,7 @@ import CameraIcon from '../icons/camera.svg';
 import VideoIcon from '../icons/video.svg';
 import PhoneIcon from '../icons/phone.svg';
 import PollIcon from '../icons/poll.svg';
+import LogoutIcon from '../icons/logout-2.svg';
 import '../components/Feeds.css';
 import './UserProfile.css';
 
@@ -202,7 +203,7 @@ const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { user, isAuthenticated, getAccessTokenSilently, logout } = useAuth0();
   const { showSuccess, showError } = useToast();
   const { isMobileView, toggleView } = useResponsive();
   
@@ -914,6 +915,14 @@ const UserProfile = () => {
     navigate('/feeds');
   };
 
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin
+      }
+    });
+  };
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -942,6 +951,16 @@ const UserProfile = () => {
     <div className="feeds-container">
       {/* User Profile Header */}
       <div className="user-profile-header">
+        {/* Logout button for own profile - top right corner (mobile only) */}
+        {isOwnProfile && isMobileView && (
+          <button 
+            className="profile-logout-icon"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            <img src={LogoutIcon} alt="Logout" />
+          </button>
+        )}
         <div className="profile-left-section">
           <div className="profile-avatar">
             {profile.image && !imageLoadError ? (

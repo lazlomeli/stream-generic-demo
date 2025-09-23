@@ -60,7 +60,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background-color: var(--str-chat__primary-color);
+  background-color: transparent;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -69,33 +69,32 @@
 }
 
 .call-button:hover {
-  background-color: var(--str-chat__primary-color-low-emphasis);
-  transform: translateY(-1px);
+  background-color: rgba(156, 163, 175, 0.1);
 }
 
 .call-button:active {
-  transform: translateY(0);
+  background-color: rgba(156, 163, 175, 0.15);
 }
 
 .call-button img {
-  filter: brightness(0) invert(1); /* Make icons white */
+  filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%); /* Grey color */
 }
 
-/* Specific call button colors */
-.audio-call-button {
-  background-color: #22c55e; /* Green for audio */
-}
-
+/* Specific call button hover effects */
 .audio-call-button:hover {
-  background-color: #16a34a;
+  background-color: rgba(34, 197, 94, 0.1);
 }
 
-.video-call-button {
-  background-color: #3b82f6; /* Blue for video */
+.audio-call-button:hover img {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(119%) contrast(119%); /* Green on hover */
 }
 
 .video-call-button:hover {
-  background-color: #2563eb;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.video-call-button:hover img {
+  filter: brightness(0) saturate(100%) invert(40%) sepia(100%) saturate(1240%) hue-rotate(217deg) brightness(95%) contrast(98%); /* Blue on hover */
 }
 
 .options-menu-container {
