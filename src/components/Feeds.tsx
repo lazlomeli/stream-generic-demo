@@ -469,6 +469,22 @@ const Feeds = () => {
     }
   }, [posts.length, searchParams]);
 
+  // Remove highlight after 3 seconds
+  useEffect(() => {
+    const highlightPostId = searchParams.get('highlight');
+    
+    if (highlightPostId) {
+      const timer = setTimeout(() => {
+        // Remove the highlight parameter from URL
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('highlight');
+        setSearchParams(newSearchParams, { replace: true });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, setSearchParams]);
+
   // OPTIMIZED: Reduce bookmark refresh frequency
   useEffect(() => {
     let lastRefresh = 0;

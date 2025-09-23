@@ -1,6 +1,6 @@
 /* Feeds Container */
 .feeds-container {
-  min-height: calc(100vh - 4rem);
+  /* min-height: calc(100vh - 4rem); */
   background: transparent;
   padding: 2rem;
 }
@@ -1731,6 +1731,20 @@
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
   animation: highlightPulse 2s ease-in-out;
 }
+
+/* Add transition only for background color fade effects */
+.feed-post {
+  transition: background-color 0.8s ease-out;
+}
+
+/* Mobile highlighted post - use background instead of border */
+.mobile-view .highlighted-post {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  animation: none !important;
+}
+
 
 @keyframes highlightPulse {
   0% {

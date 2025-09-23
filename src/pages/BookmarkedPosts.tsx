@@ -368,7 +368,7 @@ const BookmarkedPosts = () => {
   const bookmarkedContent = (
     <div className="feeds-container">
       <div className="feeds-header">
-        <h1 style={{ marginBottom: '12px'}}>Bookmarked Posts</h1>
+        <h1 style={isMobileView ? {} : { marginBottom: '12px'}}>Bookmarked Posts</h1>
         <p>Posts you've saved for later reading</p>
       </div>
 
