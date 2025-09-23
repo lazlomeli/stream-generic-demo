@@ -444,12 +444,9 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
         </div>
 
         {/* Stream Status */}
-        <div className="waiting-room-timer">
-          <div className="timer-display">
-            <span className="timer-label">🎬 Stream will start soon</span>
-            <span className="timer-value">
-              Please wait...
-            </span>
+        <div className="waiting-room-status">
+          <div className="status-display">
+            <span className="status-message">Stream will start soon</span>
           </div>
         </div>
 
