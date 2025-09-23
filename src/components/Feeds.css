@@ -1057,6 +1057,7 @@
   border-bottom: none !important;
   background: white;
   padding: 0.5rem 0.5rem 1.2rem 0.5rem;
+  border-bottom: 1px solid #e5e7eb !important;
 }
 
 .mobile-view .post-header {
@@ -1080,7 +1081,6 @@
   border-radius: 0;
   box-shadow: none;
   background: white;
-  border-bottom: none;
 }
 
 .mobile-view .create-post-content {
@@ -1240,7 +1240,6 @@
 
 /* Mobile user profile adjustments - compact */
 .mobile-view .user-profile-header {
-  padding: 0.75rem 1rem;
   margin: 0;
   border-bottom: 8px solid #f3f4f6;
 }
@@ -1270,16 +1269,88 @@
 }
 
 .mobile-view .profile-action-buttons {
-  gap: 0.5rem;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
+  justify-content: center;
+  width: 100%;
 }
 
 .mobile-view .profile-action-buttons button {
-  font-size: 0.8125rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 16px;
+  padding: 0;
+  border-radius: 50%;
+  min-width: auto !important;
+  width: 44px !important;
+  height: 44px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
 }
+
+.mobile-view .profile-action-buttons button:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide text in mobile for icon-only buttons */
+.mobile-view .profile-message-button span,
+.mobile-view .profile-call-button span {
+  display: none !important;
+}
+
+/* Make button icons larger and consistent color in mobile */
+.mobile-view .profile-action-buttons .button-icon {
+  width: 20px !important;
+  height: 20px !important;
+  filter: brightness(0) saturate(100%) invert(51%) sepia(8%) saturate(7%) hue-rotate(314deg) brightness(96%) contrast(86%) !important;
+}
+
+/* Icon-only button styling for mobile - circular */
+.mobile-view .profile-message-button,
+.mobile-view .profile-call-button {
+  background-color: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  color: #6b7280 !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+}
+
+/* Follow button keeps text and different styling */
+.mobile-view .profile-follow-button {
+  background-color: #3b82f6 !important;
+  border: 1px solid #3b82f6 !important;
+  color: white !important;
+  width: auto !important;
+  height: 36px !important;
+  border-radius: 18px !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  min-width: 80px !important;
+}
+
+.mobile-view .profile-follow-button.following {
+  background-color: #3b82f6 !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+.mobile-view .profile-follow-button:hover {
+  background-color: #2563eb !important;
+}
+
+.mobile-view .profile-follow-button.following:hover {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
 
 .mobile-view .profile-avatar {
   width: 64px;
@@ -1291,6 +1362,51 @@
   width: 64px !important;
   height: 64px !important;
   font-size: 24px !important;
+}
+
+/* Mobile user profile header adjustments */
+.mobile-view .user-profile-header {
+  border-radius: 12px !important;
+  flex-direction: column !important;
+  text-align: center !important;
+  gap: 1rem !important;
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+.mobile-view .profile-left-section {
+  gap: 0.75rem !important;
+}
+
+.mobile-view .profile-details {
+  align-items: center !important;
+  width: 100%;
+  gap: 0.5rem !important;
+}
+
+.mobile-view .profile-name {
+  font-size: 1.25rem !important;
+  padding-bottom: 1rem !important;
+  text-align: center;
+  justify-content: center;
+}
+
+.mobile-view .profile-role {
+  font-size: 0.875rem !important;
+  margin-bottom: 0.75rem !important;
+  text-align: center;
+}
+
+.mobile-view .profile-stats {
+  gap: 1.5rem !important;
+  justify-content: center !important;
+  margin: 1rem !important;
+}
+
+.mobile-view .profile-join-date {
+  font-size: 0.75rem !important;
+  text-align: center;
 }
 
 /* Mobile bookmarked posts adjustments - compact */
@@ -1489,6 +1605,7 @@
 /* Mobile user posts section adjustments */
 .mobile-view .user-posts-section {
   padding: 0;
+  width: 100%;
 }
 
 .mobile-view .posts-title {
@@ -1496,7 +1613,12 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  border-bottom: 1px solid #e5e7eb;
+  border-top-right-radius: 20px;
+  border-top-left-radius: 20px;
+}
+
+.mobile-view .user-posts-section .posts-title {
+  font-size: 0.875rem;
   background: #f9fafb;
 }
 

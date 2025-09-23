@@ -954,33 +954,10 @@ const UserProfile = () => {
               </div>
             )}
           </div>
-          {!isOwnProfile && (
-            <div className="profile-action-buttons">
-              <button 
-                className="profile-message-button"
-                onClick={handleMessageUser}
-                title="Send message"
-              >
-                <img src={MessageIcon} alt="Message" className="button-icon" />
-                Message
-              </button>
-              <button 
-                className="profile-call-button audio-call"
-                onClick={handleAudioCall}
-                title="Start audio call"
-              >
-                <img src={PhoneIcon} alt="Audio call" className="button-icon" />
-                Call
-              </button>
-              <button 
-                className="profile-call-button video-call"
-                onClick={handleVideoCall}
-                title="Start video call"
-              >
-                <img src={VideoIcon} alt="Video call" className="button-icon" />
-                Video
-              </button>
-              <button 
+        </div>
+        <div className="profile-details">
+          <h1 className="profile-name">{profile.name}</h1>
+          <button 
                 className={`profile-follow-button ${isFollowing ? 'following' : ''}`}
                 onClick={handleFollow}
               >
@@ -988,12 +965,7 @@ const UserProfile = () => {
                   console.log(`🔘 USERPROFILE: Rendering follow button, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
                   return isFollowing ? 'Following' : 'Follow';
                 })()}
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="profile-details">
-          <h1 className="profile-name">{profile.name}</h1>
+          </button>
           <div className="profile-stats">
             <div className="stat">
               <strong>{profile.postCount}</strong>
@@ -1010,6 +982,34 @@ const UserProfile = () => {
           </div>
           <p className="profile-join-date">Joined {profile.joinDate}</p>
         </div>
+        {!isOwnProfile && (
+          <div className="profile-action-buttons">
+            <button 
+              className="profile-message-button"
+              onClick={handleMessageUser}
+              title="Send message"
+            >
+              <img src={MessageIcon} alt="Message" className="button-icon" />
+              {isMobileView ? '' : 'Message'}
+            </button>
+            <button 
+              className="profile-call-button audio-call"
+              onClick={handleAudioCall}
+              title="Start audio call"
+            >
+              <img src={PhoneIcon} alt="Audio call" className="button-icon" />
+              {isMobileView ? '' : 'Call'}
+            </button>
+            <button 
+              className="profile-call-button video-call"
+              onClick={handleVideoCall}
+              title="Start video call"
+            >
+              <img src={VideoIcon} alt="Video call" className="button-icon" />
+              {isMobileView ? '' : 'Video'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* User's Posts */}
