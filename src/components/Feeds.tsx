@@ -22,6 +22,7 @@ import TrashIcon from '../icons/trash.svg';
 import CameraIcon from '../icons/camera.svg';
 import VideoIcon from '../icons/video.svg';
 import PollIcon from '../icons/poll.svg';
+import StreamLogo from '../assets/stream-logo.png';
 import './Feeds.css';
 
 // User mapping for demo users
@@ -1576,6 +1577,12 @@ const Feeds = () => {
   // Render feeds when client is ready and posts are loaded
   const feedsContent = (
     <div className="feeds-container">
+      {/* Mobile Stream Logo */}
+      {isMobileView && (
+        <div className="mobile-stream-logo">
+          <img src={StreamLogo} alt="Stream" className="stream-logo-icon" />
+        </div>
+      )}
       {/* Inline Post Creation */}
       <div className="create-post-inline">
         <div className="create-post-author">
@@ -1693,6 +1700,14 @@ const Feeds = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Feed Tabs */}
+      {isMobileView && (
+        <div className="mobile-feed-tabs">
+          <div className="feed-tab active">For You</div>
+          <div className="feed-tab">Following</div>
+        </div>
+      )}
 
       {posts.length === 0 ? (
         <div className="feeds-empty">
