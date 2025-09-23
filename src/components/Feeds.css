@@ -980,12 +980,11 @@
 .desktop-toggle-button {
   position: absolute;
   top: 20px;
-  right: 20px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 25px;
-  padding: 10px 20px;
+  padding: 5px 10px 5px 10px;
   font-size: 0.875rem;
   font-weight: 600;
   color: #374151;
@@ -1031,8 +1030,6 @@
   border-radius: 0;
   box-shadow: none;
   background: white;
-  display: flex;
-  flex-direction: column;
   padding-bottom: 60px; /* Space for bottom nav */
 }
 
@@ -1048,6 +1045,47 @@
 
 .mobile-view .feeds-timeline::-webkit-scrollbar {
   display: none; /* WebKit */
+}
+
+/* Hide scrollbars in all mobile views */
+.mobile-view {
+  /* Hide scrollbar for main mobile container */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.mobile-view::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Hide scrollbars for mobile content areas */
+.mobile-view .feeds-content,
+.mobile-view .feeds-container,
+.mobile-view .user-posts-section,
+.mobile-view .bookmarked-posts-container,
+.mobile-view .mobile-content,
+.mobile-content {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.mobile-view .feeds-content::-webkit-scrollbar,
+.mobile-view .feeds-container::-webkit-scrollbar,
+.mobile-view .user-posts-section::-webkit-scrollbar,
+.mobile-view .bookmarked-posts-container::-webkit-scrollbar,
+.mobile-view .mobile-content::-webkit-scrollbar,
+.mobile-content::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Additional mobile scrollbar hiding for any overflow elements */
+.mobile-view *::-webkit-scrollbar {
+  display: none; /* WebKit - hide all scrollbars in mobile */
+}
+
+.mobile-view * {
+  scrollbar-width: none; /* Firefox - hide all scrollbars in mobile */
+  -ms-overflow-style: none; /* Internet Explorer 10+ - hide all scrollbars in mobile */
 }
 
 /* Mobile posts - use full screen width with minimal margins */
@@ -1084,10 +1122,6 @@
   background: white;
 }
 
-.mobile-view .create-post-content {
-  padding: 0.75rem 1rem;
-}
-
 .mobile-view .create-post-author {
   margin-bottom: 0.5rem;
 }
@@ -1113,11 +1147,7 @@
 
 /* Mobile media buttons - icons only, aligned with avatar */
 .mobile-view .create-post-media {
-  position: absolute;
-  left: 51px;
-  display: flex;
-  gap: 2rem;
-  align-items: center;
+  position: sticky;
 }
 
 .mobile-view .create-post-media .media-button {
@@ -1150,18 +1180,16 @@
 
 /* Mobile submit button */
 .mobile-view .create-post-submit {
-  position: absolute;
+  position: sticky;
   right: 50px;
   padding: 0.375rem 0.75rem;
   border-radius: 16px;
   font-size: 0.8125rem;
-  font-weight: 600;
   background: #1d9bf0;
   color: white;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s;
-  flex-shrink: 0;
   max-height: 25px;
 }
 
@@ -1277,6 +1305,8 @@
   margin-top: 0.5rem;
   justify-content: center;
   width: 100%;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .mobile-view .profile-action-buttons button {
@@ -1322,6 +1352,9 @@
   height: 44px !important;
   border-radius: 50% !important;
   padding: 0 !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Follow button keeps text and different styling */

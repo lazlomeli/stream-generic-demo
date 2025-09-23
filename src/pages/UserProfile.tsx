@@ -929,6 +929,14 @@ const UserProfile = () => {
   }
 
   const isOwnProfile = feedsClient?.userId === profile?.userId;
+  
+  // Debug: Check if action buttons should be visible
+  console.log('🔍 Profile action buttons debug:', {
+    feedsClientUserId: feedsClient?.userId,
+    profileUserId: profile?.userId,
+    isOwnProfile,
+    shouldShowButtons: !isOwnProfile
+  });
 
   const profileContent = (
     <div className="feeds-container">
@@ -1155,7 +1163,7 @@ const UserProfile = () => {
           onClick={toggleView}
           title="Switch to Desktop View"
         >
-          🖥️ Desktop
+          Desktop
         </button>
       </div>
     );

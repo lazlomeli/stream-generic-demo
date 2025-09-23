@@ -26,6 +26,9 @@ import LoadingSpinner from './LoadingSpinner'
 import LivestreamSetup from './LivestreamSetup'
 import { getSanitizedUserId } from '../utils/userUtils'
 import { useUILayout } from '../App'
+import { useResponsive } from '../contexts/ResponsiveContext'
+import { useLocation } from 'react-router-dom'
+import MobileBottomNav from './MobileBottomNav'
 
 // Import SVG icons for UI elements
 import ViewersIcon from '../icons/viewers.svg'
@@ -625,12 +628,73 @@ interface VideoProps {}
 const Video: React.FC<VideoProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently, isLoading } = useAuth0()
   const { setHideHeader } = useUILayout()
+  const { isMobileView, toggleView } = useResponsive()
+  const location = useLocation()
 
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined
   
+  // Helper function to wrap content in mobile structure when needed
+  const wrapInMobileView = (content: React.ReactNode) => {
+    if (isMobileView) {
+      return (
+        <div className="video-container mobile-view" style={{
+          height: '100vh',
+          width: '100vw',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+          position: 'relative'
+        }}>
+          <div className="iphone-overlay"></div>
+          <div className="video-content mobile-content" style={{
+            position: 'relative',
+            width: '375px',
+            height: '790px',
+            borderRadius: '40px',
+            overflow: 'hidden',
+            background: '#000',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+            zIndex: 2,
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {content}
+          </div>
+          {/* Hide toggle button on video page since livestream should not be viewed in mobile */}
+          {location.pathname !== '/video' && (
+            <button 
+              className="desktop-toggle-button"
+              onClick={toggleView}
+              title="Switch to Desktop View"
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+                border: 'none',
+                borderRadius: '25px',
+                padding: '10px 20px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                cursor: 'pointer',
+                zIndex: 10
+              }}
+            >
+              🖥️ Desktop
+            </button>
+          )}
+        </div>
+      );
+    }
+    return content;
+  }
+  
   // Early guard: if we're loading or user should be available but isn't, show loading
   if (isLoading) {
-    return <LoadingSpinner />
+    return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
   }
 
   const [videoClientReady, setVideoClientReady] = useState(false)
@@ -738,7 +802,7 @@ const Video: React.FC<VideoProps> = () => {
   // Additional safety check - if user is expected but not loaded, show loading
   if (!isAnonymousViewer && isAuthenticated && !user) {
     console.log('⏳ User authenticated but user object not yet loaded...')
-    return <LoadingSpinner />
+    return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
   }
   
   // Set initial state for viewers
@@ -1309,16 +1373,16 @@ const Video: React.FC<VideoProps> = () => {
   // --- Render helpers ---
   // Only require authentication for streamers, not anonymous viewers
   if (!isAuthenticated && !isAnonymousViewer) {
-    return <div className="video-error">Please log in to access the livestream.</div>
+    return wrapInMobileView(<div className="video-error">Please log in to access the livestream.</div>)
   }
 
   if (!apiKey) {
-    return <div className="video-error">Stream API key not configured.</div>
+    return wrapInMobileView(<div className="video-error">Stream API key not configured.</div>)
   }
 
   // Show setup screen if not completed and user is not a viewer
   if (!setupCompleted && !isViewer) {
-    return <LivestreamSetup onSetupComplete={handleSetupComplete} />
+    return wrapInMobileView(<LivestreamSetup onSetupComplete={handleSetupComplete} />)
   }
 
 
@@ -1342,23 +1406,23 @@ const Video: React.FC<VideoProps> = () => {
   if (backstageMode && !livestreamActive) {
     if (isConnecting || !videoClientReady) {
       console.log('🔄 Showing loading: isConnecting:', isConnecting, 'videoClientReady:', videoClientReady);
-      return <LoadingSpinner darkMode />
+      return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
     }
     
     if (error) {
-      return <div className="video-error">Error: {error}</div>
+      return wrapInMobileView(<div className="video-error">Error: {error}</div>)
     }
 
     if (!videoClientRef.current || !callRef.current) {
       console.log('🔄 Showing loading: missing refs - videoClient:', !!videoClientRef.current, 'call:', !!callRef.current);
-      return <LoadingSpinner darkMode />
+      return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
     }
 
     if (isViewer) {
       // Show viewer waiting room (no need for chat requirements for anonymous viewers)
       const needsChat = !isAnonymousViewer
       if (needsChat && (!chatClientReady || !chatClientRef.current || !channelRef.current)) {
-        return <LoadingSpinner darkMode />
+        return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
       }
 
       return (
@@ -1386,7 +1450,7 @@ const Video: React.FC<VideoProps> = () => {
     } else {
       // Show streamer backstage mode
       if (!chatClientReady || !chatClientRef.current || !channelRef.current) {
-      return <LoadingSpinner darkMode />
+      return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
     }
 
     return (
@@ -1413,18 +1477,18 @@ const Video: React.FC<VideoProps> = () => {
 
   // Loading logic for all users (now everyone has chat access)
   if (isConnecting || !videoClientReady || !chatClientReady) {
-    return <LoadingSpinner darkMode />
+    return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
   }
   
   if (error) {
-    return <div className="video-error">Error: {error}</div>
+    return wrapInMobileView(<div className="video-error">Error: {error}</div>)
   }
   
   if (!videoClientRef.current || !callRef.current || !chatClientRef.current || !channelRef.current) {
-    return <LoadingSpinner darkMode />
+    return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
   }
 
-  return (
+  const videoContent = (
     <div className="video-container">
       <div className="video-main">
         <StreamVideo client={videoClientRef.current}>
@@ -1442,10 +1506,19 @@ const Video: React.FC<VideoProps> = () => {
               anonymousViewerId={anonymousViewerId}
               sanitizedUserId={sanitizedUserId}
               liveStreamId={liveStreamId}
+              isMobileView={isMobileView}
             />
           </StreamCall>
         </StreamVideo>
       </div>
+    </div>
+  )
+
+  // Use the wrapper function to handle mobile vs desktop view
+  return wrapInMobileView(
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {videoContent}
+      {isMobileView && <MobileBottomNav currentPath={location.pathname} />}
     </div>
   )
 }
@@ -1464,6 +1537,7 @@ interface EnhancedLivestreamLayoutProps {
   anonymousViewerId?: string | null
   sanitizedUserId?: string | null
   liveStreamId?: string | null
+  isMobileView?: boolean
 }
 
 const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
@@ -1478,7 +1552,8 @@ const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
   isAuthenticatedViewer = false,
   anonymousViewerId = null,
   sanitizedUserId = null,
-  liveStreamId = null
+  liveStreamId = null,
+  isMobileView = false
 }) => {
   const { useCallCallingState, useParticipants, useCallState } = useCallStateHooks()
   const callingState = useCallCallingState()
@@ -1592,7 +1667,7 @@ const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
   if (callingState === CallingState.JOINING) {
     return (
       <div className="video-loading">
-        <LoadingSpinner darkMode />
+        <LoadingSpinner darkMode mobile={isMobileView} />
         <p>Joining livestream...</p>
         <p style={{ fontSize: '0.8em', opacity: 0.7 }}>
           State: {callingState} | Viewer: {isViewer ? 'Yes' : 'No'}

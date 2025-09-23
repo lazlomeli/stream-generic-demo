@@ -406,7 +406,7 @@ const Chat: React.FC<ChatProps> = () => {
           onClick={toggleView}
           title="Switch to Desktop View"
         >
-          🖥️ Desktop
+          Desktop
         </button>
       </div>
     );

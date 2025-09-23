@@ -118,7 +118,6 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
               className="responsive-toggle-button"
               title={isMobileView ? 'Switch to Desktop View' : 'Switch to Mobile View'}
             >
-              <img src={isMobileView ? DeviceDesktopIcon : PhoneIcon} alt={isMobileView ? 'Desktop' : 'Mobile'} />
               <span>{isMobileView ? 'Desktop' : 'Mobile'}</span>
             </button>
           </div>

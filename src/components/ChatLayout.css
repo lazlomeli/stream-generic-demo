@@ -307,12 +307,11 @@
 .desktop-toggle-button {
   position: absolute;
   top: 20px;
-  right: 20px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 25px;
-  padding: 10px 20px;
+  padding: 5px 10px 5px 10px;
   font-size: 0.875rem;
   font-weight: 600;
   color: #374151;

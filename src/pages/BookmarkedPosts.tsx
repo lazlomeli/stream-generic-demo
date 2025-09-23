@@ -507,7 +507,7 @@ const BookmarkedPosts = () => {
           onClick={toggleView}
           title="Switch to Desktop View"
         >
-          🖥️ Desktop
+          Desktop
         </button>
       </div>
     );
