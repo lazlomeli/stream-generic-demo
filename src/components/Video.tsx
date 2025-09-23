@@ -365,7 +365,8 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
   // No need for custom participant updates - Stream handles this automatically through video call participants
 
   // Count waiting participants from Stream's native participant list
-  const waitingParticipants = participants.filter(p => p.isLocalParticipant === false)
+  // Include all participants for waiting room display
+  const waitingParticipants = participants
   
   // Debug logging for waiting room
   console.log('🚪 WAITING ROOM DEBUG:', {
@@ -383,19 +384,22 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
 
   // Listen for "stream went live" messages from the streamer
   useEffect(() => {
-    if (!channel || (!isAuthenticatedViewer && !isAnonymousViewer)) return
+    if (!channel) return // Allow all viewers to listen, regardless of auth type
 
     const handleStreamEvent = (event: any) => {
+      console.log('📡 Received chat event:', event.message?.type, event.message?.text)
       if (event.message?.type === 'system' && event.message?.text) {
         try {
           const data = JSON.parse(event.message.text)
+          console.log('📋 Parsed system message:', data)
           if (data.type === 'stream.went_live') {
-            console.log('🔴 Received stream went live notification')
+            console.log('🔴 Stream went live - transitioning viewer!')
             if (onStreamGoesLive) {
               onStreamGoesLive()
             }
           }
         } catch (e) {
+          console.log('📋 Not a JSON system message:', e)
           // Not a system message, ignore
         }
       }
@@ -406,7 +410,7 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
     return () => {
       channel.off('message.new', handleStreamEvent)
     }
-  }, [channel, isAnonymousViewer, isAuthenticatedViewer, onStreamGoesLive])
+  }, [channel, onStreamGoesLive]) // Simplified dependencies
 
 
   const handleExit = () => {
@@ -453,7 +457,7 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
         <div className="waiting-room-participants">
           <h3>
             <img src={ViewersIcon} alt="Waiting" className="section-icon" />
-            Waiting Room ({waitingParticipants.length + 1}) {/* +1 for current viewer */}
+            Waiting Room ({waitingParticipants.length}) {/* All participants including viewer */}
           </h3>
           
           <div className="participants-list">
@@ -467,27 +471,45 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
             </div>
             
             {/* Show other participants */}
-            {waitingParticipants.map((participant) => (
-              <div key={participant.sessionId || participant.userId} className="waiting-participant">
-                <div className="participant-avatar">
-                  {participant.image ? (
-                    <img src={participant.image} alt={participant.name} />
-                  ) : (
-                    <div className="avatar-placeholder">
-                      {(participant.name || participant.userId)?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                  )}
+            {waitingParticipants.filter(p => !p.isLocalParticipant).map((participant) => {
+              // Determine if this participant is the streamer 
+              // Streamers are authenticated users who are not anonymous viewers
+              const isStreamer = participant.userId && 
+                                !participant.userId.startsWith('viewer_') && 
+                                !participant.userId.startsWith('anonymous_');
+              
+              console.log('🎭 Participant analysis:', {
+                userId: participant.userId,
+                name: participant.name,
+                isLocal: participant.isLocalParticipant,
+                isStreamer: isStreamer
+              });
+              
+              return (
+                <div key={participant.sessionId || participant.userId} className={`waiting-participant ${isStreamer ? 'streamer' : ''}`}>
+                  <div className="participant-avatar">
+                    {participant.image ? (
+                      <img src={participant.image} alt={participant.name} />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {(participant.name || participant.userId)?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="participant-info">
+                    <span className="participant-name">
+                      {participant.name || participant.userId || 'Anonymous User'}
+                      {isStreamer && <span className="live-badge">LIVE</span>}
+                    </span>
+                    <span className="participant-status">
+                      {isStreamer ? 'Streaming live' : 'Waiting to watch'}
+                    </span>
+                  </div>
                 </div>
-                <div className="participant-info">
-                  <span className="participant-name">
-                    {participant.name || participant.userId || 'Anonymous User'}
-                  </span>
-                  <span className="participant-status">Waiting to watch</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             
-            {waitingParticipants.length === 0 && (
+            {waitingParticipants.filter(p => !p.isLocalParticipant).length === 0 && (
               <p className="no-other-participants">You're the first viewer waiting!</p>
             )}
           </div>
@@ -636,6 +658,18 @@ const Video: React.FC<VideoProps> = () => {
   const chatClientRef = useRef<StreamChat | null>(null)
   const callRef = useRef<any>(null)
   const channelRef = useRef<StreamChannel | null>(null)
+  const cleanupInProgressRef = useRef<Set<string>>(new Set())
+  
+  // Global cleanup tracking to prevent duplicate cleanups across component instances
+  const globalCleanupTracker = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      if (!window.__streamCleanupTracker) {
+        window.__streamCleanupTracker = new Set<string>();
+      }
+      return window.__streamCleanupTracker;
+    }
+    return new Set<string>();
+  }, []);
 
   // Memoize current user id using shared utility - with proper null checking
   const sanitizedUserId = useMemo(() => {
@@ -718,6 +752,13 @@ const Video: React.FC<VideoProps> = () => {
       // Let the call state determine what viewers should see
     }
   }, [isViewer])
+
+  // Set header visibility for viewers
+  useEffect(() => {
+    if (isViewer) {
+      setHideHeader(true) // Hide header for viewers too
+    }
+  }, [isViewer, setHideHeader])
 
   // Handle going live from backstage
   const handleGoLive = () => {
@@ -822,6 +863,7 @@ const Video: React.FC<VideoProps> = () => {
       videoClientRef.current = videoClient
       setVideoClientReady(true)
       console.log('✅ Video client initialized successfully')
+      console.log('🔧 setVideoClientReady(true) called - state should update now')
 
       // Use the shared call ID that was calculated once
       setCallId(sharedCallId)
@@ -1169,7 +1211,7 @@ const Video: React.FC<VideoProps> = () => {
     }
 
     initialize()
-  }, [isAuthenticated, user, apiKey, sanitizedUserId, initializationAttempted, setupCompleted, initializeVideoClient, initializeChatClient, isAnonymousViewer, liveStreamId])
+  }, [isAuthenticated, user, apiKey, sanitizedUserId, setupCompleted, isAnonymousViewer, liveStreamId]) // Removed initializationAttempted to prevent cleanup loop
 
   // --- Cleanup livestream channel function ---
   const cleanupLivestreamChannel = useCallback(async (channelId: string) => {
@@ -1179,8 +1221,20 @@ const Video: React.FC<VideoProps> = () => {
       return;
     }
 
+    // Prevent duplicate cleanup attempts (both local and global)
+    if (cleanupInProgressRef.current.has(channelId) || globalCleanupTracker.has(channelId)) {
+      console.log(`🚫 Cleanup already in progress for channel: ${channelId}`);
+      return;
+    }
+
+    cleanupInProgressRef.current.add(channelId);
+    globalCleanupTracker.add(channelId);
+
     try {
       console.log(`🧹 Cleaning up livestream channel: ${channelId}`);
+      
+      // Add small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const accessToken = await getAccessTokenSilently();
       
@@ -1205,13 +1259,22 @@ const Video: React.FC<VideoProps> = () => {
     } catch (error) {
       console.error('❌ Error cleaning up livestream channel:', error);
       // Don't throw - cleanup failures shouldn't block user navigation
+    } finally {
+      // Always remove from in-progress sets when done
+      cleanupInProgressRef.current.delete(channelId);
+      globalCleanupTracker.delete(channelId);
     }
   }, [isAuthenticated, user, isStreamer, sanitizedUserId, getAccessTokenSilently]);
 
   // --- Cleanup effect ---
   useEffect(() => {
     return () => {
-      console.log('🧹 Cleaning up video clients...')
+      console.log('🧹 Cleanup effect triggered! Current state:', {
+        callId,
+        isStreamer,
+        videoClientReady,
+        chatClientReady
+      });
       
       // Cleanup livestream channel if this is a streamer
       if (callId && isStreamer) {
@@ -1237,15 +1300,14 @@ const Video: React.FC<VideoProps> = () => {
       if (videoClientRef.current) {
         videoClientRef.current = null
       }
-      // Reset state for potential re-initialization
+      // Reset state for potential re-initialization (but keep initializationAttempted to prevent re-runs)
       setVideoClientReady(false)
       setChatClientReady(false)
-      setInitializationAttempted(false)
       setIsConnecting(false)
       setError(null)
       setHideHeader(false) // Show header again when leaving
     }
-  }, [setHideHeader, callId, isStreamer, cleanupLivestreamChannel])
+  }, [setHideHeader, isStreamer]) // Removed callId to prevent cleanup during initialization
 
   // --- Render helpers ---
   // Only require authentication for streamers, not anonymous viewers
@@ -1262,14 +1324,27 @@ const Video: React.FC<VideoProps> = () => {
     return <LivestreamSetup onSetupComplete={handleSetupComplete} />
   }
 
-  // If user is a viewer, skip setup and backstage, go directly to viewing
-  if (isViewer) {
-    setHideHeader(true) // Hide header for viewers too
-  }
+
+  // Debug state values
+  console.log('🔍 VIDEO DEBUG STATE:', {
+    setupCompleted,
+    backstageMode,
+    livestreamActive,
+    isConnecting,
+    videoClientReady,
+    chatClientReady,
+    hasVideoClient: !!videoClientRef.current,
+    hasCallRef: !!callRef.current,
+    hasChannelRef: !!channelRef.current,
+    error,
+    isViewer,
+    isStreamer
+  });
 
   // Show backstage mode before going live (different for streamers vs viewers)
   if (backstageMode && !livestreamActive) {
     if (isConnecting || !videoClientReady) {
+      console.log('🔄 Showing loading: isConnecting:', isConnecting, 'videoClientReady:', videoClientReady);
       return <LoadingSpinner darkMode />
     }
     
@@ -1278,6 +1353,7 @@ const Video: React.FC<VideoProps> = () => {
     }
 
     if (!videoClientRef.current || !callRef.current) {
+      console.log('🔄 Showing loading: missing refs - videoClient:', !!videoClientRef.current, 'call:', !!callRef.current);
       return <LoadingSpinner darkMode />
     }
 
@@ -2231,7 +2307,7 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  // Count waiting participants (exclude the host, use Stream's native participants)
+  // Count waiting participants (exclude the host/streamer, use Stream's native participants)
   const waitingParticipants = participants.filter(p => p.isLocalParticipant === false)
   
   // Debug logging for backstage waiting room
@@ -2416,7 +2492,11 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
                     <span className="participant-name">
                       {participant.name || participant.userId || 'Anonymous User'}
                     </span>
-                    <span className="participant-status">Waiting to join</span>
+                    <span className="participant-status">
+                      {participant.userId?.startsWith('viewer_') || participant.userId?.startsWith('anonymous_') 
+                        ? 'Waiting to watch' 
+                        : 'Waiting to join'}
+                    </span>
                   </div>
                 </div>
               ))}

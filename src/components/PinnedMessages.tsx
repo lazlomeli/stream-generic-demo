@@ -102,9 +102,22 @@ const PinnedMessages: React.FC = () => {
     };
 
     const handleMessageDeleted = (event: any) => {
-      // Remove from pinned messages if a pinned message was deleted
-      if (event.message?.pinned) {
-        fetchPinnedMessages();
+      // Always check if the deleted message was in our pinned list
+      // This is more robust than relying on event.message?.pinned
+      const deletedMessageId = event.message?.id;
+      
+      if (deletedMessageId) {
+        // Check if this message was pinned by looking at our current pinned messages
+        const wasPinned = pinnedMessages.some(pinnedMsg => pinnedMsg.id === deletedMessageId);
+        
+        if (wasPinned) {
+          console.log('📌 Unpinning deleted message:', deletedMessageId);
+          // Remove the message from pinned messages immediately for better UX
+          setPinnedMessages(prev => prev.filter(msg => msg.id !== deletedMessageId));
+          
+          // Also refetch to ensure consistency with server state
+          fetchPinnedMessages();
+        }
       }
     };
 

@@ -159,12 +159,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ]
       };
       
-      // For admin users, add additional capabilities
+      // For admin users, add additional capabilities for livestreaming
       if (userRole === 'admin') {
         tokenPayload.capabilities.push(
           'remove-call-member',
           'update-call-settings',
-          'end-call'
+          'end-call',
+          'create-call',
+          'update-call-permissions'
         );
         tokenPayload.call_cids = ['*']; // Allow access to all calls
       }
