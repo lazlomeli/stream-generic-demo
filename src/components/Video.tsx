@@ -646,7 +646,6 @@ const Video: React.FC<VideoProps> = () => {
           background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
           position: 'relative'
         }}>
-          <div className="iphone-overlay"></div>
           <div className="video-content mobile-content" style={{
             position: 'relative',
             width: '375px',

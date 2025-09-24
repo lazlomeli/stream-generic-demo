@@ -48,8 +48,28 @@ export default async function handler(
     const feed = streamFeedsClient.feed(feedGroup, feedId);
     console.log(`Fetching from feed: ${feedGroup}:${feedId} for user: ${userId}`);
     
-    const result = await feed.get({ limit, withReactionCounts: true });
+    const result = await feed.get({ limit: limit * 2, withReactionCounts: true }); // Get more to account for filtering
     console.log(`Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
+    
+    // Debug: Log what verbs we have before filtering
+    console.log(`🔍 DEBUG: Raw activities in ${feedGroup}:${feedId}:`, 
+      result.results.map((a: any) => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+    );
+    
+    // Filter out notification activities to prevent them from showing as posts
+    const filteredResults = result.results.filter((activity: any) => 
+      activity.verb !== 'notification'
+    );
+    console.log(`Filtered to ${filteredResults.length} non-notification activities`);
+    console.log(`🔍 DEBUG: Filtered activities:`, 
+      filteredResults.map((a: any) => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+    );
+    
+    // Limit after filtering
+    const limitedResults = filteredResults.slice(0, limit);
+    
+    // Update result to use filtered activities
+    result.results = limitedResults;
     console.log(`🔍 withReactionCounts enabled: true`);
     
     // Debug: Log the first activity to see its structure

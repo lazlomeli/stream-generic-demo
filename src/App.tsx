@@ -16,6 +16,7 @@ import './App.css'
 import Feeds from './components/Feeds'
 import BookmarkedPosts from './pages/BookmarkedPosts'
 import UserProfile from './pages/UserProfile'
+import Notifications from './pages/Notifications'
 import Login from './pages/Login'
 
 // Context for controlling UI layout
@@ -40,8 +41,8 @@ function AppContent() {
   const [hideHeader, setHideHeader] = useState(false)
   const { isMobileView } = useResponsive()
 
-  // Determine if we should show the sidebars (feeds, bookmarked, and profile pages)
-  const showSidebars = isAuthenticated && !isMobileView && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname.startsWith('/profile/'))
+  // Determine if we should show the sidebars (feeds, bookmarked, notifications, and profile pages)
+  const showSidebars = isAuthenticated && !isMobileView && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname === '/notifications' || location.pathname.startsWith('/profile/'))
   
   // Video and call pages should use full layout without sidebars, similar to chat
   const isVideoPage = location.pathname === '/video'
@@ -98,6 +99,11 @@ function AppContent() {
               <Route path="/bookmarked" element={
                 <ProtectedRoute>
                   <BookmarkedPosts />
+                </ProtectedRoute>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <Notifications />
                 </ProtectedRoute>
               } />
               <Route path="/profile/:userId" element={

@@ -372,11 +372,15 @@
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: #666;
+  background: #3b82f6 !important;
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+}
+
+.play-button img {
+  filter: brightness(0) invert(1);
 }
 
 .play-button:hover {

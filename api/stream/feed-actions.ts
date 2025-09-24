@@ -15,6 +15,108 @@ interface UserProfileResponse {
   };
 }
 
+// Helper function to create notification activities
+async function createNotificationActivity(
+  serverClient: any,
+  notificationType: 'like' | 'comment' | 'follow',
+  actorUserId: string,
+  targetUserId: string,
+  postId?: string,
+  commentText?: string
+) {
+  try {
+    // Don't create notifications for self-actions
+    if (actorUserId === targetUserId) {
+      console.log(`🔔 Skipping notification: actor and target are the same user (${actorUserId})`);
+      return;
+    }
+
+    console.log(`🔔 Creating ${notificationType} notification: ${actorUserId} → ${targetUserId}`);
+
+    // Get actor user profile for the notification
+    let actorProfile = {
+      name: actorUserId,
+      image: undefined
+    };
+
+    try {
+      const userProfileResponse = await serverClient.user(actorUserId).get();
+      if (userProfileResponse.data) {
+        const userData = userProfileResponse.data;
+        actorProfile = {
+          name: userData.name || userData.username || actorUserId,
+          image: userData.image || userData.profile_image || undefined
+        };
+      }
+    } catch (userError) {
+      console.log(`⚠️ Could not fetch user profile for ${actorUserId}, using fallback`);
+    }
+
+    // Create notification activity data
+    let notificationData: any = {
+      actor: actorUserId,
+      verb: 'notification',
+      object: notificationType,
+      target: targetUserId,
+      custom: {
+        notification_type: notificationType,
+        target_user: targetUserId,
+        actor_name: actorProfile.name,
+        actor_image: actorProfile.image
+      }
+    };
+
+    // Add type-specific data
+    switch (notificationType) {
+      case 'like':
+        notificationData.text = `${actorProfile.name} liked your post`;
+        notificationData.custom.post_id = postId;
+        break;
+      case 'comment':
+        notificationData.text = `${actorProfile.name} commented on your post`;
+        notificationData.custom.post_id = postId;
+        notificationData.custom.comment_text = commentText?.substring(0, 100) || '';
+        break;
+      case 'follow':
+        notificationData.text = `${actorProfile.name} followed you`;
+        break;
+    }
+
+    // Add notification to target user's personal feed with notification verb
+    // We'll filter these out from regular feeds display but show them in notifications
+    const userFeed = serverClient.feed('user', targetUserId);
+    const notificationActivity = await userFeed.addActivity(notificationData);
+    
+    console.log(`✅ Notification created: ${notificationActivity.id}`);
+    return notificationActivity;
+  } catch (error) {
+    console.error(`❌ Failed to create ${notificationType} notification:`, error);
+    // Don't throw error - notifications are not critical
+  }
+}
+
+// Helper function to get post author from activity
+async function getPostAuthor(serverClient: any, postId: string): Promise<string | null> {
+  try {
+    // Try to get the activity from global feed first
+    const globalFeed = serverClient.feed('flat', 'global');
+    const activities = await globalFeed.get({ limit: 100, withReactionCounts: false });
+    
+    // Find the activity by ID
+    const activity = activities.results?.find((act: any) => act.id === postId);
+    if (activity && activity.actor) {
+      console.log(`📍 Found post author: ${activity.actor} for post ${postId}`);
+      return activity.actor;
+    }
+
+    console.log(`⚠️ Could not find post author for post ${postId}`);
+    return null;
+  } catch (error) {
+    console.error(`❌ Error getting post author for ${postId}:`, error);
+    return null;
+  }
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -151,6 +253,16 @@ export default async function handler(
           }
         };
 
+        // Ensure user follows themselves (timeline:user follows user:user)
+        try {
+          const timelineFeed = serverClient.feed('timeline', trimmedUserId);
+          await timelineFeed.follow('user', trimmedUserId);
+          console.log(`✅ Ensured self-follow: timeline:${trimmedUserId} → user:${trimmedUserId}`);
+        } catch (followError) {
+          // This might fail if already following, which is fine
+          console.log(`ℹ️ Self-follow already exists or error (this is normal):`, followError.message);
+        }
+
         // Create post in BOTH global feed AND user's personal feed
         console.log('📝 Creating post in both global and user feeds...');
         const [globalActivity, userActivity] = await Promise.all([
@@ -204,6 +316,21 @@ export default async function handler(
         const likeResult = await serverClient.reactions.add('like', postId, {}, { userId: trimmedUserId });
         
         console.log('✅ LIKE_POST: Like added successfully:', likeResult?.id || 'success');
+
+        // Create notification for the post author
+        console.log(`🔔 About to create like notification for post: ${postId}`);
+        const postAuthor = await getPostAuthor(serverClient, postId);
+        console.log(`🔔 Found post author: ${postAuthor}`);
+        if (postAuthor) {
+          try {
+            await createNotificationActivity(serverClient, 'like', trimmedUserId, postAuthor, postId);
+            console.log(`✅ Like notification creation completed`);
+          } catch (notificationError) {
+            console.error(`❌ Like notification failed:`, notificationError);
+          }
+        } else {
+          console.log(`⚠️ No post author found, skipping like notification`);
+        }
 
         return res.json({
           success: true,
@@ -259,6 +386,21 @@ export default async function handler(
         }, { userId: trimmedUserId });
         
         console.log('✅ ADD_COMMENT: Comment added successfully:', comment?.id || 'success');
+
+        // Create notification for the post author
+        console.log(`🔔 About to create comment notification for post: ${postId}`);
+        const commentPostAuthor = await getPostAuthor(serverClient, postId);
+        console.log(`🔔 Found comment post author: ${commentPostAuthor}`);
+        if (commentPostAuthor) {
+          try {
+            await createNotificationActivity(serverClient, 'comment', trimmedUserId, commentPostAuthor, postId, postData.text);
+            console.log(`✅ Comment notification creation completed`);
+          } catch (notificationError) {
+            console.error(`❌ Comment notification failed:`, notificationError);
+          }
+        } else {
+          console.log(`⚠️ No comment post author found, skipping comment notification`);
+        }
 
         return res.json({
           success: true,
@@ -497,6 +639,15 @@ export default async function handler(
           }
           
           console.log(`✅ User ${trimmedUserId} successfully followed ${targetUserId}`);
+
+          // Create notification for the followed user
+          console.log(`🔔 About to create follow notification: ${trimmedUserId} → ${targetUserId}`);
+          try {
+            await createNotificationActivity(serverClient, 'follow', trimmedUserId, targetUserId);
+            console.log(`✅ Follow notification creation completed`);
+          } catch (notificationError) {
+            console.error(`❌ Follow notification failed:`, notificationError);
+          }
 
           return res.json({
             success: true,

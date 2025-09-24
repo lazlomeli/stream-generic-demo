@@ -10,6 +10,7 @@ import BookmarkIcon from '../icons/bookmark.svg'
 import DeviceDesktopIcon from '../icons/device-desktop.svg'
 import PhoneIcon from '../icons/phone.svg'
 import { useResponsive } from '../contexts/ResponsiveContext'
+import NotificationBell from './NotificationBell'
 
 interface HeaderProps {
   showNavigation?: boolean;
@@ -140,6 +141,8 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
                     {user?.name || user?.email}
                   </span>
                 </div>
+                {/* Notification Bell - in header right */}
+                <NotificationBell className="header-nav-button" />
                 <button
                   onClick={handleLogout}
                   className="header-logout-button"

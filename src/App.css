@@ -196,7 +196,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
   color: white;
   border: none;
   border-radius: 0.75rem;
@@ -208,7 +208,7 @@ body {
 }
 
 .responsive-toggle-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #0078be 0%, #001e6f 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -243,7 +243,7 @@ body {
 .user-avatar {
   width: 2rem;
   height: 2rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -676,16 +676,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
   border-radius: 50%;
   color: white;
   font-weight: 600;
   flex-shrink: 0;
-}
-
-.fallback-avatar:hover {
-  transform: scale(1.05);
-  transition: transform 0.2s ease;
 }
 
 /* ===== STREAM PRODUCTS SHOWCASE ===== */

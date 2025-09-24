@@ -80,6 +80,11 @@
   opacity: 1;
 }
 
+/* Special hover effect for notification bell */
+.sidebar-button:hover .notification-bell .bell-icon {
+  transform: rotate(15deg);
+}
+
 .sidebar-button.active .sidebar-icon {
   opacity: 1;
 }

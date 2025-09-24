@@ -18,7 +18,7 @@
 .create-channel-button {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -34,7 +34,7 @@
 }
 
 .create-channel-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #0080ca 0%, #002690 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }

@@ -31,7 +31,7 @@ const FallbackAvatar: React.FC<FallbackAvatarProps> = ({
           style={{ 
             width: `${size}px`, 
             height: `${size}px`,
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #00a2ff 0%, #0031b6 100%)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -62,7 +62,7 @@ const FallbackAvatar: React.FC<FallbackAvatarProps> = ({
           style={{ 
             width: `${size}px`, 
             height: `${size}px`,
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #00a2ff 0%, #0031b6 100%)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -92,7 +92,7 @@ const FallbackAvatar: React.FC<FallbackAvatarProps> = ({
         style={{ 
           width: `${size}px`, 
           height: `${size}px`,
-          background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #00a2ff 0%, #0031b6 100%)',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',

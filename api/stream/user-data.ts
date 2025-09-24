@@ -255,22 +255,33 @@ export default async function handler(
       const streamFeedsClient = connect(apiKey, apiSecret);
 
       console.log(`🔍 Fetching posts from user's personal feed: user:${targetUserId}`);
+      console.log(`🔍 PROFILE_DEBUG: This is for profile view of user: ${targetUserId}`);
 
       // Get posts from the user's personal feed (where follow relationships matter)
       const userFeed = streamFeedsClient.feed('user', targetUserId);
       const result = await userFeed.get({
-        limit: limit, // Use the requested limit directly
+        limit: limit * 2, // Get more to account for filtering
         offset: 0,
         withReactionCounts: true,
         withOwnReactions: true,
       });
 
-      // Posts are already from the target user's feed, no filtering needed
-      const userPosts = result.results || [];
-      const limitedPosts: any[] = userPosts.slice(0, limit);
+      // Debug: Log what verbs we have before filtering
+      console.log(`🔍 DEBUG: Raw activities in user:${targetUserId} feed:`, 
+        (result.results || []).map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+      );
+
+      // Filter out notification activities to prevent them from showing as posts
+      const filteredPosts = (result.results || []).filter((activity: any) => 
+        activity.verb !== 'notification'
+      );
+      const limitedPosts: any[] = filteredPosts.slice(0, limit);
 
       console.log(`✅ Found ${limitedPosts.length} posts in user:${targetUserId} feed`);
       console.log(`🔗 This feed has ${result.results?.length || 0} total activities`);
+      console.log(`🔍 DEBUG: Filtered posts:`, 
+        filteredPosts.map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+      );
       
       // If no posts in user feed, fallback to global feed filtering (for backward compatibility)
       if (limitedPosts.length === 0) {

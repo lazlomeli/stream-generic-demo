@@ -12,6 +12,108 @@ import jwt from 'jsonwebtoken';
 // Load environment variables from both .env and .env.local
 dotenv.config(); // Loads .env
 
+// Helper function to create notification activities
+async function createNotificationActivity(
+  serverFeedsClient,
+  notificationType,
+  actorUserId,
+  targetUserId,
+  postId,
+  commentText
+) {
+  try {
+    // Don't create notifications for self-actions
+    if (actorUserId === targetUserId) {
+      console.log(`🔔 Skipping notification: actor and target are the same user (${actorUserId})`);
+      return;
+    }
+
+    console.log(`🔔 Creating ${notificationType} notification: ${actorUserId} → ${targetUserId}`);
+
+    // Get actor user profile for the notification
+    let actorProfile = {
+      name: actorUserId,
+      image: undefined
+    };
+
+    try {
+      const userProfileResponse = await serverFeedsClient.user(actorUserId).get();
+      if (userProfileResponse.data) {
+        const userData = userProfileResponse.data;
+        actorProfile = {
+          name: userData.name || userData.username || actorUserId,
+          image: userData.image || userData.profile_image || undefined
+        };
+      }
+    } catch (userError) {
+      console.log(`⚠️ Could not fetch user profile for ${actorUserId}, using fallback`);
+    }
+
+    // Create notification activity data
+    let notificationData = {
+      actor: actorUserId,
+      verb: 'notification',
+      object: notificationType,
+      target: targetUserId,
+      custom: {
+        notification_type: notificationType,
+        target_user: targetUserId,
+        actor_name: actorProfile.name,
+        actor_image: actorProfile.image
+      }
+    };
+
+    // Add type-specific data
+    switch (notificationType) {
+      case 'like':
+        notificationData.text = `${actorProfile.name} liked your post`;
+        notificationData.custom.post_id = postId;
+        break;
+      case 'comment':
+        notificationData.text = `${actorProfile.name} commented on your post`;
+        notificationData.custom.post_id = postId;
+        notificationData.custom.comment_text = commentText?.substring(0, 100) || '';
+        break;
+      case 'follow':
+        notificationData.text = `${actorProfile.name} followed you`;
+        break;
+    }
+
+    // Add notification to target user's personal feed with notification verb
+    // We'll filter these out from regular feeds display but show them in notifications
+    const userFeed = serverFeedsClient.feed('user', targetUserId);
+    const notificationActivity = await userFeed.addActivity(notificationData);
+    
+    console.log(`✅ Notification created: ${notificationActivity.id}`);
+    return notificationActivity;
+  } catch (error) {
+    console.error(`❌ Failed to create ${notificationType} notification:`, error);
+    // Don't throw error - notifications are not critical
+  }
+}
+
+// Helper function to get post author from activity
+async function getPostAuthor(serverFeedsClient, postId) {
+  try {
+    // Try to get the activity from global feed first
+    const globalFeed = serverFeedsClient.feed('flat', 'global');
+    const activities = await globalFeed.get({ limit: 100, withReactionCounts: false });
+    
+    // Find the activity by ID
+    const activity = activities.results?.find((act) => act.id === postId);
+    if (activity && activity.actor) {
+      console.log(`📍 Found post author: ${activity.actor} for post ${postId}`);
+      return activity.actor;
+    }
+
+    console.log(`⚠️ Could not find post author for post ${postId}`);
+    return null;
+  } catch (error) {
+    console.error(`❌ Error getting post author for ${postId}:`, error);
+    return null;
+  }
+}
+
 // --- Sample Users (same as in Vercel seed.ts) ---
 const SAMPLE_USERS = [
   {
@@ -186,6 +288,7 @@ app.post('/api/stream/get-posts', async (req, res) => {
     const { userId, feedGroup = 'flat', feedId = 'global', limit = 20 } = req.body;
     
     console.log('📊 Fetching posts from feed:', `${feedGroup}:${feedId}`, 'for userId:', userId);
+    console.log(`🔍 MAIN_FEED_DEBUG: This is for main feed view, fetching ${feedGroup}:${feedId}`);
     
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
@@ -195,9 +298,29 @@ app.post('/api/stream/get-posts', async (req, res) => {
     const feed = serverFeedsClient.feed(feedGroup, feedId);
 
     // Fetch activities from the specified feed with reaction counts (V2)
-    const result = await feed.get({ limit, withReactionCounts: true });
+    const result = await feed.get({ limit: limit * 2, withReactionCounts: true }); // Get more to account for filtering
 
     console.log(`✅ Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
+    
+    // Debug: Log what verbs we have before filtering
+    console.log(`🔍 DEBUG: Raw activities in ${feedGroup}:${feedId}:`, 
+      result.results.map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+    );
+    
+    // Filter out notification activities to prevent them from showing as posts
+    const filteredResults = result.results.filter((activity) => 
+      activity.verb !== 'notification'
+    );
+    console.log(`🔧 Filtered to ${filteredResults.length} non-notification activities`);
+    console.log(`🔍 DEBUG: Filtered activities:`, 
+      filteredResults.map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+    );
+    
+    // Limit after filtering
+    const limitedResults = filteredResults.slice(0, limit);
+    
+    // Update result to use filtered activities
+    result.results = limitedResults;
     console.log(`🔍 withReactionCounts enabled: true`);
     
     // Debug: Log the first activity to see its structure
@@ -677,9 +800,18 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         console.log('📝 Creating post:', postData.text ? postData.text.substring(0, 50) + '...' : '[Media only post]');
         console.log('👤 User profile data:', JSON.stringify(userProfile, null, 2));
         
-        // Get global feed and add activity (V2) - server-side access
-        const globalFeedForPost = serverFeedsClient.feed('flat', 'global');
-        const newActivity = await globalFeedForPost.addActivity({
+        // Ensure user follows themselves (timeline:user follows user:user)
+        try {
+          const timelineFeed = serverFeedsClient.feed('timeline', trimmedUserId);
+          await timelineFeed.follow('user', trimmedUserId);
+          console.log(`✅ Ensured self-follow: timeline:${trimmedUserId} → user:${trimmedUserId}`);
+        } catch (followError) {
+          // This might fail if already following, which is fine
+          console.log(`ℹ️ Self-follow already exists or error (this is normal):`, followError.message);
+        }
+
+        // Create activity data
+        const activityData = {
           actor: trimmedUserId,
           verb: 'post',
           object: postData.text && postData.text.trim() ? 'post' : 'media', // Use 'media' for media-only posts
@@ -704,8 +836,22 @@ app.post('/api/stream/feed-actions', async (req, res) => {
             email: userProfile.email || undefined,
             sub: userProfile.sub || trimmedUserId
           }
-        });
+        };
 
+        // Create post in BOTH global feed AND user's personal feed
+        console.log('📝 Creating post in both global and user feeds...');
+        const [globalActivity, userActivity] = await Promise.all([
+          // Global feed for main feed display
+          serverFeedsClient.feed('flat', 'global').addActivity(activityData),
+          // User's personal feed for profile and follow relationships
+          serverFeedsClient.feed('user', trimmedUserId).addActivity(activityData)
+        ]);
+
+        console.log('✅ Post created in global feed with ID:', globalActivity.id);
+        console.log('✅ Post created in user feed with ID:', userActivity.id);
+
+        // Return the global activity (for consistency with existing code)
+        const newActivity = globalActivity;
         console.log('✅ Post created with ID:', newActivity.id);
         return res.json({
           success: true,
@@ -737,6 +883,21 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         console.log('❤️ Liking post:', postId, 'by user:', trimmedUserId);
         // Add reaction using server client for proper attribution (V2 requires userId)
         const likeResult = await serverFeedsClient.reactions.add('like', postId, {}, { userId: trimmedUserId });
+
+        // Create notification for the post author
+        console.log(`🔔 About to create like notification for post: ${postId}`);
+        const postAuthor = await getPostAuthor(serverFeedsClient, postId);
+        console.log(`🔔 Found post author: ${postAuthor}`);
+        if (postAuthor) {
+          try {
+            await createNotificationActivity(serverFeedsClient, 'like', trimmedUserId, postAuthor, postId);
+            console.log(`✅ Like notification creation completed`);
+          } catch (notificationError) {
+            console.error(`❌ Like notification failed:`, notificationError);
+          }
+        } else {
+          console.log(`⚠️ No post author found, skipping like notification`);
+        }
 
         return res.json({
           success: true,
@@ -788,11 +949,47 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        console.log('💬 Adding comment to post:', postId, 'by user:', trimmedUserId);
-        // Add comment using server client for proper attribution (V2 requires userId)
-        const comment = await serverFeedsClient.reactions.add('comment', postId, {
-          text: postData.text
-        }, { userId: trimmedUserId });
+        console.log('💬 COMMENT_DEBUG: Starting comment process');
+        console.log('💬 COMMENT_DEBUG: postId:', postId);
+        console.log('💬 COMMENT_DEBUG: trimmedUserId:', trimmedUserId);
+        console.log('💬 COMMENT_DEBUG: commentText:', postData.text);
+        
+        let comment;
+        try {
+          // Add comment using server client for proper attribution (V2 requires userId)
+          comment = await serverFeedsClient.reactions.add('comment', postId, {
+            text: postData.text
+          }, { userId: trimmedUserId });
+          
+          console.log('✅ COMMENT_DEBUG: Comment added successfully:', comment?.id);
+
+          // Create notification for the post author
+          console.log(`🔔 COMMENT_DEBUG: About to create comment notification for post: ${postId}`);
+          try {
+            const commentPostAuthor = await getPostAuthor(serverFeedsClient, postId);
+            console.log(`🔔 COMMENT_DEBUG: Found comment post author: ${commentPostAuthor}`);
+            
+            if (commentPostAuthor && commentPostAuthor !== trimmedUserId) {
+              console.log(`🔔 COMMENT_DEBUG: Creating notification: ${trimmedUserId} → ${commentPostAuthor}`);
+              await createNotificationActivity(serverFeedsClient, 'comment', trimmedUserId, commentPostAuthor, postId, postData.text);
+              console.log(`✅ COMMENT_DEBUG: Comment notification creation completed`);
+            } else if (commentPostAuthor === trimmedUserId) {
+              console.log(`🔔 COMMENT_DEBUG: Skipping notification - user commented on own post`);
+            } else {
+              console.log(`⚠️ COMMENT_DEBUG: No comment post author found, skipping comment notification`);
+            }
+          } catch (notificationError) {
+            console.error(`❌ COMMENT_DEBUG: Comment notification failed:`, notificationError);
+            // Don't throw here - comment was successful, notification failure shouldn't fail the comment
+          }
+        } catch (commentError) {
+          console.error(`❌ COMMENT_DEBUG: Failed to add comment:`, commentError);
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to add comment',
+            details: commentError.message || 'Unknown error'
+          });
+        }
 
         return res.json({
           success: true,
@@ -985,6 +1182,15 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           }
           
           console.log(`✅ User ${trimmedUserId} successfully followed ${targetUserId}`);
+
+          // Create notification for the followed user
+          console.log(`🔔 About to create follow notification: ${trimmedUserId} → ${targetUserId}`);
+          try {
+            await createNotificationActivity(serverFeedsClient, 'follow', trimmedUserId, targetUserId);
+            console.log(`✅ Follow notification creation completed`);
+          } catch (notificationError) {
+            console.error(`❌ Follow notification failed:`, notificationError);
+          }
 
           return res.json({
             success: true,
@@ -2195,6 +2401,279 @@ app.post('/api/stream/chat-operations', async (req, res) => {
   }
 });
 
+// Stream Notifications endpoint (handles notification retrieval and management)
+app.post('/api/stream/notifications', async (req, res) => {
+  try {
+    console.log('🔔 NOTIFICATIONS: Request received:', {
+      action: req.body?.action,
+      userId: req.body?.userId,
+      method: req.method,
+      hasBody: !!req.body
+    });
+    
+    const { action, userId } = req.body;
+
+    // Enhanced validation for userId
+    if (!userId || !action || typeof userId !== 'string' || userId.trim() === '') {
+      console.error('❌ NOTIFICATIONS: Missing or invalid required fields:', { 
+        userId: userId, 
+        userIdType: typeof userId,
+        action: !!action 
+      });
+      return res.status(400).json({ error: 'userId and action are required and userId must be a non-empty string' });
+    }
+
+    // Trim userId to ensure no whitespace issues
+    const trimmedUserId = userId.trim();
+    
+    console.log('🔔 NOTIFICATIONS: Using userId for Stream API:', {
+      originalUserId: userId,
+      trimmedUserId: trimmedUserId,
+      userIdLength: trimmedUserId.length,
+      action: action
+    });
+
+    // Get Stream API credentials with fallbacks
+    const apiKey = process.env.STREAM_API_KEY || process.env.VITE_STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET || process.env.VITE_STREAM_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      console.error('❌ Missing Stream API credentials:', {
+        apiKey: !!apiKey,
+        apiSecret: !!apiSecret,
+        envKeys: Object.keys(process.env).filter(key => key.includes('STREAM'))
+      });
+      return res.status(500).json({ 
+        error: 'Missing Stream API credentials',
+        debug: {
+          hasApiKey: !!apiKey,
+          hasApiSecret: !!apiSecret,
+          availableStreamEnvs: Object.keys(process.env).filter(key => key.includes('STREAM'))
+        }
+      });
+    }
+
+    console.log('🔔 NOTIFICATIONS: Initializing Stream V2 client for production stability...');
+    
+    // Initialize Stream V2 Feeds client (server-side access)
+    const serverClient = connect(apiKey, apiSecret, undefined);
+    
+    console.log('✅ NOTIFICATIONS: Stream V2 client initialized successfully');
+
+    switch (action) {
+      case 'get_notifications':
+        try {
+          console.log(`🔔 GET_NOTIFICATIONS: Fetching notifications for user ${trimmedUserId}`);
+          
+          // Get notifications from the user's personal feed (filtering for notification activities)
+          const userFeed = serverClient.feed('user', trimmedUserId);
+          const result = await userFeed.get({
+            limit: 100, // Get more activities to filter from
+            offset: 0,
+            withReactionCounts: false,
+            withOwnReactions: false,
+          });
+
+          // Filter for notification activities only
+          const notifications = (result.results || []).filter(activity => 
+            activity.verb === 'notification'
+          ).slice(0, 25); // Take only the first 25 notifications
+          console.log(`✅ Found ${notifications.length} notifications for user ${trimmedUserId}`);
+
+          // Enrich notifications with user information
+          const enrichedNotifications = [];
+          
+          for (const notification of notifications) {
+            try {
+              const actorUserId = notification.actor;
+              
+              // Try to get user profile information for the actor
+              let userInfo = {
+                name: actorUserId,
+                image: undefined,
+                role: undefined
+              };
+              
+              try {
+                const actorProfile = await serverClient.user(actorUserId).get();
+                if (actorProfile.data) {
+                  const userData = actorProfile.data;
+                  userInfo = {
+                    name: userData.name || userData.username || actorUserId,
+                    image: userData.image || userData.profile_image || undefined,
+                    role: userData.role || undefined
+                  };
+                }
+              } catch (userError) {
+                // Handle user not found gracefully
+                if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
+                  console.log(`👤 User ${actorUserId} not found in Stream user database - using fallback for notifications`);
+                } else {
+                  console.warn(`❌ Failed to fetch user profile for ${actorUserId}:`, userError?.message);
+                }
+                // Keep the default userInfo (actor ID as name)
+              }
+              
+              enrichedNotifications.push({
+                id: notification.id,
+                actor: actorUserId,
+                verb: notification.verb,
+                object: notification.object,
+                target: notification.target,
+                text: notification.text,
+                created_at: notification.created_at || notification.time,
+                time: notification.created_at || notification.time,
+                custom: notification.custom || {},
+                userInfo: userInfo,
+                notification_type: notification.custom?.notification_type
+              });
+            } catch (enrichError) {
+              console.warn(`❌ Failed to enrich notification ${notification.id}:`, enrichError);
+              // Add the notification without enrichment
+              enrichedNotifications.push({
+                id: notification.id,
+                actor: notification.actor,
+                verb: notification.verb,
+                object: notification.object,
+                target: notification.target,
+                text: notification.text,
+                created_at: notification.created_at || notification.time,
+                time: notification.created_at || notification.time,
+                custom: notification.custom || {}
+              });
+            }
+          }
+
+          return res.json({
+            success: true,
+            notifications: enrichedNotifications
+          });
+        } catch (error) {
+          console.error('❌ Error fetching notifications:', error);
+          return res.status(500).json({
+            error: 'Failed to fetch notifications',
+            details: error.message || 'Unknown error'
+          });
+        }
+
+      case 'get_unread_count':
+        try {
+          console.log(`🔔 GET_UNREAD_COUNT: Getting unread notification count for user ${trimmedUserId}`);
+          
+          // Get notifications from the user's personal feed (filtering for notification activities)
+          const userFeed = serverClient.feed('user', trimmedUserId);
+          const result = await userFeed.get({
+            limit: 100, // Get more activities to filter from
+            offset: 0,
+            withReactionCounts: false,
+            withOwnReactions: false,
+          });
+
+          // Filter for notification activities only
+          const notifications = (result.results || []).filter(activity => 
+            activity.verb === 'notification'
+          );
+          
+          // Check which notifications have been read by checking for "read" reactions
+          const unreadNotifications = [];
+          for (const notification of notifications) {
+            try {
+              // Check if this notification has a "read" reaction from this user
+              const readReactions = await serverClient.reactions.filter({
+                kind: 'read',
+                activity_id: notification.id,
+                limit: 1
+              });
+              
+              // If no read reaction found, it's unread
+              if (!readReactions.results || readReactions.results.length === 0) {
+                unreadNotifications.push(notification);
+              }
+            } catch (error) {
+              console.warn(`❌ Failed to check read status for notification ${notification.id}:`, error);
+              // If we can't check read status, assume it's unread
+              unreadNotifications.push(notification);
+            }
+          }
+          
+          const unreadCount = unreadNotifications.length;
+          
+          console.log(`✅ Found ${unreadCount} unread notifications for user ${trimmedUserId}`);
+
+          return res.json({
+            success: true,
+            unreadCount: unreadCount
+          });
+        } catch (error) {
+          console.error('❌ Error getting unread count:', error);
+          return res.status(500).json({
+            error: 'Failed to get unread count',
+            details: error.message || 'Unknown error'
+          });
+        }
+
+      case 'mark_read':
+        const { notificationIds } = req.body;
+        if (!notificationIds || !Array.isArray(notificationIds)) {
+          return res.status(400).json({ error: 'notificationIds array is required' });
+        }
+
+        try {
+          console.log(`🔔 MARK_READ: Marking ${notificationIds.length} notifications as read for user ${trimmedUserId}`);
+          
+          // Mark notifications as read by adding a "read" reaction to each notification
+          const markReadPromises = notificationIds.map(async (notificationId) => {
+            try {
+              // Add a "read" reaction to the notification
+              await serverClient.reactions.add(
+                'read',
+                notificationId,
+                { read_at: new Date().toISOString() },
+                { userId: trimmedUserId }
+              );
+              console.log(`✅ Marked notification ${notificationId} as read`);
+            } catch (error) {
+              console.error(`❌ Failed to mark notification ${notificationId} as read:`, error);
+            }
+          });
+          
+          await Promise.all(markReadPromises);
+          
+          return res.json({
+            success: true,
+            message: `Marked ${notificationIds.length} notifications as read`
+          });
+        } catch (error) {
+          console.error('❌ Error marking notifications as read:', error);
+          return res.status(500).json({
+            error: 'Failed to mark notifications as read',
+            details: error.message || 'Unknown error'
+          });
+        }
+
+      default:
+        return res.status(400).json({ error: 'Invalid action' });
+    }
+
+  } catch (error) {
+    const { action, userId } = req.body || {};
+    const trimmedUserId = typeof userId === 'string' ? userId.trim() : userId;
+    
+    console.error('❌ NOTIFICATIONS: Critical error in notifications API:', {
+      error: error.message || String(error),
+      stack: error.stack,
+      action: action,
+      userId: trimmedUserId
+    });
+    res.status(500).json({ 
+      error: 'Failed to process notification request',
+      details: error.message || String(error),
+      action: action,
+      userId: trimmedUserId
+    });
+  }
+});
+
 // Serve static files from the dist directory (built React app)
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -2213,6 +2692,7 @@ app.listen(PORT, () => {
   console.log(`🔑 Auth tokens: http://localhost:${PORT}/api/stream/auth-tokens`);
   console.log(`👥 User data: http://localhost:${PORT}/api/stream/user-data`);
   console.log(`💬 Chat operations: http://localhost:${PORT}/api/stream/chat-operations`);
+  console.log(`🔔 Notifications: http://localhost:${PORT}/api/stream/notifications`);
   console.log('');
   console.log('🔍 LEGACY ENDPOINTS (Local development only):');
   console.log(`💬 Chat tokens: http://localhost:${PORT}/api/stream/chat-token`);

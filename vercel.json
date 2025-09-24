@@ -23,6 +23,9 @@
     },
     "api/stream/chat-operations.ts": {
       "maxDuration": 30
+    },
+    "api/stream/notifications.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

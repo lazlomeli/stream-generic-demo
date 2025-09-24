@@ -4,6 +4,7 @@ import HomeIcon from '../icons/home.svg';
 import SendIcon from '../icons/send.svg';
 import CastIcon from '../icons/cast.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
+import NotificationBell from './NotificationBell';
 import './Sidebar.css';
 
 interface SidebarProps {}
@@ -26,6 +27,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
 
   const handleBookmarkedClick = () => {
     navigate('/bookmarked');
+  };
+
+  const handleNotificationsClick = () => {
+    navigate('/notifications');
   };
 
   const isActive = (path: string) => {
@@ -72,6 +77,15 @@ const Sidebar: React.FC<SidebarProps> = () => {
         >
           <img src={BookmarkIcon} alt="Bookmarked" className="sidebar-icon" />
           <span className="sidebar-label">Bookmarked</span>
+        </button>
+
+        <button
+          onClick={handleNotificationsClick}
+          className={`sidebar-button ${isActive('/notifications') ? 'active' : ''}`}
+          title="Notifications"
+        >
+          <NotificationBell className="sidebar-icon" showClickHandler={false} />
+          <span className="sidebar-label">Notifications</span>
         </button>
       </nav>
     </aside>

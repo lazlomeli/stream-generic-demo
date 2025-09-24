@@ -371,7 +371,6 @@ const Chat: React.FC<ChatProps> = () => {
   if (isMobileView) {
     return (
       <div className={`chat-container mobile-view`}>
-        <div className="iphone-overlay" />
         <div className={`chat-content mobile-content`}>
           <ChatComponent
             client={client}

@@ -497,7 +497,6 @@ const BookmarkedPosts = () => {
   if (isMobileView) {
     return (
       <div className="feeds-container mobile-view">
-        <div className="iphone-overlay"></div>
         <div className="feeds-content mobile-content">
           {bookmarkedContent}
           <MobileBottomNav currentPath={location.pathname} />
