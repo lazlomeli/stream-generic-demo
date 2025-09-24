@@ -43,28 +43,6 @@
   flex-shrink: 0 !important;
 }
 
-/* Critical modal positioning fixes */
-.str-chat__message-actions-box,
-.str-chat__message-reactions-selector,
-.str-chat__tooltip {
-  position: absolute !important;
-  z-index: 9999 !important;
-}
-
-/* Force message actions modal to open to the left */
-.str-chat__message-actions-box.str-chat__message-actions-box--open,
-.str-chat__message-actions-box {
-  right: auto !important;
-  left: 0 !important;
-  transform: translateX(0) !important;
-}
-
-/* Additional specificity for left positioning */
-.str-chat__message .str-chat__message-actions-box {
-  right: auto !important;
-  left: 0 !important;
-}
-
 /* Ensure modals don't get clipped */
 .str-chat__message-simple {
   position: relative !important;
@@ -87,40 +65,11 @@
   z-index: 100 !important;
 }
 
-/* Message Actions Modal Positioning Fixes */
-.str-chat__message-actions-box {
-  position: absolute !important;
-  z-index: 9999 !important;
-  /* Ensure the modal is positioned relative to the message */
-  transform: none !important;
-  /* Prevent modal from going to bottom of page */
-  bottom: auto !important;
-}
-
 /* Message container positioning */
 .str-chat__message {
   position: relative !important;
   overflow: visible !important;
 }
-
-/* Ensure the message actions button container is properly positioned */
-.str-chat__message-actions-box-button {
-  position: relative !important;
-}
-
-/* Fix for message actions dropdown positioning */
-.str-chat__message-actions-box__dropdown {
-  position: absolute !important;
-  top: 100% !important;
-  right: auto !important;
-  left: 0 !important;
-  z-index: 10000 !important;
-  transform: none !important;
-  bottom: auto !important;
-  max-width: 200px !important;
-  white-space: nowrap !important;
-}
-
 
 /* Ensure proper stacking context for modals */
 .str-chat__message-list {
@@ -322,6 +271,7 @@
 .desktop-toggle-button {
   position: absolute;
   top: 20px;
+  right: 20px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.3);
