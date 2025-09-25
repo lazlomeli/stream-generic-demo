@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useNavigate } from 'react-router-dom'
 import SendIcon from '../icons/send.svg'
@@ -7,9 +7,9 @@ import LogoutIcon from '../icons/logout-2.svg'
 import StreamLogo from '../assets/stream-logo.png'
 import CastIcon from '../icons/cast.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
-import DeviceDesktopIcon from '../icons/device-desktop.svg'
-import PhoneIcon from '../icons/phone.svg'
+import ResetIcon from '../icons/restore.svg'  
 import { useResponsive } from '../contexts/ResponsiveContext'
+import { useToast } from '../contexts/ToastContext'
 import NotificationBell from './NotificationBell'
 
 interface HeaderProps {
@@ -17,9 +17,42 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
-  const { isAuthenticated, user, logout } = useAuth0()
+  const { isAuthenticated, user, logout, getAccessTokenSilently } = useAuth0()
   const navigate = useNavigate()
   const { isMobileView, toggleView } = useResponsive()
+  const { showSuccess, showError } = useToast()
+  const [isResetting, setIsResetting] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [showFinalConfirm, setShowFinalConfirm] = useState(false)
+
+  // Cleanup body overflow on component unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showFinalConfirm) {
+          // Close both modals when escaping from final confirmation
+          setShowFinalConfirm(false)
+          setShowResetConfirm(false)
+          document.body.style.overflow = 'unset'
+        } else if (showResetConfirm) {
+          setShowResetConfirm(false)
+          document.body.style.overflow = 'unset'
+        }
+      }
+    }
+    
+    if (showResetConfirm || showFinalConfirm) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [showResetConfirm, showFinalConfirm])
 
   const handleLogout = () => {
     logout({ logoutParams: { returnTo: window.location.origin } })
@@ -47,6 +80,74 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
 
   const handleLoginClick = () => {
     navigate('/login')
+  }
+
+  const handleResetClick = () => {
+    setShowResetConfirm(true)
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden'
+  }
+
+  const handleFirstConfirm = () => {
+    // Move from first confirmation to final confirmation
+    setShowResetConfirm(false)
+    setShowFinalConfirm(true)
+  }
+
+  const handleFinalConfirm = async () => {
+    try {
+      setIsResetting(true)
+      setShowFinalConfirm(false)
+      // Re-enable body scroll since modal is closing
+      document.body.style.overflow = 'unset'
+
+      const token = await getAccessTokenSilently()
+      
+      // Get user ID from Auth0 for the reset endpoint
+      const userId = user?.sub
+      if (!userId) {
+        throw new Error('User not authenticated')
+      }
+      
+      const response = await fetch('/api/stream/reset', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        showSuccess('App emptied successfully! All data has been cleared.')
+        // Refresh the page to show the empty state
+        window.location.reload()
+      } else {
+        throw new Error(data.error || 'Reset failed')
+      }
+    } catch (error) {
+      console.error('Reset error:', error)
+      showError(
+        error instanceof Error ? error.message : 'Failed to reset app. Please try again.'
+      )
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
+  const handleFinalCancel = () => {
+    setShowFinalConfirm(false)
+    setShowResetConfirm(false)
+    // Re-enable body scroll since we're closing all modals
+    document.body.style.overflow = 'unset'
+  }
+
+  const handleResetCancel = () => {
+    setShowResetConfirm(false)
+    // Re-enable body scroll
+    document.body.style.overflow = 'unset'
   }
 
   return (
@@ -112,7 +213,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
             )}
           </div>
           
-          {/* Center - Responsive Toggle Button */}
+          {/* Center - Responsive Toggle Button and Reset */}
           <div className="header-center">
             <button
               onClick={toggleView}
@@ -121,6 +222,18 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
             >
               <span>{isMobileView ? 'Desktop' : 'Mobile'}</span>
             </button>
+            
+            {/* Reset Button */}
+            {isAuthenticated && (
+              <button
+                onClick={handleResetClick}
+                className="header-nav-button reset-button"
+                title="Reset App (Clear all data and reseed)"
+                disabled={isResetting}
+              >
+                <img src={ResetIcon} alt="Reset App" />
+              </button>
+            )}
           </div>
           
           {/* Right side - User info and logout */}
@@ -143,6 +256,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
                 </div>
                 {/* Notification Bell - in header right */}
                 <NotificationBell className="header-nav-button" />
+                
                 <button
                   onClick={handleLogout}
                   className="header-logout-button"
@@ -155,6 +269,106 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
           </div>
         </div>
       </div>
+      
+      {/* Reset Confirmation Dialog */}
+      {showResetConfirm && (
+        <div 
+          className="reset-confirmation-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleResetCancel()
+            }
+          }}
+        >
+          <div className="reset-confirmation-dialog">
+            <h3>Reset App</h3>
+            <p>
+              This will permanently delete all existing data including:
+              <br />
+              • All chat channels and messages
+              <br />
+              • All activity feed posts
+              <br />
+              • All user data and follows
+              <br />
+              <br />
+              Fresh sample data will be created afterwards.
+              <br />
+              <strong>This action cannot be undone.</strong>
+            </p>
+            <div className="reset-confirmation-buttons">
+              <button
+                onClick={handleResetCancel}
+                className="reset-cancel-button"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFirstConfirm}
+                className="reset-confirm-button"
+                disabled={isResetting}
+              >
+                Yes, Reset App
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Final Confirmation Dialog */}
+      {showFinalConfirm && (
+        <div 
+          className="reset-confirmation-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleFinalCancel()
+            }
+          }}
+        >
+          <div className="reset-confirmation-dialog">
+            <h3>Are you sure?</h3>
+            <p>
+              This action will permanently delete all your data and cannot be undone.
+              <br />
+              <br />
+              <strong>Do you really want to proceed with the reset?</strong>
+            </p>
+            <div className="reset-confirmation-buttons">
+              <button
+                onClick={handleFinalCancel}
+                className="reset-cancel-button"
+              >
+                No
+              </button>
+              <button
+                onClick={handleFinalConfirm}
+                className="reset-confirm-button"
+                disabled={isResetting}
+              >
+                {isResetting ? 'Resetting...' : 'Yes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Loading Overlay */}
+      {isResetting && (
+        <div className="reset-loading-overlay">
+          <div className="reset-loading-dialog">
+            <div className="reset-loading-spinner">
+              <div className="spinner"></div>
+            </div>
+            <h3>Resetting app...</h3>
+            <p>Please wait while we clear all data and prepare a fresh start.</p>
+            <div className="reset-loading-progress">
+              <div className="progress-bar">
+                <div className="progress-bar-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

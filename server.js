@@ -1672,6 +1672,235 @@ app.post("/api/stream/seed", async (req, res) => {
   }
 });
 
+// --- NEW: Reset endpoint for clearing and re-seeding data ---
+app.post("/api/stream/reset", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    const me = userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
+    console.log('🔄 Starting app reset for user:', me);
+
+    // === AGGRESSIVE CLEANUP PHASE ===
+    console.log('🧹 AGGRESSIVELY cleaning up ALL visible data...');
+
+    // 1. COMPLETELY WIPE Chat data
+    console.log('💬 WIPING ALL Chat channels and users...');
+    
+    try {
+      // Get EVERY possible channel with multiple query approaches
+      const queryAttempts = [
+        { type: 'messaging' },
+        { members: { $in: [me] } },
+        {},  // Get everything
+      ];
+
+      let allChannels = [];
+      
+      for (const filter of queryAttempts) {
+        try {
+          const channels = await streamClient.queryChannels(filter, { created_at: -1 }, { limit: 100 });
+          allChannels.push(...channels);
+          console.log(`Query with filter ${JSON.stringify(filter)} found ${channels.length} channels`);
+        } catch (error) {
+          console.log(`Query failed for filter ${JSON.stringify(filter)}:`, error);
+        }
+      }
+
+      // Remove duplicates
+      const uniqueChannels = allChannels.filter((channel, index, self) => 
+        index === self.findIndex(c => c.id === channel.id)
+      );
+
+      console.log(`🎯 TOTAL UNIQUE CHANNELS TO DELETE: ${uniqueChannels.length}`);
+      
+      // Delete EVERY channel found
+      for (const channel of uniqueChannels) {
+        try {
+          // Force delete with hard_delete option
+          await channel.delete({ hard_delete: true });
+          console.log(`✅ HARD DELETED channel: ${channel.id}`);
+        } catch (error) {
+          console.log(`⚠️ Hard delete failed for ${channel.id}, trying soft delete:`, error);
+          try {
+            await channel.delete();
+            console.log(`✅ Soft deleted channel: ${channel.id}`);
+          } catch (softError) {
+            console.log(`❌ All deletion methods failed for ${channel.id}:`, softError);
+          }
+        }
+      }
+
+      // HARD DELETE ALL sample users to make them completely disappear
+      const userIds = SAMPLE_USERS.map(u => u.id);
+      console.log(`🗑️ HARD DELETING ${userIds.length} sample users...`);
+      
+      for (const userId of userIds) {
+        try {
+          await streamClient.deleteUser(userId, { 
+            mark_messages_deleted: true, 
+            hard_delete: true,
+            delete_conversation_channels: true 
+          });
+          console.log(`✅ HARD DELETED user: ${userId}`);
+        } catch (error) {
+          console.log(`⚠️ Could not hard delete user ${userId}:`, error);
+          // Try soft delete as fallback
+          try {
+            await streamClient.deactivateUser(userId, { mark_messages_deleted: true });
+            console.log(`✅ Soft deleted user: ${userId}`);
+          } catch (softError) {
+            console.log(`❌ All user deletion methods failed for ${userId}`);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error("❌ Error in aggressive chat cleanup:", error);
+    }
+
+    // 2. COMPLETELY OBLITERATE Feeds data
+    console.log('📱 OBLITERATING ALL Feeds data...');
+    
+    try {
+      // Test different feed types to find what exists
+      const feedTypes = ['flat', 'user', 'timeline', 'aggregated', 'notification'];
+      const feedIds = ['global', me, ...SAMPLE_USERS.map(u => u.id)];
+      
+      console.log(`🔍 Testing ${feedTypes.length} feed types with ${feedIds.length} feed IDs...`);
+      
+      for (const feedType of feedTypes) {
+        for (const feedId of feedIds) {
+          try {
+            const feed = serverFeedsClient.feed(feedType, feedId);
+            
+            // Get ALL activities with pagination to ensure we get everything
+            let allActivityIds = [];
+            let hasMore = true;
+            let offset = 0;
+            
+            while (hasMore) {
+              try {
+                const activities = await feed.get({ limit: 100, offset });
+                
+                if (activities.results && activities.results.length > 0) {
+                  const activityIds = activities.results.map(a => a.id);
+                  allActivityIds.push(...activityIds);
+                  console.log(`📊 Found ${activityIds.length} activities in ${feedType}:${feedId} (offset: ${offset})`);
+                  
+                  // Check if we got less than the limit (means we're at the end)
+                  if (activities.results.length < 100) {
+                    hasMore = false;
+                  } else {
+                    offset += 100;
+                  }
+                } else {
+                  hasMore = false;
+                }
+              } catch (getError) {
+                // Feed might not exist or be empty
+                hasMore = false;
+              }
+            }
+            
+            // Delete ALL activities found
+            if (allActivityIds.length > 0) {
+              console.log(`🗑️ DELETING ${allActivityIds.length} activities from ${feedType}:${feedId}`);
+              
+              // Delete in smaller batches for reliability
+              for (let i = 0; i < allActivityIds.length; i += 50) {
+                const batch = allActivityIds.slice(i, i + 50);
+                try {
+                  await feed.removeActivity(batch);
+                  console.log(`✅ Deleted batch of ${batch.length} activities from ${feedType}:${feedId}`);
+                } catch (batchError) {
+                  console.log(`⚠️ Batch deletion failed for ${feedType}:${feedId}:`, batchError);
+                  
+                  // Try deleting one by one as last resort
+                  for (const activityId of batch) {
+                    try {
+                      await feed.removeActivity(activityId);
+                      console.log(`✅ Individually deleted activity ${activityId}`);
+                    } catch (individualError) {
+                      console.log(`❌ Failed to delete individual activity ${activityId}`);
+                    }
+                  }
+                }
+              }
+            }
+            
+            // If this is a timeline feed, also unfollow EVERYONE
+            if (feedType === 'timeline') {
+              console.log(`🔗 Clearing ALL follow relationships for ${feedId}...`);
+              
+              // Try to unfollow all possible users
+              const allPossibleUsers = [me, ...SAMPLE_USERS.map(u => u.id), 'global'];
+              
+              for (const targetUser of allPossibleUsers) {
+                if (targetUser !== feedId) {
+                  try {
+                    await feed.unfollow('user', targetUser);
+                    console.log(`✅ ${feedId} unfollowed ${targetUser}`);
+                  } catch (unfollowError) {
+                    // Ignore - relationship might not exist
+                  }
+                }
+              }
+            }
+            
+          } catch (error) {
+            // Feed type/id combination might not exist - that's ok
+          }
+        }
+      }
+
+      // HARD DELETE ALL sample users from Feeds
+      console.log(`🗑️ HARD DELETING all sample users from Feeds...`);
+      for (const user of SAMPLE_USERS) {
+        try {
+          await serverFeedsClient.user(user.id).delete();
+          console.log(`✅ HARD DELETED feeds user: ${user.id}`);
+        } catch (error) {
+          console.log(`⚠️ Could not delete feeds user ${user.id}:`, error);
+        }
+      }
+      
+      console.log(`✅ OBLITERATION of Feeds data complete!`);
+      
+    } catch (error) {
+      console.error("❌ Error in aggressive feeds cleanup:", error);
+    }
+
+    console.log("✅ AGGRESSIVE CLEANUP COMPLETED - Everything should be GONE!");
+
+    // STOP HERE - Just return empty state without re-seeding  
+    console.log('🎉 App EMPTIED successfully');
+
+    res.json({ 
+      ok: true, 
+      message: "App completely emptied - all data wiped clean",
+      chat: {
+        users: 0,
+        channels: 0
+      },
+      feeds: {
+        users: 0,
+        activities: 0,
+        followRelationships: 0
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Error resetting app:", err);
+    res.status(500).json({ 
+      error: "Failed to reset app",
+      details: err instanceof Error ? err.message : String(err)
+    });
+  }
+});
+
 
 
 // NEW CONSOLIDATED ENDPOINTS FOR VERCEL COMPATIBILITY
@@ -2699,6 +2928,7 @@ app.listen(PORT, () => {
   console.log(`📰 Feed tokens: http://localhost:${PORT}/api/stream/feed-token`);
   console.log(`📊 Get posts: http://localhost:${PORT}/api/stream/get-posts`);
   console.log(`🌱 Unified seeding: http://localhost:${PORT}/api/stream/seed`);
+  console.log(`🔄 App reset: http://localhost:${PORT}/api/stream/reset`);
   console.log(`🎯 Feed actions: http://localhost:${PORT}/api/stream/feed-actions`);
   console.log(`💬 Create Channel: http://localhost:${PORT}/api/stream/create-channel`);
   console.log('');

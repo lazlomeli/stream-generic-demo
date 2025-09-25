@@ -222,9 +222,9 @@ const Notifications = () => {
 
   const notificationsContent = (
     <div className="notifications-container">
-      <div className="notifications-header">
-        <h1>Notifications</h1>
-        <p className="notifications-subtitle">Stay updated on your social activity</p>
+      <div className="feeds-header">
+        <h1 style={isMobileView ? {} : { marginBottom: '12px'}}>Notifications</h1>
+        <p>Stay updated on your social activity</p>
       </div>
 
       {isLoadingNotifications ? (
