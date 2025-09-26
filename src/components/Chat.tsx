@@ -191,25 +191,7 @@ const Chat: React.FC<ChatProps> = () => {
     [getAccessTokenSilently, user]
   );
 
-  const seedIfNeeded = useCallback(
-    async (userId: string) => {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch("/api/stream/seed", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ userId }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        // Not fatal for chat connection, but log it
-        console.warn("seed failed:", res.status, text);
-      }
-    },
-    [getAccessTokenSilently]
-  );
+  // Removed seedIfNeeded - seeding should only happen via explicit reset button
 
 
 
@@ -249,11 +231,8 @@ const Chat: React.FC<ChatProps> = () => {
         setIsConnecting(true);
         setError(null);
 
-        // Do seed and token fetch in parallel
-        const [_, token] = await Promise.all([
-          seedIfNeeded(sanitizedUserId),
-          getStreamToken(sanitizedUserId),
-        ]);
+        // Get token only - NO automatic seeding
+        const token = await getStreamToken(sanitizedUserId);
         if (cancelled) return;
 
         await client.connectUser(
@@ -326,7 +305,6 @@ const Chat: React.FC<ChatProps> = () => {
     user,
     apiKey,
     getStreamToken,
-    seedIfNeeded,
     sanitizedUserId,
   ]);
 

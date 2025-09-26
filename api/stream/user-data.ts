@@ -3,6 +3,40 @@ import { connect } from 'getstream';
 import { StreamChat } from 'stream-chat';
 import jwt from 'jsonwebtoken';
 
+// Demo user mapping
+const DEMO_USERS = {
+  'alice_smith': {
+    name: 'Alice Smith',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
+    role: 'Frontend Developer',
+    company: 'Stream'
+  },
+  'bob_johnson': {
+    name: 'Bob Johnson',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    role: 'Backend Engineer',
+    company: 'TechCorp'
+  },
+  'carol_williams': {
+    name: 'Carol Williams',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    role: 'Product Designer',
+    company: 'Design Studio'
+  },
+  'david_brown': {
+    name: 'David Brown',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    role: 'DevRel Engineer',
+    company: 'Stream'
+  },
+  'emma_davis': {
+    name: 'Emma Davis',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
+    role: 'Full-stack Developer',
+    company: 'StartupCo'
+  }
+};
+
 interface UserProfileResponse {
   [userId: string]: {
     name?: string;
@@ -257,17 +291,75 @@ export default async function handler(
       console.log(`🔍 Fetching posts from user's personal feed: user:${targetUserId}`);
       console.log(`🔍 PROFILE_DEBUG: This is for profile view of user: ${targetUserId}`);
 
-      // Get posts from the user's personal feed (where follow relationships matter)
-      const userFeed = streamFeedsClient.feed('user', targetUserId);
-      const result = await userFeed.get({
-        limit: limit * 2, // Get more to account for filtering
-        offset: 0,
-        withReactionCounts: true,
-        withOwnReactions: true,
-      });
+      // Check if we need to map to a timestamped user ID
+      let actualUserId = targetUserId;
+      
+      // First try the original user ID
+      let result: any;
+      try {
+        const userFeed = streamFeedsClient.feed('user', targetUserId);
+        result = await userFeed.get({
+          limit: limit * 2,
+          offset: 0,
+          withReactionCounts: true,
+          withOwnReactions: true,
+        });
+        
+        console.log(`✅ Found ${result.results?.length || 0} activities in user:${targetUserId} feed`);
+      } catch (error) {
+        console.log(`⚠️ Failed to fetch from user:${targetUserId}, will try timestamped versions...`);
+        result = { results: [] };
+      }
+      
+      // If no posts found, try to find a timestamped version of this user
+      if (!result.results || result.results.length === 0) {
+        console.log(`🔍 No posts found for ${targetUserId}, searching for timestamped versions...`);
+        
+        try {
+          // Query global feed to find any activities by timestamped versions of this user
+          const globalFeed = streamFeedsClient.feed('flat', 'global');
+          const globalResult = await globalFeed.get({
+            limit: 100,
+            offset: 0,
+            withReactionCounts: true,
+            withOwnReactions: true,
+          });
+          
+          // Look for activities by users matching the pattern: targetUserId_timestamp
+          const timestampedActivities = globalResult.results?.filter((activity: any) => {
+            const actorId = activity.actor;
+            return actorId && actorId.startsWith(targetUserId + '_') && /\d{13}$/.test(actorId);
+          }) || [];
+          
+          console.log(`🔍 Found ${timestampedActivities.length} activities by timestamped versions of ${targetUserId}`);
+          
+          if (timestampedActivities.length > 0) {
+            // Get the most recent timestamped user ID
+            const timestampedUserIds = Array.from(new Set(timestampedActivities.map(a => a.actor)));
+            console.log(`🔍 Found timestamped user IDs:`, timestampedUserIds);
+            
+            // Use the first one (they should all be the same user anyway)
+            actualUserId = timestampedUserIds[0];
+            console.log(`🔄 Using timestamped user ID: ${actualUserId}`);
+            
+            // Now fetch from the correct timestamped user feed
+            const timestampedUserFeed = streamFeedsClient.feed('user', actualUserId);
+            result = await timestampedUserFeed.get({
+              limit: limit * 2,
+              offset: 0,
+              withReactionCounts: true,
+              withOwnReactions: true,
+            });
+            
+            console.log(`✅ Found ${result.results?.length || 0} activities in timestamped user:${actualUserId} feed`);
+          }
+        } catch (globalError) {
+          console.log(`⚠️ Failed to search global feed for timestamped users:`, globalError);
+        }
+      }
 
       // Debug: Log what verbs we have before filtering
-      console.log(`🔍 DEBUG: Raw activities in user:${targetUserId} feed:`, 
+      console.log(`🔍 DEBUG: Raw activities in user:${actualUserId} feed:`, 
         (result.results || []).map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
       );
 
@@ -277,7 +369,7 @@ export default async function handler(
       );
       const limitedPosts: any[] = filteredPosts.slice(0, limit);
 
-      console.log(`✅ Found ${limitedPosts.length} posts in user:${targetUserId} feed`);
+      console.log(`✅ Found ${limitedPosts.length} posts in user:${actualUserId} feed`);
       console.log(`🔗 This feed has ${result.results?.length || 0} total activities`);
       console.log(`🔍 DEBUG: Filtered posts:`, 
         filteredPosts.map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
@@ -296,7 +388,7 @@ export default async function handler(
         });
 
         const fallbackPosts = globalResult.results?.filter((activity: any) => 
-          activity.actor === targetUserId
+          activity.actor === actualUserId
         ) || [];
         
         const fallbackLimited: any[] = fallbackPosts.slice(0, limit);
@@ -308,8 +400,9 @@ export default async function handler(
         }
       }
 
-      // Get user profile information for post authors
-      const userIds = Array.from(new Set([targetUserId]));
+      // Get user profile information for post authors  
+      // Include both the target user ID (for display name mapping) and actual user ID (if different)
+      const userIds = Array.from(new Set([targetUserId, actualUserId]));
       let userProfiles: UserProfileResponse = {};
 
       try {
@@ -329,6 +422,24 @@ export default async function handler(
             // Handle user not found gracefully
             if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
               console.log(`👤 User ${id} not found in Stream user database - using fallback profile`);
+              
+              // Check demo users mapping first
+              let baseUserId = id;
+              if (id.includes('_') && /\d{13}$/.test(id)) {
+                baseUserId = id.replace(/_\d{13}$/, '');
+              }
+              
+              const demoUser = DEMO_USERS[baseUserId as keyof typeof DEMO_USERS];
+              if (demoUser) {
+                console.log(`✅ Found demo user mapping for ${baseUserId}:`, demoUser.name);
+                return { [id]: {
+                  name: demoUser.name,
+                  username: id,
+                  image: demoUser.image,
+                  role: demoUser.role,
+                  company: demoUser.company
+                }};
+              }
               
               // Create a basic profile from the Auth0 ID
               const fallbackName = id.includes('google-oauth2_') 
@@ -362,7 +473,8 @@ export default async function handler(
         posts: limitedPosts,
         userProfiles,
         count: limitedPosts.length,
-        totalUserPosts: userPosts.length
+        totalUserPosts: limitedPosts.length,
+        mappedFromTimestampedUser: actualUserId !== targetUserId ? actualUserId : undefined
       });
     }
 

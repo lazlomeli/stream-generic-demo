@@ -10,11 +10,11 @@ interface Props {
 }
 
 const SampleChannels: React.FC<Props> = ({ streamClient, currentUserId, onChannelsCreated }) => {
-  const { channels, seedAndLoad } = useDemoChannels(streamClient, currentUserId);
+  const { channels, loadChannels } = useDemoChannels(streamClient, currentUserId);
 
   useEffect(() => {
-    seedAndLoad();
-  }, [seedAndLoad]);
+    loadChannels();
+  }, [loadChannels]);
 
   useEffect(() => {
     onChannelsCreated(channels);

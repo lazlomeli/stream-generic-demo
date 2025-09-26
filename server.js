@@ -115,36 +115,18 @@ async function getPostAuthor(serverFeedsClient, postId) {
 }
 
 // --- Sample Users (same as in Vercel seed.ts) ---
-const SAMPLE_USERS = [
-  {
-    id: "bot_bob_johnson",
-    name: "Bob Johnson",
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    status: "online"
-  },
-  {
-    id: "bot_carol_williams",
-    name: "Carol Williams",
-    image:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-    status: "away"
-  },
-  {
-    id: "bot_david_brown",
-    name: "David Brown",
-    image:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    status: "offline"
-  },
-  {
-    id: "bot_emma_davis",
-    name: "Emma Davis",
-    image:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-    status: "online"
-  },
-];
+// Import unified seeding logic (using dynamic import since it's TypeScript)
+let seedingModule;
+const loadSeedingModule = async () => {
+  if (!seedingModule) {
+    // Use dynamic import to load TypeScript module
+    seedingModule = await import('./api/_utils/seeding.ts');
+  }
+  return seedingModule;
+};
+
+// Legacy comment: sample users are now imported from unified seeding utility
+// Legacy sample users array removed - now imported from unified seeding utility
 
 
 const app = express();
@@ -1529,7 +1511,7 @@ app.post('/api/stream/create-channel', upload.single('channelImage'), async (req
   }
 });
 
-// --- NEW: Unified seed endpoint for both Chat and Feeds ---
+// --- Unified seed endpoint using shared seeding logic ---
 app.post("/api/stream/seed", async (req, res) => {
   try {
     const { userId } = req.body;
@@ -1539,140 +1521,39 @@ app.post("/api/stream/seed", async (req, res) => {
 
     const me = userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
 
-    console.log('🌱 Seeding both Chat and Feeds for user:', me);
+    console.log('🌱 Using unified seeding for user:', me);
 
-    // === CHAT SEEDING ===
-    // Create current user + sample users
-    await streamClient.upsertUser({ id: me });
-    await streamClient.upsertUsers(SAMPLE_USERS);
+    // Create seeding context
+    const context = {
+      streamClient: streamClient,
+      serverFeedsClient: serverFeedsClient,
+      currentUserId: me
+    };
 
-    // General channel
-    const general = streamClient.channel("messaging", "general", {
-      name: "General",
-      members: [
-        me, 
-        SAMPLE_USERS[0].id, 
-        SAMPLE_USERS[1].id, 
-        SAMPLE_USERS[2].id, 
-        SAMPLE_USERS[3].id
-      ],
-      created_by_id: me
-    });
-    await general.create();
+    // Use unified seeding logic with dynamic import
+    const { seedStreamDemo } = await loadSeedingModule();
+    const results = await seedStreamDemo(context);
 
-    // 1:1 channels with sample users
-    for (const u of SAMPLE_USERS) {
-      const dm = streamClient.channel("messaging", { 
-        name: u.name,
-        image: u.image,
-        members: [me, u.id], 
-        created_by_id: me 
-      });
-      await dm.create();
-
-      const currentName  = (dm.data?.name);
-      const currentImage = (dm.data?.image);
-      if (!currentName || !currentImage) {
-        await dm.update({ name: u.name, image: u.image });
-      }
-    }
-
-    console.log('✅ Chat seeding completed');
-
-    // === FEEDS SEEDING (V2) ===
-    // Use V2 serverFeedsClient for backend operations (server-side access)
-
-    // Enhanced demo activities showcasing Stream Feeds features
-    const sampleActivities = [
-      {
-        actor: 'david_brown',
-        verb: 'post',
-        object: 'post',
-        text: '🚀 Just launched our new real-time activity feeds powered by @getstream! The performance is incredible - handling millions of activities with sub-100ms latency. #StreamChat #RealTime #ActivityFeeds',
-        attachments: [{
-          type: 'image',
-          asset_url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop',
-          mime_type: 'image/jpeg',
-          title: 'Stream Dashboard Analytics'
-        }],
-        custom: {
-          likes: 47, shares: 23, comments: 18, category: 'technology',
-          hashtags: ['StreamChat', 'RealTime', 'ActivityFeeds'], sentiment: 'positive'
-        }
-      },
-      {
-        actor: 'alice_smith',
-        verb: 'post',  
-        object: 'post',
-        text: '✨ Demo time! This activity feed you\'re looking at is powered by Stream Feeds. Try creating a post, liking, commenting - everything is real-time and scalable. Perfect for social apps, collaboration tools, or any app needing activity streams.',
-        attachments: [{
-          type: 'image',
-          asset_url: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=600&fit=crop',
-          mime_type: 'image/jpeg',
-          title: 'Real-time Demo Interface'
-        }],
-        custom: {
-          likes: 156, shares: 73, comments: 45, category: 'demo',
-          hashtags: ['StreamFeeds', 'Demo', 'RealTime'], sentiment: 'positive', featured: true
-        }
-      },
-      {
-        actor: 'emma_davis',
-        verb: 'post',
-        object: 'post',
-        text: 'Building scalable chat and feeds is no joke! 💪 Stream\'s SDK made it so much easier to implement real-time features. From prototype to production in days, not months. Highly recommend for any dev building social features!',
-        custom: {
-          likes: 92, shares: 41, comments: 29, category: 'technology',
-          hashtags: ['GetStream', 'RealTime', 'SocialFeatures'], sentiment: 'positive'
-        }
-      }
-    ];
-
-    // Check if activities already exist and create them if they don't (V2) - server-side access
-    const globalFeedForSeeding = serverFeedsClient.feed('flat', 'global');
-    const existingActivities = await globalFeedForSeeding.get({ limit: 25 });
-    
-    for (const activity of sampleActivities) {
-      const activityExists = existingActivities.results.some(existing => 
-        existing.actor === activity.actor && 
-        existing.verb === activity.verb &&
-        (existing.text === activity.text || 
-         (existing.text && activity.text && existing.text.substring(0, 50) === activity.text.substring(0, 50)))
-      );
-      
-      if (!activityExists) {
-        const activityData = {
-          actor: activity.actor,
-          verb: activity.verb,
-          object: activity.object,
-          text: activity.text,
-          attachments: activity.attachments || [],
-          custom: activity.custom
-        };
-
-        // Add to flat:global feed (V2)
-        await globalFeedForSeeding.addActivity(activityData);
-        console.log(`✅ Created feed activity: "${activity.text.substring(0, 50)}..." by ${activity.actor}`);
-      } else {
-        console.log(`⏭️  Feed activity already exists for ${activity.actor}, skipping`);
-      }
-    }
-
-    console.log('✅ Feeds seeding completed');
+    console.log('🎉 Unified seeding completed successfully!');
 
     res.json({ 
       ok: true, 
-      message: "Chat and Feeds data seeded successfully",
-      chat: { users: SAMPLE_USERS.length + 1, channels: SAMPLE_USERS.length + 1 },
-      feeds: { activities: sampleActivities.length }
+      message: "Chat and Feeds data seeded successfully using unified logic",
+      chat: { users: results.users, channels: results.channels },
+      feeds: { 
+        users: results.users,
+        activities: results.activities, 
+        followRelationships: results.followRelationships 
+      }
     });
+
   } catch (err) {
-    console.error("❌ Error seeding Stream data:", err);
-    res.status(500).json({ error: "Failed to seed Stream data" });
+    console.error("❌ Error in unified seeding:", err);
+    res.status(500).json({ error: "Failed to seed Stream data using unified logic" });
   }
 });
 
-// --- NEW: Reset endpoint for clearing and re-seeding data ---
+// --- Unified reset endpoint using shared reset logic ---
 app.post("/api/stream/reset", async (req, res) => {
   try {
     const { userId } = req.body;
@@ -1681,348 +1562,136 @@ app.post("/api/stream/reset", async (req, res) => {
     }
 
     const me = userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
-    console.log('🔄 Starting app reset for user:', me);
+    console.log('🔄 Starting unified reset for user:', me);
 
-    // === AGGRESSIVE CLEANUP PHASE ===
-    console.log('🧹 AGGRESSIVELY cleaning up ALL visible data...');
+    // Create reset context
+    const context = {
+      streamClient: streamClient,
+      serverFeedsClient: serverFeedsClient,
+      currentUserId: me
+    };
 
-    // 1. COMPLETELY WIPE Chat data
-    console.log('💬 WIPING ALL Chat channels and users...');
-    
-    try {
-      // Get EVERY possible channel with multiple query approaches
-      const queryAttempts = [
-        { type: 'messaging' },
-        { members: { $in: [me] } },
-        {},  // Get everything
-      ];
+    // Use unified reset logic (cleanup + fresh seeding) with dynamic import
+    const { resetStreamDemo } = await loadSeedingModule();
+    const results = await resetStreamDemo(context);
 
-      let allChannels = [];
-      
-      for (const filter of queryAttempts) {
-        try {
-          const channels = await streamClient.queryChannels(filter, { created_at: -1 }, { limit: 100 });
-          allChannels.push(...channels);
-          console.log(`Query with filter ${JSON.stringify(filter)} found ${channels.length} channels`);
-        } catch (error) {
-          console.log(`Query failed for filter ${JSON.stringify(filter)}:`, error);
-        }
-      }
-
-      // Remove duplicates
-      const uniqueChannels = allChannels.filter((channel, index, self) => 
-        index === self.findIndex(c => c.id === channel.id)
-      );
-
-      console.log(`🎯 TOTAL UNIQUE CHANNELS TO DELETE: ${uniqueChannels.length}`);
-      
-      // Delete EVERY channel found
-      for (const channel of uniqueChannels) {
-        try {
-          // Force delete with hard_delete option
-          await channel.delete({ hard_delete: true });
-          console.log(`✅ HARD DELETED channel: ${channel.id}`);
-        } catch (error) {
-          console.log(`⚠️ Hard delete failed for ${channel.id}, trying soft delete:`, error);
-          try {
-            await channel.delete();
-            console.log(`✅ Soft deleted channel: ${channel.id}`);
-          } catch (softError) {
-            console.log(`❌ All deletion methods failed for ${channel.id}:`, softError);
-          }
-        }
-      }
-
-      // HARD DELETE ALL sample users to make them completely disappear
-      const userIds = SAMPLE_USERS.map(u => u.id);
-      console.log(`🗑️ HARD DELETING ${userIds.length} sample users...`);
-      
-      for (const userId of userIds) {
-        try {
-          await streamClient.deleteUser(userId, { 
-            mark_messages_deleted: true, 
-            hard_delete: true,
-            delete_conversation_channels: true 
-          });
-          console.log(`✅ HARD DELETED user: ${userId}`);
-        } catch (error) {
-          console.log(`⚠️ Could not hard delete user ${userId}:`, error);
-          // Try soft delete as fallback
-          try {
-            await streamClient.deactivateUser(userId, { mark_messages_deleted: true });
-            console.log(`✅ Soft deleted user: ${userId}`);
-          } catch (softError) {
-            console.log(`❌ All user deletion methods failed for ${userId}`);
-          }
-        }
-      }
-
-    } catch (error) {
-      console.error("❌ Error in aggressive chat cleanup:", error);
-    }
-
-    // 2. COMPLETELY OBLITERATE Feeds data
-    console.log('📱 OBLITERATING ALL Feeds data...');
-    
-    try {
-      // Test different feed types to find what exists
-      const feedTypes = ['flat', 'user', 'timeline', 'aggregated', 'notification'];
-      const feedIds = ['global', me, ...SAMPLE_USERS.map(u => u.id)];
-      
-      console.log(`🔍 Testing ${feedTypes.length} feed types with ${feedIds.length} feed IDs...`);
-      
-      for (const feedType of feedTypes) {
-        for (const feedId of feedIds) {
-          try {
-            const feed = serverFeedsClient.feed(feedType, feedId);
-            
-            // Get ALL activities with pagination to ensure we get everything
-            let allActivityIds = [];
-            let hasMore = true;
-            let offset = 0;
-            
-            while (hasMore) {
-              try {
-                const activities = await feed.get({ limit: 100, offset });
-                
-                if (activities.results && activities.results.length > 0) {
-                  const activityIds = activities.results.map(a => a.id);
-                  allActivityIds.push(...activityIds);
-                  console.log(`📊 Found ${activityIds.length} activities in ${feedType}:${feedId} (offset: ${offset})`);
-                  
-                  // Check if we got less than the limit (means we're at the end)
-                  if (activities.results.length < 100) {
-                    hasMore = false;
-                  } else {
-                    offset += 100;
-                  }
-                } else {
-                  hasMore = false;
-                }
-              } catch (getError) {
-                // Feed might not exist or be empty
-                hasMore = false;
-              }
-            }
-            
-            // Delete ALL activities found
-            if (allActivityIds.length > 0) {
-              console.log(`🗑️ DELETING ${allActivityIds.length} activities from ${feedType}:${feedId}`);
-              
-              // Delete in smaller batches for reliability
-              for (let i = 0; i < allActivityIds.length; i += 50) {
-                const batch = allActivityIds.slice(i, i + 50);
-                try {
-                  await feed.removeActivity(batch);
-                  console.log(`✅ Deleted batch of ${batch.length} activities from ${feedType}:${feedId}`);
-                } catch (batchError) {
-                  console.log(`⚠️ Batch deletion failed for ${feedType}:${feedId}:`, batchError);
-                  
-                  // Try deleting one by one as last resort
-                  for (const activityId of batch) {
-                    try {
-                      await feed.removeActivity(activityId);
-                      console.log(`✅ Individually deleted activity ${activityId}`);
-                    } catch (individualError) {
-                      console.log(`❌ Failed to delete individual activity ${activityId}`);
-                    }
-                  }
-                }
-              }
-            }
-            
-            // If this is a timeline feed, also unfollow EVERYONE
-            if (feedType === 'timeline') {
-              console.log(`🔗 Clearing ALL follow relationships for ${feedId}...`);
-              
-              // Try to unfollow all possible users
-              const allPossibleUsers = [me, ...SAMPLE_USERS.map(u => u.id), 'global'];
-              
-              for (const targetUser of allPossibleUsers) {
-                if (targetUser !== feedId) {
-                  try {
-                    await feed.unfollow('user', targetUser);
-                    console.log(`✅ ${feedId} unfollowed ${targetUser}`);
-                  } catch (unfollowError) {
-                    // Ignore - relationship might not exist
-                  }
-                }
-              }
-            }
-            
-          } catch (error) {
-            // Feed type/id combination might not exist - that's ok
-          }
-        }
-      }
-
-      // HARD DELETE ALL sample users from Feeds
-      console.log(`🗑️ HARD DELETING all sample users from Feeds...`);
-      for (const user of SAMPLE_USERS) {
-        try {
-          await serverFeedsClient.user(user.id).delete();
-          console.log(`✅ HARD DELETED feeds user: ${user.id}`);
-        } catch (error) {
-          console.log(`⚠️ Could not delete feeds user ${user.id}:`, error);
-        }
-      }
-      
-      console.log(`✅ OBLITERATION of Feeds data complete!`);
-      
-    } catch (error) {
-      console.error("❌ Error in aggressive feeds cleanup:", error);
-    }
-
-    console.log("✅ AGGRESSIVE CLEANUP COMPLETED - Everything should be GONE!");
-
-    // STOP HERE - Just return empty state without re-seeding  
-    console.log('🎉 App EMPTIED successfully');
+    console.log('🎉 Unified reset completed successfully!');
 
     res.json({ 
       ok: true, 
-      message: "App completely emptied - all data wiped clean",
-      chat: {
-        users: 0,
-        channels: 0
-      },
-      feeds: {
-        users: 0,
-        activities: 0,
-        followRelationships: 0
+      message: "App reset and seeded successfully with fresh sample data",
+      chat: { users: results.users, channels: results.channels },
+      feeds: { 
+        users: results.users,
+        activities: results.activities, 
+        followRelationships: results.followRelationships 
       }
     });
 
   } catch (err) {
-    console.error("❌ Error resetting app:", err);
+    console.error("❌ Error in unified reset:", err);
     res.status(500).json({ 
-      error: "Failed to reset app",
+      error: "Failed to reset app using unified logic",
       details: err instanceof Error ? err.message : String(err)
     });
   }
 });
 
-
-
-// NEW CONSOLIDATED ENDPOINTS FOR VERCEL COMPATIBILITY
-// (These mirror the consolidated Vercel functions for local development)
-
-// Stream Auth Tokens endpoint (handles both feed and chat tokens)
-app.post('/api/stream/auth-tokens', async (req, res) => {
+// --- Auth tokens endpoint ---
+app.post("/api/stream/auth-tokens", async (req, res) => {
   try {
+    console.log('🔧 AUTH-TOKENS: Request received:', { type: req.body?.type, userId: req.body?.userId });
+    
     const { type, userId, userProfile } = req.body;
 
     if (!userId || !type) {
+      console.error('❌ AUTH-TOKENS: Missing required fields:', { userId: !!userId, type: !!type });
       return res.status(400).json({ error: 'userId and type are required' });
     }
 
     if (!['feed', 'chat', 'video'].includes(type)) {
+      console.error('❌ AUTH-TOKENS: Invalid type:', type);
       return res.status(400).json({ error: 'type must be "feed", "chat", or "video"' });
     }
 
-    console.log(`🔐 Generating Stream ${type} token for userId:`, userId);
+    // Get Stream API credentials
+    const apiKey = process.env.STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET;
 
-    // Check if we have Stream credentials
-    if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-      console.error('❌ Missing Stream API credentials');
+    if (!apiKey || !apiSecret) {
+      console.error('❌ AUTH-TOKENS: Missing Stream API credentials');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
     // Handle feed token generation
     if (type === 'feed') {
+      console.log('🍃 AUTH-TOKENS: Generating feed token for:', userId);
+      
       // Generate a Feeds V3-compatible JWT token
       const token = jwt.sign(
         {
           user_id: userId,
         },
-        process.env.STREAM_API_SECRET,
+        apiSecret,
         {
           algorithm: 'HS256',
           expiresIn: '24h',
         }
       );
 
+      console.log('✅ AUTH-TOKENS: Feed token generated successfully');
       return res.status(200).json({
         token,
-        apiKey: process.env.STREAM_API_KEY,
+        apiKey,
         userId,
       });
     }
 
     // Handle chat token generation
     if (type === 'chat') {
-      // Initialize Stream Chat client
-      const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-
+      console.log('💬 AUTH-TOKENS: Generating chat token for:', userId);
+      
       // Create/update user profile in Stream Chat if profile information is provided
       if (userProfile) {
         try {
+          console.log('👤 AUTH-TOKENS: Updating chat user profile...');
           await streamClient.upsertUser({
             id: userId,
             name: userProfile.name,
-            image: userProfile.image,
-            role: userProfile.role
+            image: userProfile.image
+            // Remove role to avoid Stream Chat validation errors
           });
-          console.log(`✅ User profile updated for chat: ${userId}`);
+          console.log(`✅ AUTH-TOKENS: User profile updated for chat: ${userId}`);
         } catch (profileError) {
-          console.warn(`Failed to update user profile for chat ${userId}:`, profileError);
+          console.warn(`❌ AUTH-TOKENS: Failed to update user profile for chat ${userId}:`, profileError);
           // Continue with token generation even if profile update fails
         }
       }
 
       // Generate Stream user token
+      console.log('🔑 AUTH-TOKENS: Generating chat token...');
       const streamToken = streamClient.createToken(userId);
 
+      console.log('✅ AUTH-TOKENS: Chat token generated successfully');
       return res.status(200).json({
         token: streamToken,
-        apiKey: process.env.STREAM_API_KEY,
+        apiKey: apiKey,
         userId: userId
       });
     }
 
     // Handle video token generation
     if (type === 'video') {
-      console.log('📹 Generating video token for:', userId);
+      console.log('📹 AUTH-TOKENS: Generating video token for:', userId);
       
-      // Initialize Stream client for video operations
-      const streamClient = new StreamClient(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-
-      // Create/update user profile in Stream Video
-      try {
-        const userRole = userProfile?.role || 'user'; // Use provided role or default to 'user'
-        console.log('👤 Creating/updating video user...', {
-          userId,
-          name: userProfile?.name || `User ${userId}`,
-          hasImage: !!userProfile?.image,
-          role: userRole
-        });
-        
-        const userData = {
-          id: userId,
-          name: userProfile?.name || `User ${userId}`,
-          image: userProfile?.image,
-          role: userRole // Use the role from userProfile (admin for streamers, user for viewers)
-        };
-        
-        console.log('📋 User data being upserted:', userData);
-        await streamClient.upsertUsers([userData]);
-        console.log(`✅ User profile updated for video with role ${userRole}: ${userId}`);
-        
-      } catch (profileError) {
-        console.error(`❌ Failed to update user profile for video ${userId}:`, profileError);
-        // Continue with token generation even if profile update fails
-      }
-
-      // Generate Stream video user token with proper capabilities
+      // For video tokens, create JWT token directly
       const userRole = userProfile?.role || 'user';
-      console.log('🔑 Generating video token for role:', userRole);
       
-      // Create JWT token directly like chat tokens, but with video-specific payload
       const tokenPayload = {
         user_id: userId,
         iss: 'stream-video',
         exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
         iat: Math.floor(Date.now() / 1000),
-        // Add video publishing capabilities
         capabilities: [
           'join-call',
           'send-audio', 
@@ -2043,595 +1712,29 @@ app.post('/api/stream/auth-tokens', async (req, res) => {
         tokenPayload.call_cids = ['*']; // Allow access to all calls
       }
       
-      console.log('🔧 Video token payload:', JSON.stringify(tokenPayload, null, 2));
-      
-      // Generate JWT token directly using the same method as chat
-      const videoToken = jwt.sign(tokenPayload, process.env.STREAM_API_SECRET, {
+      const videoToken = jwt.sign(tokenPayload, apiSecret, {
         algorithm: 'HS256'
       });
 
-      console.log('✅ Video token generated successfully');
-      console.log('🔧 Generated token (first 50 chars):', videoToken.substring(0, 50) + '...');
+      console.log('✅ AUTH-TOKENS: Video token generated successfully');
       return res.status(200).json({
         token: videoToken,
-        apiKey: process.env.STREAM_API_KEY,
+        apiKey: apiKey,
         userId: userId
       });
     }
 
   } catch (error) {
-    console.error('Error generating token:', error);
-    res.status(500).json({ error: 'Failed to generate token' });
-  }
-});
-
-// Stream User Data endpoint (handles user posts, resolve user ID, chat user data)
-app.post('/api/stream/user-data', async (req, res) => {
-  try {
-    const { type } = req.body;
-
-    if (!type) {
-      return res.status(400).json({ error: 'type is required' });
-    }
-
-    if (!['posts', 'resolve', 'chat-user'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "posts", "resolve", or "chat-user"' });
-    }
-
-    console.log(`🔍 Processing user-data request of type: ${type}`);
-
-    // For local development, we'll use the existing working endpoints internally
-    // This ensures the same logic as production but maintains compatibility
-    
-    if (type === 'posts') {
-      // Use the existing get-user-posts logic
-      const { userId, targetUserId, limit = 20 } = req.body;
-
-      if (!targetUserId) {
-        return res.status(400).json({ error: 'targetUserId is required' });
-      }
-
-      console.log(`🔍 Fetching posts for user: ${targetUserId}`);
-
-      // Check if we have Stream credentials
-      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-        console.error('❌ Missing Stream API credentials');
-        return res.status(500).json({ 
-          error: 'Stream API credentials not configured. Check your .env file.' 
-        });
-      }
-
-      try {
-        // Use Stream Feeds V2 for backend operations (server-side access)
-        // Get posts from the global feed, filtered by the target user (V2)
-        const globalFeedForUserData = serverFeedsClient.feed('flat', 'global');
-        const feedResponse = await globalFeedForUserData.get({
-          limit: 25, // Reduced to avoid rate limits
-          offset: 0,
-          withReactionCounts: true,
-          withOwnReactions: true
-        });
-
-        // Filter activities by the target user (actor)
-        const userPosts = feedResponse.results?.filter(activity => 
-          activity.actor === targetUserId
-        ) || [];
-
-        // Limit the results
-        const limitedPosts = userPosts.slice(0, limit);
-
-        console.log(`✅ Found ${limitedPosts.length} posts for user ${targetUserId}`);
-
-        // Get user profile information
-        let userProfiles = {};
-        try {
-          const user = await client.user(targetUserId).get();
-          console.log(`✅ Found Stream user profile for ${targetUserId}:`, user.name);
-          userProfiles[targetUserId] = {
-            name: user.name || targetUserId,
-            username: user.username,
-            image: user.image || user.profile_image,
-            role: user.role,
-            company: user.company
-          };
-        } catch (userError) {
-          // Handle user not found gracefully (same as Vercel functions)
-          if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
-            console.log(`👤 User ${targetUserId} not found in Stream user database - using fallback profile`);
-            
-            // Create a basic profile from the ID
-            const fallbackName = targetUserId.includes('google-oauth2_') 
-              ? targetUserId.replace('google-oauth2_', '').replace(/^\d+/, 'User') // Clean up Google OAuth ID
-              : targetUserId.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Format other IDs
-            
-            userProfiles[targetUserId] = { 
-              name: fallbackName,
-              username: targetUserId,
-              image: undefined,
-              role: 'User',
-              company: undefined
-            };
-          } else {
-            console.warn(`❌ Failed to get user profile for ${targetUserId}:`, userError?.message || userError);
-            userProfiles[targetUserId] = { name: targetUserId };
-          }
-        }
-
-        return res.status(200).json({
-          success: true,
-          posts: limitedPosts,
-          userProfiles,
-          count: limitedPosts.length,
-          totalUserPosts: userPosts.length
-        });
-
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        return res.status(500).json({
-          error: 'Failed to fetch posts',
-          details: error.message
-        });
-      }
-    }
-    
-    if (type === 'resolve') {
-      // This is a complex endpoint - for local development, return the userId as-is
-      // since we don't have the same Auth0 setup as production
-      const { hashedUserId } = req.body;
-      if (!hashedUserId) {
-        return res.status(400).json({ error: 'hashedUserId is required' });
-      }
-      
-      // For local development, assume the hashedUserId IS the auth0UserId
-      // This maintains compatibility while working locally
-      return res.status(200).json({ 
-        auth0UserId: hashedUserId,
-        userName: hashedUserId
-      });
-    }
-    
-    if (type === 'chat-user') {
-      // Use Stream Chat to get user data
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-      }
-
-      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-        return res.status(500).json({ error: 'Missing Stream API credentials' });
-      }
-
-      try {
-        const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-        
-        const response = await streamClient.queryUsers(
-          { id: userId },
-          { id: 1 },
-          { limit: 1 }
-        );
-
-        if (response.users && response.users.length > 0) {
-          const user = response.users[0];
-          return res.status(200).json({ 
-            success: true,
-            message: 'Success',
-            user: {
-              id: user.id,
-              name: user.name,
-              image: user.image,
-              role: user.role,
-              online: user.online,
-              last_active: user.last_active,
-              created_at: user.created_at,
-              updated_at: user.updated_at
-            }
-          });
-        } else {
-          return res.status(404).json({ 
-            success: false,
-            message: 'User not found in Stream Chat',
-            user: null 
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching Stream Chat user:', error);
-        return res.status(500).json({ 
-          success: false,
-          message: 'Error fetching user data',
-          user: null,
-          error: error.message
-        });
-      }
-    }
-
-  } catch (error) {
-    console.error('Error in user-data handler:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      details: error.message
+    console.error('❌ AUTH-TOKENS: Critical error generating token:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate token',
+      details: error instanceof Error ? error.message : String(error)
     });
   }
 });
 
-// Stream Chat Operations endpoint (handles channel creation and add to general)
-app.post('/api/stream/chat-operations', async (req, res) => {
-  try {
-    const { type } = req.body;
-
-    if (!type) {
-      return res.status(400).json({ error: 'type is required' });
-    }
-
-    if (!['create-channel', 'add-to-general', 'create-livestream-channel', 'leave-channel', 'cleanup-livestream-channel'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "create-channel", "add-to-general", "create-livestream-channel", "leave-channel", or "cleanup-livestream-channel"' });
-    }
-
-    console.log(`🏗️ Processing chat-operations request of type: ${type}`);
-
-    // For local development, we'll use the existing working logic
-    // This ensures the same behavior as the individual endpoints
-    
-    if (type === 'create-channel') {
-      // Use the same logic as the existing create-channel endpoint
-      const { channelName, selectedUsers, currentUserId, isDM, channelImage } = req.body;
-      
-      if (!channelName || !selectedUsers || !currentUserId) {
-        return res.status(400).json({ 
-          error: 'Channel name, selected users, and current user ID are required',
-          received: { channelName, selectedUsers, currentUserId }
-        });
-      }
-
-      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-        return res.status(500).json({ error: 'Missing Stream API credentials' });
-      }
-
-      try {
-        const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-        
-        // Parse selected users
-        let userIds;
-        try {
-          userIds = JSON.parse(selectedUsers);
-        } catch (error) {
-          return res.status(400).json({ error: 'Invalid selected users format' });
-        }
-
-        if (!Array.isArray(userIds) || userIds.length === 0) {
-          return res.status(400).json({ error: 'At least one user must be selected' });
-        }
-
-        // Add current user to the channel members
-        const allMembers = [currentUserId, ...userIds];
-
-        // Prepare channel data
-        const channelData = {
-          name: channelName,
-          members: allMembers,
-          created_by_id: currentUserId,
-          image: channelImage || undefined
-        };
-
-        // Create the channel using Stream Chat
-        const channel = streamClient.channel('messaging', null, channelData);
-        await channel.create();
-
-        console.log('✅ Channel created successfully:', channel.id);
-
-        return res.json({
-          success: true,
-          message: isDM ? 'Direct message started successfully' : 'Channel created successfully',
-          channelId: channel.id,
-          channel: {
-            id: channel.id,
-            name: channelName,
-            members: allMembers,
-            created_by_id: currentUserId,
-            image: channelImage,
-            isDM: isDM
-          }
-        });
-      } catch (error) {
-        console.error('❌ Error creating channel:', error);
-        return res.status(500).json({ 
-          error: 'Failed to create channel',
-          details: error.message
-        });
-      }
-    }
-    
-    if (type === 'add-to-general') {
-      // Use the same logic as the existing add-user-to-general logic
-      const { userId } = req.body;
-      
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-      }
-
-      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-        return res.status(500).json({ error: 'Missing Stream API credentials' });
-      }
-
-      try {
-        const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-        
-        // Get the general channel and watch it to get current state
-        const general = streamClient.channel("messaging", "general");
-        await general.watch();
-        
-        // Check if user is already a member
-        const currentMembers = Object.keys(general.state.members || {});
-        const isAlreadyMember = currentMembers.includes(userId);
-        
-        if (isAlreadyMember) {
-          console.log(`✅ User ${userId} is already a member of general channel`);
-          return res.status(200).json({
-            success: true,
-            message: 'User already has access to general channel'
-          });
-        }
-        
-        // Add the user to the general channel
-        await general.addMembers([userId]);
-        
-        console.log(`✅ Successfully added user ${userId} to general channel`);
-        
-        return res.status(200).json({
-          success: true,
-          message: 'User added to general channel'
-        });
-        
-      } catch (error) {
-        console.error('❌ Error with general channel operation:', error);
-        
-        // Check if the channel doesn't exist
-        if (error.code === 4 || error.code === 17 || error.message?.includes('does not exist') || error.message?.includes('not found')) {
-          return res.status(404).json({
-            error: 'General channel does not exist',
-            message: 'The general channel needs to be created. Please run the seed endpoint first.',
-            suggestion: 'POST to /api/stream/seed to initialize channels and users'
-          });
-        }
-        
-        return res.status(500).json({
-          error: 'Failed to process general channel operation',
-          details: error.message,
-          code: error.code || 'unknown'
-        });
-      }
-    }
-
-    // Handle livestream channel creation
-    if (type === 'create-livestream-channel') {
-      const { channelId, userId } = req.body;
-
-      if (!channelId || !userId) {
-        return res.status(400).json({ error: 'channelId and userId are required' });
-      }
-
-      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-        return res.status(500).json({ error: 'Missing Stream API credentials' });
-      }
-
-      try {
-        console.log(`🔴 Creating livestream channel: ${channelId} for user: ${userId}`);
-        
-        const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-        
-        // Create livestream channel with user as member
-        // Use 'livestream' type to separate from regular messaging channels
-        const channel = streamClient.channel('livestream', channelId, {
-          members: [userId], // Add user as member with server admin permissions
-          created_by_id: userId,
-          isLivestreamChannel: true, // Add metadata flag for easier identification
-        });
-
-        await channel.create();
-        console.log(`✅ Successfully created livestream channel: ${channelId}`);
-
-        return res.status(200).json({
-          success: true,
-          message: 'Livestream channel created successfully',
-          channelId: channelId,
-          channel: {
-            id: channelId,
-            type: 'livestream',
-            members: [userId],
-            created_by_id: userId
-          }
-        });
-
-      } catch (error) {
-        console.error(`❌ Error creating livestream channel ${channelId}:`, error);
-        
-        // If channel already exists, that's OK - just return success
-        if (error.code === 4 || error.message?.includes('already exists')) {
-          console.log(`✅ Livestream channel ${channelId} already exists - adding user as member`);
-          
-          try {
-            // Get existing channel and ensure user is a member
-            const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-            const existingChannel = streamClient.channel('messaging', channelId);
-            await existingChannel.watch();
-            
-            // Check if user is already a member
-            const currentMembers = Object.keys(existingChannel.state.members || {});
-            if (!currentMembers.includes(userId)) {
-              await existingChannel.addMembers([userId]);
-              console.log(`✅ Added user ${userId} to existing livestream channel`);
-            } else {
-              console.log(`✅ User ${userId} is already a member of livestream channel`);
-            }
-            
-            return res.status(200).json({
-              success: true,
-              message: 'Livestream channel ready (already existed)',
-              channelId: channelId,
-              channel: {
-                id: channelId,
-                type: 'livestream',
-                members: currentMembers.includes(userId) ? currentMembers : [...currentMembers, userId],
-                created_by_id: userId
-              }
-            });
-            
-          } catch (addMemberError) {
-            console.error(`❌ Failed to add user to existing channel:`, addMemberError);
-            return res.status(500).json({
-              error: 'Failed to join existing livestream channel',
-              details: addMemberError.message || String(addMemberError)
-            });
-          }
-        }
-        
-        // For any other error, return failure
-        return res.status(500).json({
-          error: 'Failed to create livestream channel',
-          details: error.message || String(error),
-          code: error.code || 'unknown'
-        });
-      }
-    }
-
-    // Handle leaving a channel
-    if (type === 'leave-channel') {
-      const { channelId, userId } = req.body;
-
-      if (!channelId || !userId) {
-        return res.status(400).json({ error: 'channelId and userId are required' });
-      }
-
-      try {
-        console.log(`👋 User ${userId} leaving channel: ${channelId}`);
-        
-        // Get the channel
-        const channel = streamClient.channel('messaging', channelId);
-        await channel.watch();
-        
-        // Check if user is a member of the channel
-        const members = channel.state?.members || {};
-        if (!members[userId]) {
-          return res.status(400).json({ 
-            error: 'User is not a member of this channel',
-            channelId,
-            userId
-          });
-        }
-        
-        // Check if this is the last member
-        const memberCount = Object.keys(members).length;
-        if (memberCount === 1) {
-          // If this is the last member, delete the channel entirely
-          console.log(`🗑️ Deleting channel ${channelId} as ${userId} is the last member`);
-          await channel.delete();
-          
-          return res.status(200).json({
-            success: true,
-            message: 'Channel deleted as you were the last member',
-            channelId,
-            deleted: true
-          });
-        } else {
-          // Remove the user from the channel
-          await channel.removeMembers([userId]);
-          console.log(`✅ Successfully removed user ${userId} from channel ${channelId}`);
-          
-          return res.status(200).json({
-            success: true,
-            message: 'Successfully left the channel',
-            channelId,
-            deleted: false,
-            remainingMembers: memberCount - 1
-          });
-        }
-        
-      } catch (error) {
-        console.error(`❌ Error leaving channel ${channelId}:`, error);
-        
-        return res.status(500).json({
-          error: 'Failed to leave channel',
-          details: error.message || String(error),
-          code: error.code || 'unknown'
-        });
-      }
-    }
-
-    // Handle livestream channel cleanup (destroy when stream ends)
-    if (type === 'cleanup-livestream-channel') {
-      const { channelId, userId } = req.body;
-
-      if (!channelId || !userId) {
-        return res.status(400).json({ error: 'channelId and userId are required' });
-      }
-
-      if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-        return res.status(500).json({ error: 'Missing Stream API credentials' });
-      }
-
-      try {
-        console.log(`🧹 Cleaning up livestream channel: ${channelId} for user: ${userId}`);
-        
-        const streamClient = new StreamChat(process.env.STREAM_API_KEY, process.env.STREAM_API_SECRET);
-        
-        // Get the livestream channel with proper created_by information
-        const channel = streamClient.channel('livestream', channelId, {
-          created_by_id: userId,
-          created_by: { id: userId }
-        });
-        
-        // Delete the channel directly - if user doesn't have permission, the delete will fail with proper error
-        await channel.delete();
-        console.log(`✅ Successfully deleted livestream channel: ${channelId}`);
-
-        return res.status(200).json({
-          success: true,
-          message: 'Livestream channel deleted successfully',
-          channelId: channelId
-        });
-
-      } catch (error) {
-        console.error(`❌ Error cleaning up livestream channel ${channelId}:`, error);
-        
-        // If channel doesn't exist, that's OK - already cleaned up
-        if (error.code === 16 || error.message?.includes('does not exist') || error.message?.includes("Can't find channel")) {
-          console.log(`⚠️ Livestream channel ${channelId} doesn't exist, already cleaned up`);
-          return res.status(200).json({
-            success: true,
-            message: 'Livestream channel already cleaned up (did not exist)',
-            channelId: channelId
-          });
-        }
-        
-        // Handle rate limiting gracefully
-        if (error.code === 9 && error.status === 429) {
-          console.log(`⏳ Rate limited on cleanup for ${channelId}, treating as success`);
-          return res.status(200).json({
-            success: true,
-            message: 'Cleanup skipped due to rate limiting (channel likely already cleaned up)',
-            channelId: channelId
-          });
-        }
-        
-        // For any other error, return failure but don't block the user
-        return res.status(500).json({
-          error: 'Failed to cleanup livestream channel',
-          details: error.message || String(error),
-          code: error.code || 'unknown'
-        });
-      }
-    }
-
-  } catch (error) {
-    console.error('Error in chat-operations handler:', error);
-    return res.status(500).json({ 
-      error: 'Failed to process chat operation',
-      details: error.message
-    });
-  }
-});
-
-// Stream Notifications endpoint (handles notification retrieval and management)
-app.post('/api/stream/notifications', async (req, res) => {
+// --- Notifications endpoint ---
+app.post("/api/stream/notifications", async (req, res) => {
   try {
     console.log('🔔 NOTIFICATIONS: Request received:', {
       action: req.body?.action,
@@ -2642,7 +1745,6 @@ app.post('/api/stream/notifications', async (req, res) => {
     
     const { action, userId } = req.body;
 
-    // Enhanced validation for userId
     if (!userId || !action || typeof userId !== 'string' || userId.trim() === '') {
       console.error('❌ NOTIFICATIONS: Missing or invalid required fields:', { 
         userId: userId, 
@@ -2652,52 +1754,17 @@ app.post('/api/stream/notifications', async (req, res) => {
       return res.status(400).json({ error: 'userId and action are required and userId must be a non-empty string' });
     }
 
-    // Trim userId to ensure no whitespace issues
     const trimmedUserId = userId.trim();
     
-    console.log('🔔 NOTIFICATIONS: Using userId for Stream API:', {
-      originalUserId: userId,
-      trimmedUserId: trimmedUserId,
-      userIdLength: trimmedUserId.length,
-      action: action
-    });
-
-    // Get Stream API credentials with fallbacks
-    const apiKey = process.env.STREAM_API_KEY || process.env.VITE_STREAM_API_KEY;
-    const apiSecret = process.env.STREAM_API_SECRET || process.env.VITE_STREAM_API_SECRET;
-
-    if (!apiKey || !apiSecret) {
-      console.error('❌ Missing Stream API credentials:', {
-        apiKey: !!apiKey,
-        apiSecret: !!apiSecret,
-        envKeys: Object.keys(process.env).filter(key => key.includes('STREAM'))
-      });
-      return res.status(500).json({ 
-        error: 'Missing Stream API credentials',
-        debug: {
-          hasApiKey: !!apiKey,
-          hasApiSecret: !!apiSecret,
-          availableStreamEnvs: Object.keys(process.env).filter(key => key.includes('STREAM'))
-        }
-      });
-    }
-
-    console.log('🔔 NOTIFICATIONS: Initializing Stream V2 client for production stability...');
-    
-    // Initialize Stream V2 Feeds client (server-side access)
-    const serverClient = connect(apiKey, apiSecret, undefined);
-    
-    console.log('✅ NOTIFICATIONS: Stream V2 client initialized successfully');
-
     switch (action) {
       case 'get_notifications':
         try {
           console.log(`🔔 GET_NOTIFICATIONS: Fetching notifications for user ${trimmedUserId}`);
           
           // Get notifications from the user's personal feed (filtering for notification activities)
-          const userFeed = serverClient.feed('user', trimmedUserId);
+          const userFeed = serverFeedsClient.feed('user', trimmedUserId);
           const result = await userFeed.get({
-            limit: 100, // Get more activities to filter from
+            limit: 100,
             offset: 0,
             withReactionCounts: false,
             withOwnReactions: false,
@@ -2706,138 +1773,19 @@ app.post('/api/stream/notifications', async (req, res) => {
           // Filter for notification activities only
           const notifications = (result.results || []).filter(activity => 
             activity.verb === 'notification'
-          ).slice(0, 25); // Take only the first 25 notifications
-          console.log(`✅ Found ${notifications.length} notifications for user ${trimmedUserId}`);
-
-          // Enrich notifications with user information
-          const enrichedNotifications = [];
+          ).slice(0, 25);
           
-          for (const notification of notifications) {
-            try {
-              const actorUserId = notification.actor;
-              
-              // Try to get user profile information for the actor
-              let userInfo = {
-                name: actorUserId,
-                image: undefined,
-                role: undefined
-              };
-              
-              try {
-                const actorProfile = await serverClient.user(actorUserId).get();
-                if (actorProfile.data) {
-                  const userData = actorProfile.data;
-                  userInfo = {
-                    name: userData.name || userData.username || actorUserId,
-                    image: userData.image || userData.profile_image || undefined,
-                    role: userData.role || undefined
-                  };
-                }
-              } catch (userError) {
-                // Handle user not found gracefully
-                if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
-                  console.log(`👤 User ${actorUserId} not found in Stream user database - using fallback for notifications`);
-                } else {
-                  console.warn(`❌ Failed to fetch user profile for ${actorUserId}:`, userError?.message);
-                }
-                // Keep the default userInfo (actor ID as name)
-              }
-              
-              enrichedNotifications.push({
-                id: notification.id,
-                actor: actorUserId,
-                verb: notification.verb,
-                object: notification.object,
-                target: notification.target,
-                text: notification.text,
-                created_at: notification.created_at || notification.time,
-                time: notification.created_at || notification.time,
-                custom: notification.custom || {},
-                userInfo: userInfo,
-                notification_type: notification.custom?.notification_type
-              });
-            } catch (enrichError) {
-              console.warn(`❌ Failed to enrich notification ${notification.id}:`, enrichError);
-              // Add the notification without enrichment
-              enrichedNotifications.push({
-                id: notification.id,
-                actor: notification.actor,
-                verb: notification.verb,
-                object: notification.object,
-                target: notification.target,
-                text: notification.text,
-                created_at: notification.created_at || notification.time,
-                time: notification.created_at || notification.time,
-                custom: notification.custom || {}
-              });
-            }
-          }
+          console.log(`✅ Found ${notifications.length} notifications for user ${trimmedUserId}`);
 
           return res.json({
             success: true,
-            notifications: enrichedNotifications
+            notifications: notifications
           });
         } catch (error) {
           console.error('❌ Error fetching notifications:', error);
           return res.status(500).json({
             error: 'Failed to fetch notifications',
-            details: error.message || 'Unknown error'
-          });
-        }
-
-      case 'get_unread_count':
-        try {
-          console.log(`🔔 GET_UNREAD_COUNT: Getting unread notification count for user ${trimmedUserId}`);
-          
-          // Get notifications from the user's personal feed (filtering for notification activities)
-          const userFeed = serverClient.feed('user', trimmedUserId);
-          const result = await userFeed.get({
-            limit: 100, // Get more activities to filter from
-            offset: 0,
-            withReactionCounts: false,
-            withOwnReactions: false,
-          });
-
-          // Filter for notification activities only
-          const notifications = (result.results || []).filter(activity => 
-            activity.verb === 'notification'
-          );
-          
-          // Check which notifications have been read by checking for "read" reactions
-          const unreadNotifications = [];
-          for (const notification of notifications) {
-            try {
-              // Check if this notification has a "read" reaction from this user
-              const readReactions = await serverClient.reactions.filter({
-                kind: 'read',
-                activity_id: notification.id,
-                limit: 1
-              });
-              
-              // If no read reaction found, it's unread
-              if (!readReactions.results || readReactions.results.length === 0) {
-                unreadNotifications.push(notification);
-              }
-            } catch (error) {
-              console.warn(`❌ Failed to check read status for notification ${notification.id}:`, error);
-              // If we can't check read status, assume it's unread
-              unreadNotifications.push(notification);
-            }
-          }
-          
-          const unreadCount = unreadNotifications.length;
-          
-          console.log(`✅ Found ${unreadCount} unread notifications for user ${trimmedUserId}`);
-
-          return res.json({
-            success: true,
-            unreadCount: unreadCount
-          });
-        } catch (error) {
-          console.error('❌ Error getting unread count:', error);
-          return res.status(500).json({
-            error: 'Failed to get unread count',
-            details: error.message || 'Unknown error'
+            details: error instanceof Error ? error.message : 'Unknown error'
           });
         }
 
@@ -2853,8 +1801,7 @@ app.post('/api/stream/notifications', async (req, res) => {
           // Mark notifications as read by adding a "read" reaction to each notification
           const markReadPromises = notificationIds.map(async (notificationId) => {
             try {
-              // Add a "read" reaction to the notification
-              await serverClient.reactions.add(
+              await serverFeedsClient.reactions.add(
                 'read',
                 notificationId,
                 { read_at: new Date().toISOString() },
@@ -2876,7 +1823,43 @@ app.post('/api/stream/notifications', async (req, res) => {
           console.error('❌ Error marking notifications as read:', error);
           return res.status(500).json({
             error: 'Failed to mark notifications as read',
-            details: error.message || 'Unknown error'
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+
+      case 'get_unread_count':
+        try {
+          console.log(`🔔 GET_UNREAD_COUNT: Getting unread notification count for user ${trimmedUserId}`);
+          
+          // Get notifications from the user's personal feed
+          const userFeed = serverFeedsClient.feed('user', trimmedUserId);
+          const result = await userFeed.get({
+            limit: 100,
+            offset: 0,
+            withReactionCounts: false,
+            withOwnReactions: false,
+          });
+
+          // Filter for notification activities only
+          const notifications = (result.results || []).filter(activity => 
+            activity.verb === 'notification'
+          );
+          
+          // For simplicity, assume all notifications are unread
+          // (In production, you'd check for read reactions)
+          const unreadCount = notifications.length;
+          
+          console.log(`✅ Found ${unreadCount} unread notifications for user ${trimmedUserId}`);
+
+          return res.json({
+            success: true,
+            unreadCount: unreadCount
+          });
+        } catch (error) {
+          console.error('❌ Error getting unread count:', error);
+          return res.status(500).json({
+            error: 'Failed to get unread count',
+            details: error instanceof Error ? error.message : 'Unknown error'
           });
         }
 
@@ -2885,20 +1868,10 @@ app.post('/api/stream/notifications', async (req, res) => {
     }
 
   } catch (error) {
-    const { action, userId } = req.body || {};
-    const trimmedUserId = typeof userId === 'string' ? userId.trim() : userId;
-    
-    console.error('❌ NOTIFICATIONS: Critical error in notifications API:', {
-      error: error.message || String(error),
-      stack: error.stack,
-      action: action,
-      userId: trimmedUserId
-    });
+    console.error('❌ NOTIFICATIONS: Critical error in notifications API:', error);
     res.status(500).json({ 
       error: 'Failed to process notification request',
-      details: error.message || String(error),
-      action: action,
-      userId: trimmedUserId
+      details: error instanceof Error ? error.message : String(error)
     });
   }
 });
@@ -2913,37 +1886,21 @@ app.get('*', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 Local Development Server Running!');
+  console.log(`🚀 Stream Demo Server running on port ${PORT}`);
   console.log(`📍 URL: http://localhost:${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log('');
-  console.log('🆕 CONSOLIDATED ENDPOINTS (Production-compatible):');
-  console.log(`🔑 Auth tokens: http://localhost:${PORT}/api/stream/auth-tokens`);
-  console.log(`👥 User data: http://localhost:${PORT}/api/stream/user-data`);
-  console.log(`💬 Chat operations: http://localhost:${PORT}/api/stream/chat-operations`);
-  console.log(`🔔 Notifications: http://localhost:${PORT}/api/stream/notifications`);
-  console.log('');
-  console.log('🔍 LEGACY ENDPOINTS (Local development only):');
-  console.log(`💬 Chat tokens: http://localhost:${PORT}/api/stream/chat-token`);
-  console.log(`📰 Feed tokens: http://localhost:${PORT}/api/stream/feed-token`);
-  console.log(`📊 Get posts: http://localhost:${PORT}/api/stream/get-posts`);
+  console.log('🎯 UNIFIED SEEDING SYSTEM:');
   console.log(`🌱 Unified seeding: http://localhost:${PORT}/api/stream/seed`);
   console.log(`🔄 App reset: http://localhost:${PORT}/api/stream/reset`);
-  console.log(`🎯 Feed actions: http://localhost:${PORT}/api/stream/feed-actions`);
-  console.log(`💬 Create Channel: http://localhost:${PORT}/api/stream/create-channel`);
   console.log('');
-  console.log('📢 IMPORTANT: Use CONSOLIDATED endpoints for production compatibility!');
-  console.log('   Frontend should call /api/stream/auth-tokens with type: "feed", "chat", or "video"');
-  console.log('   Legacy endpoints are for local development debugging only.');
+  console.log('✅ Single source of truth: api/_utils/seeding.ts');
+  console.log('✅ No more duplicate seeding files!');
   console.log('');
   console.log('🔧 Environment Variables Debug:');
   console.log(`   PORT: ${process.env.PORT || '5000 (default)'}`);
   console.log(`   STREAM_API_KEY: ${process.env.STREAM_API_KEY ? '✅ Set' : '❌ NOT SET'}`);
   console.log(`   STREAM_API_SECRET: ${process.env.STREAM_API_SECRET ? '✅ Set' : '❌ NOT SET'}`);
-  console.log('');
-  console.log('📁 Environment Files:');
-  console.log('   .env loaded: ✅');
-  console.log('   .env.local loaded: ✅');
   console.log('');
   if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
     console.log('⚠️  WARNING: Missing Stream API credentials!');

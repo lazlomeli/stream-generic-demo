@@ -615,10 +615,48 @@ const UserProfile = () => {
         console.log('🎯 USERPROFILE: Using cached follow state');
       }
 
-      // Get user counts using real-time client-side state
-      console.log(`📊 USERPROFILE: Fetching real-time counts for user: ${targetUserId}`);
+      // Get user counts efficiently with caching
+      console.log(`📊 USERPROFILE: Getting counts for user: ${targetUserId} (with caching)`);
       const accessToken = await getAccessTokenSilently();
-      const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
+      
+      // Try cache first
+      let counts = apiCache.getUserCounts(targetUserId);
+      if (!counts) {
+        console.log(`🚀 USERPROFILE: Cache miss, fetching counts for: ${targetUserId}`);
+        
+        const requestPayload = {
+          userId: feedsClient.userId,
+          targetUserIds: [targetUserId]
+        };
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+        
+        const response = await fetch('/api/stream/get-user-counts-batch', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const freshCounts = data.userCounts[targetUserId] || { followers: 0, following: 0 };
+          counts = freshCounts;
+          apiCache.setUserCounts(targetUserId, freshCounts);
+        } else {
+          counts = { followers: 0, following: 0 };
+        }
+      } else {
+        console.log(`🎯 USERPROFILE: Using cached counts for: ${targetUserId}`);
+      }
+      
+      // Ensure counts is never null
+      const safeCounts = counts || { followers: 0, following: 0 };
       
       // Update state with fresh data
       console.log(`🔄 USERPROFILE: Setting follow state from cache:`, {
@@ -630,14 +668,14 @@ const UserProfile = () => {
       setIsFollowing(isCurrentlyFollowing !== null ? isCurrentlyFollowing : false);
       setProfile(prev => prev ? {
         ...prev,
-        followerCount: counts.followers,
-        followingCount: counts.following
+        followerCount: safeCounts.followers,
+        followingCount: safeCounts.following
       } : null);
       
       console.log('✅ USERPROFILE: Follow data refreshed using shared cache:', {
         isFollowing: isCurrentlyFollowing,
-        followerCount: counts.followers,
-        followingCount: counts.following,
+        followerCount: safeCounts.followers,
+        followingCount: safeCounts.following,
         usedCache: apiCache.getFollowState(feedsClient.userId, targetUserId) !== null
       });
       
@@ -873,8 +911,36 @@ const UserProfile = () => {
       });
       
       try {
-        const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
-        console.log(`📊 USERPROFILE DEBUG: Count API returned for ${targetUserId}:`, {
+        // Clear cache for fresh data after follow action, then get efficiently
+        apiCache.clearUserCounts([targetUserId]);
+        
+        const requestPayload = {
+          userId: feedsClient.userId,
+          targetUserIds: [targetUserId]
+        };
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+        
+        const response = await fetch('/api/stream/get-user-counts-batch', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestPayload)
+        });
+
+        let counts = { followers: 0, following: 0 };
+        if (response.ok) {
+          const data = await response.json();
+          counts = data.userCounts[targetUserId] || counts;
+          apiCache.setUserCounts(targetUserId, counts);
+        }
+        
+        console.log(`📊 USERPROFILE DEBUG: Efficient count API returned for ${targetUserId}:`, {
           followers: counts.followers,
           following: counts.following,
           note: `These are ${targetUserId}'s counts (followers of them + people they follow)`

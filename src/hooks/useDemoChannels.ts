@@ -8,37 +8,18 @@ export function useDemoChannels(
   chatClient: StreamChat | null,
   userId: string | undefined
 ) {
-  const { getAccessTokenSilently } = useAuth0();
+  // Removed getAccessTokenSilently - no longer needed for auto-seeding
   const [channels, setChannels] = React.useState<ChannelItem[]>([]);
-  const seededForUserRef = React.useRef<string | null>(null);
 
   useLastMessageListener(chatClient, setChannels);
 
-  const seedAndLoad = React.useCallback(async () => {
+  const loadChannels = React.useCallback(async () => {
     if (!chatClient || !userId) return;
 
-    // seed only once per userId
-    if (seededForUserRef.current !== userId) {
-      const at = await getAccessTokenSilently();
-      const res = await fetch("/api/stream/seed", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${at}`,
-        },
-        body: JSON.stringify({ userId }), // <-- IMPORTANT
-      });
-      if (!res.ok) {
-        // not fatal for listing; log and continue
-        console.warn("seed failed", res.status, await res.text());
-      } else {
-        seededForUserRef.current = userId;
-      }
-    }
-
+    // Just load channels - NO automatic seeding
     const list = await listMyChannels(chatClient, userId);
     setChannels(list);
-  }, [chatClient, userId, getAccessTokenSilently]);
+  }, [chatClient, userId]);
 
-  return { channels, seedAndLoad };
+  return { channels, loadChannels };
 }

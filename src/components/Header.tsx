@@ -54,6 +54,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
     }
   }, [showResetConfirm, showFinalConfirm])
 
+
   const handleLogout = () => {
     logout({ logoutParams: { returnTo: window.location.origin } })
   }
@@ -121,8 +122,8 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
       const data = await response.json()
 
       if (response.ok) {
-        showSuccess('App emptied successfully! All data has been cleared.')
-        // Refresh the page to show the empty state
+        showSuccess('App reset and seeded successfully! Fresh sample data has been created.')
+        // Refresh the page to show the new sample data
         window.location.reload()
       } else {
         throw new Error(data.error || 'Reset failed')
@@ -149,6 +150,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
     // Re-enable body scroll
     document.body.style.overflow = 'unset'
   }
+
 
   return (
     <header className="header">
@@ -228,7 +230,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
               <button
                 onClick={handleResetClick}
                 className="header-nav-button reset-button"
-                title="Reset App (Clear all data and reseed)"
+                title="Reset App (Clear all data and create fresh sample data)"
                 disabled={isResetting}
               >
                 <img src={ResetIcon} alt="Reset App" />
@@ -281,21 +283,21 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
           }}
         >
           <div className="reset-confirmation-dialog">
-            <h3>Reset App</h3>
-            <p>
-              This will permanently delete all existing data including:
-              <br />
-              • All chat channels and messages
-              <br />
-              • All activity feed posts
-              <br />
-              • All user data and follows
-              <br />
-              <br />
-              Fresh sample data will be created afterwards.
-              <br />
-              <strong>This action cannot be undone.</strong>
-            </p>
+              <h3>Reset App</h3>
+              <p>
+                This will permanently delete all existing data and create fresh sample data:
+                <br />
+                • Clear all chat channels and messages
+                <br />
+                • Clear all activity feed posts
+                <br />
+                • Clear all user data and follows
+                <br />
+                • Create sample users, channels, and posts
+                <br />
+                <br />
+                <strong>This action cannot be undone.</strong>
+              </p>
             <div className="reset-confirmation-buttons">
               <button
                 onClick={handleResetCancel}
@@ -308,7 +310,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
                 className="reset-confirm-button"
                 disabled={isResetting}
               >
-                Yes, Reset App
+                Yes, Reset & Seed App
               </button>
             </div>
           </div>
@@ -359,8 +361,8 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
             <div className="reset-loading-spinner">
               <div className="spinner"></div>
             </div>
-            <h3>Resetting app...</h3>
-            <p>Please wait while we clear all data and prepare a fresh start.</p>
+            <h3>Resetting & seeding app...</h3>
+            <p>Please wait while we clear all data and create fresh sample content.</p>
             <div className="reset-loading-progress">
               <div className="progress-bar">
                 <div className="progress-bar-fill"></div>
@@ -369,6 +371,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
           </div>
         </div>
       )}
+
     </header>
   )
 }

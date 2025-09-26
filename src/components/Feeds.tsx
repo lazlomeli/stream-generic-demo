@@ -83,6 +83,15 @@ const getUserDisplayName = (actorId: string, currentUser: any, userInfo?: any, u
     return demoUser.name;
   }
   
+  // Handle timestamped user IDs (e.g., alice_smith_1234567890 -> alice_smith)
+  if (actorId.includes('_') && /\d{13}$/.test(actorId)) {
+    const baseUserId = actorId.replace(/_\d{13}$/, '');
+    const baseDemoUser = DEMO_USERS[baseUserId as keyof typeof DEMO_USERS];
+    if (baseDemoUser) {
+      return baseDemoUser.name;
+    }
+  }
+  
   // Last resort: format the actor ID to be more readable
   // Handle Auth0-style IDs like "Google-Oauth2 113714394737973100008"
   if (actorId.includes('|') || actorId.includes('oauth2') || actorId.includes('google')) {
@@ -118,6 +127,15 @@ const getUserProfileImage = (actorId: string, currentUser: any, userInfo?: any, 
   const demoUser = DEMO_USERS[actorId as keyof typeof DEMO_USERS];
   if (demoUser) {
     return demoUser.image;
+  }
+  
+  // Handle timestamped user IDs (e.g., alice_smith_1234567890 -> alice_smith)
+  if (actorId.includes('_') && /\d{13}$/.test(actorId)) {
+    const baseUserId = actorId.replace(/_\d{13}$/, '');
+    const baseDemoUser = DEMO_USERS[baseUserId as keyof typeof DEMO_USERS];
+    if (baseDemoUser) {
+      return baseDemoUser.image;
+    }
   }
   
   return undefined;
@@ -275,10 +293,8 @@ const Feeds = () => {
         
         setClientReady(true);
         
-
-        
-        // Automatically seed demo feeds after getting the token
-        await seedDemoFeeds(sanitizedUserId, accessToken);
+        // Note: Demo seeding removed - only seed via reset button or explicit action
+        // This prevents automatic user creation on every page load
         
       } catch (err: any) {
         console.error('Error getting feed token:', err);
@@ -333,23 +349,21 @@ const Feeds = () => {
           return updatedCounts;
         });
         
-        // Update follower counts only (avoid calling fetchUserCounts to prevent state conflicts)
-        console.log(`🔄 FEEDS EVENT: Updating follower counts from real-time state...`);
+        // Update follower counts efficiently using cached batch API
+        console.log(`🔄 FEEDS EVENT: Updating follower counts from cached state...`);
         try {
-          const accessToken = await getAccessTokenSilently();
-          const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
-          setUserCounts(prev => ({
-            ...prev,
-            [targetUserId]: {
-              followers: counts.followers,
-              following: counts.following
-            }
-          }));
-          console.log(`✅ FEEDS EVENT: Updated follower counts from event:`, {
-            followers: counts.followers,
-            following: counts.following,
-            eventFollowState: isFollowing
-          });
+          // Use cached data first, only fetch if not available
+          const cachedCounts = apiCache.getUserCounts(targetUserId);
+          if (cachedCounts) {
+            setUserCounts(prev => ({
+              ...prev,
+              [targetUserId]: cachedCounts
+            }));
+            console.log(`✅ FEEDS EVENT: Updated from cache:`, cachedCounts);
+          } else {
+            // If not cached, trigger efficient batch fetch for this single user
+            await fetchUserCounts([targetUserId]);
+          }
         } catch (error) {
           console.error('❌ FEEDS EVENT: Error updating counts:', error);
         }
@@ -674,40 +688,52 @@ const Feeds = () => {
     }
 
     try {
-      console.log(`📊 Fetching real-time counts for ${userIds.length} users using client-side state`);
+      console.log(`📊 Batch fetching user counts for ${userIds.length} users with caching`);
       
       // Get access token for authenticated API calls
       const accessToken = await getAccessTokenSilently();
       
-      // Use client-side state management for real-time counts
-      const countPromises = userIds.map(async (userId) => {
-        try {
-          const counts = await streamFeedsManager.getUserCounts(userId, accessToken);
-          return { [userId]: counts };
-        } catch (error) {
-          console.warn(`❌ Failed to get real-time counts for ${userId}:`, error);
-          return { [userId]: { followers: 0, following: 0 } };
+      // Use the efficient batch API with caching
+      const newCounts = await apiCache.fetchUserCountsBatch(userIds, async (uncachedUserIds) => {
+        console.log(`🚀 Making SINGLE batch API call for ${uncachedUserIds.length} uncached users`);
+        
+        const requestPayload = {
+          userId: feedsClient.userId,
+          targetUserIds: uncachedUserIds
+        };
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
         }
+        
+        const response = await fetch('/api/stream/get-user-counts-batch', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Batch user counts failed: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.userCounts || {};
       });
 
-      const countResults = await Promise.all(countPromises);
-      const newCounts = countResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+      console.log(`✅ Efficient batch counts fetched (${Object.keys(newCounts).length} users):`, newCounts);
 
-      console.log(`✅ Real-time counts fetched:`, newCounts);
-
-      // Update state with the real-time counts
+      // Update state with the batch-fetched counts
       setUserCounts(prev => ({
         ...prev,
         ...newCounts
       }));
 
     } catch (error) {
-      console.error('❌ Error fetching real-time user counts:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        userIds: userIds
-      });
+      console.error('❌ Error in efficient batch user counts:', error);
     }
   };
 
@@ -1418,22 +1444,14 @@ const Feeds = () => {
       }));
       console.log(`📡 FEEDS: Broadcasted follow state change event`);
       
-      // CRITICAL: Update follower counts only (trust the optimistic follow state update)
-      console.log(`🔄 FEEDS: Fetching updated follower counts from client-side state...`);
+      // CRITICAL: Update follower counts efficiently (trust the optimistic follow state update)
+      console.log(`🔄 FEEDS: Refreshing follower counts efficiently...`);
       try {
-        const counts = await streamFeedsManager.getUserCounts(targetUserId, accessToken);
-        setUserCounts(prev => ({
-          ...prev,
-          [targetUserId]: {
-            followers: counts.followers,
-            following: counts.following
-          }
-        }));
-        console.log(`✅ FEEDS: Updated follower counts:`, {
-          followers: counts.followers,
-          following: counts.following,
-          followButtonState: !isCurrentlyFollowing // Should match optimistic update
-        });
+        // Clear cache for this user to force fresh data, then use efficient batch fetch
+        apiCache.clearUserCounts([targetUserId]);
+        await fetchUserCounts([targetUserId]);
+        
+        console.log(`✅ FEEDS: Follower counts refreshed efficiently after follow action`);
       } catch (error) {
         console.error('❌ FEEDS: Error fetching updated counts:', error);
       }
@@ -1842,11 +1860,10 @@ const Feeds = () => {
                             handleFollow(post.actor);
                           }}
                         >
-                          {(() => {
-                            const isFollowing = followingUsers.has(post.actor);
-                            console.log(`🔘 FEEDS MODAL: Rendering follow button for ${post.actor}, following: ${isFollowing}, followingUsers size: ${followingUsers.size}`);
-                            return isFollowing ? 'Following' : 'Follow';
-                          })()}
+                      {(() => {
+                        const isFollowing = followingUsers.has(post.actor);
+                        return isFollowing ? 'Following' : 'Follow';
+                      })()}
                         </button>
                       </div>
                     )}
@@ -1867,7 +1884,6 @@ const Feeds = () => {
                     >
                       {(() => {
                         const isFollowing = followingUsers.has(post.actor);
-                        console.log(`🔘 FEEDS HEADER: Rendering follow button for ${post.actor}, following: ${isFollowing}, followingUsers size: ${followingUsers.size}`);
                         return isFollowing ? 'Following' : 'Follow';
                       })()}
                     </button>
