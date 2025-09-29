@@ -18,6 +18,7 @@ import MessageIcon from '../icons/message-circle.svg';
 import ShareIcon from '../icons/share-3.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
+import SmartImage from './SmartImage';
 import TrashIcon from '../icons/trash.svg';
 import CameraIcon from '../icons/camera.svg';
 import VideoIcon from '../icons/video.svg';
@@ -1910,10 +1911,11 @@ const Feeds = () => {
                     {post.attachments.map((attachment, index) => (
                       <div key={index} className="post-attachment">
                         {attachment.type === 'image' ? (
-                          <img 
-                            src={(attachment as any).url || `data:${(attachment as any).mimeType || attachment.mime_type};base64,${(attachment as any).data}`} 
-                            alt={(attachment as any).name || attachment.title}
+                          <SmartImage 
+                            src={attachment.asset_url || (attachment as any).url || `data:${(attachment as any).mimeType || attachment.mime_type};base64,${(attachment as any).data}`} 
+                            alt={(attachment as any).name || attachment.title || 'Post image'}
                             className="post-attachment-image"
+                            title={attachment.title || 'Post image'}
                           />
                         ) : attachment.type === 'video' ? (
                           <video 

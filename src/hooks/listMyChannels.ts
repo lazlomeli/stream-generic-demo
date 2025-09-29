@@ -49,15 +49,68 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
     
 
 
-    // Handle voice messages for channel list preview
+    // Handle different message types for channel list preview
     let lastMessage = last?.text;
     
-    // If no text but has voice recording attachment, show voice message preview
+    // If no text but has attachments, show appropriate preview based on attachment type
     if (!lastMessage && last?.attachments?.length > 0) {
-      const voiceAttachment = last.attachments.find(att => att.type === 'voiceRecording');
-      if (voiceAttachment) {
-        // Use custom preview text if available, otherwise show default
-        lastMessage = last.custom?.previewText || '🎤 Voice Message';
+      const attachment = last.attachments[0]; // Use the first attachment for preview
+      
+      switch (attachment.type) {
+        case 'voiceRecording':
+          // Use custom preview text if available, otherwise show default
+          lastMessage = last.custom?.previewText || '🎤 Voice Message';
+          break;
+        case 'poll':
+          lastMessage = '📊 Poll';
+          break;
+        case 'image':
+          lastMessage = '📷 Photo';
+          break;
+        case 'video':
+          lastMessage = '🎥 Video';
+          break;
+        case 'file':
+          lastMessage = '📎 File';
+          break;
+        case 'giphy':
+          lastMessage = '🎬 GIF';
+          break;
+        default:
+          // For any other attachment types
+          lastMessage = '📎 Attachment';
+          break;
+      }
+    }
+    
+    // Handle case where there's text AND attachments - show text but indicate attachments
+    if (last?.text && last?.attachments?.length > 0) {
+      const attachment = last.attachments[0];
+      let attachmentIndicator = '';
+      
+      switch (attachment.type) {
+        case 'voiceRecording':
+          // Don't add extra emoji for voice recordings since they already have 🎤 in the text
+          break;
+        case 'poll':
+          attachmentIndicator = ' 📊';
+          break;
+        case 'image':
+          attachmentIndicator = ' 📷';
+          break;
+        case 'video':
+          attachmentIndicator = ' 🎥';
+          break;
+        case 'file':
+          attachmentIndicator = ' 📎';
+          break;
+        case 'giphy':
+          attachmentIndicator = ' 🎬';
+          break;
+      }
+      
+      if (attachmentIndicator) {
+        lastMessage = last.text + attachmentIndicator;
       }
     }
 

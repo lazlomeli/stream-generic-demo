@@ -210,9 +210,12 @@ const CustomChannelHeader: React.FC = () => {
   const handleAudioCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a valid call ID (only a-z, 0-9, _, - allowed)
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const callId = `audio_${sanitizedChannelId}_${Date.now()}`;
+    // Generate a valid call ID (only a-z, 0-9, _, - allowed) with length limit
+    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20); // Limit channel ID part
+    const timestamp = Date.now().toString().slice(-8); // Use last 8 digits of timestamp
+    const callId = `audio_${sanitizedChannelId}_${timestamp}`.slice(0, 60); // Ensure under 64 chars
+    
+    console.log('🎵 Generated call ID:', callId, 'Length:', callId.length);
     
     // Navigate to call page with audio mode
     navigate(`/call/${callId}?type=audio&channel=${channel.id}`);
@@ -222,9 +225,12 @@ const CustomChannelHeader: React.FC = () => {
   const handleVideoCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a valid call ID (only a-z, 0-9, _, - allowed)
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const callId = `video_${sanitizedChannelId}_${Date.now()}`;
+    // Generate a valid call ID (only a-z, 0-9, _, - allowed) with length limit
+    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20); // Limit channel ID part
+    const timestamp = Date.now().toString().slice(-8); // Use last 8 digits of timestamp
+    const callId = `video_${sanitizedChannelId}_${timestamp}`.slice(0, 60); // Ensure under 64 chars
+    
+    console.log('🎥 Generated call ID:', callId, 'Length:', callId.length);
     
     // Navigate to call page with video mode
     navigate(`/call/${callId}?type=video&channel=${channel.id}`);

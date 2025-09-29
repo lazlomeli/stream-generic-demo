@@ -191,46 +191,12 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
     }
   }, [isRecording]);
 
-  // Custom send message handler that finds and clicks Stream Chat's native send button
-  const handleSendMessage = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
+  // Custom send handler
+  const handleSendMessage = useCallback(() => {
+    if (messageInputContext?.handleSubmit) {
+      messageInputContext.handleSubmit();
     }
-    
-    // Look for Stream Chat's native send button (which is hidden by CSS)
-    const nativeSendButton = containerRef.current?.querySelector('.str-chat__send-button');
-    if (nativeSendButton) {
-      console.log('Found native send button, clicking it');
-      (nativeSendButton as HTMLButtonElement).click();
-      return;
-    }
-    
-    // Alternative: look for any button with type="submit" inside the MessageInput
-    const submitButton = containerRef.current?.querySelector('button[type="submit"]');
-    if (submitButton) {
-      console.log('Found submit button, clicking it');
-      (submitButton as HTMLButtonElement).click();
-      return;
-    }
-    
-    // Fallback: try to simulate Enter key press on the textarea
-    const textarea = containerRef.current?.querySelector('.str-chat__textarea__textarea');
-    if (textarea) {
-      console.log('Simulating Enter key press');
-      const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true
-      });
-      textarea.dispatchEvent(enterEvent);
-      return;
-    }
-    
-    console.warn('Could not find any way to send the message');
-  }, []);
+  }, [messageInputContext]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -244,7 +210,7 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
         <MessageInput 
           {...props} 
           additionalTextareaProps={{
-            placeholder: "Type a message..."
+            placeholder: "Type a message... (try /giphy search_term)"
           }}
         />
         

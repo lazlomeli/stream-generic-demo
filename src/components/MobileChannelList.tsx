@@ -7,6 +7,7 @@ import CreateChannelModal from './CreateChannelModal'
 import { listMyChannels, ChannelItem } from '../hooks/listMyChannels'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingIcon from './LoadingIcon'
+import ChannelTypingIndicator from './ChannelTypingIndicator'
 import { useToast } from '../contexts/ToastContext'
 import UsersGroupIcon from '../icons/users-group.svg'
 import SendIcon from '../icons/send.svg'
@@ -349,7 +350,10 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
                         </div>
                       </div>
                       <div className="mobile-channel-message">
-                        {channelItem.lastMessage || 'No messages yet'}
+                        <ChannelTypingIndicator
+                          channelId={channelItem.id}
+                          lastMessage={channelItem.lastMessage}
+                        />
                       </div>
                     </div>
                   </div>

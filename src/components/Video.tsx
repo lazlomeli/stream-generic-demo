@@ -820,6 +820,31 @@ const Video: React.FC<VideoProps> = () => {
     }
   }, [isViewer, setHideHeader])
 
+  // FORCE clear browser cache on video page load
+  useEffect(() => {
+    // Clear any potential browser caches for Stream APIs
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        cacheNames.forEach(cacheName => {
+          if (cacheName.includes('stream') || cacheName.includes('video')) {
+            caches.delete(cacheName);
+            console.log('🧹 CLEARED browser cache:', cacheName);
+          }
+        });
+      });
+    }
+    
+    // Force reload if this is the first time loading the video page
+    const hasLoadedVideo = sessionStorage.getItem('video_page_loaded');
+    if (!hasLoadedVideo) {
+      sessionStorage.setItem('video_page_loaded', 'true');
+      console.log('🔄 FIRST VIDEO PAGE LOAD - Will reload after 100ms to clear caches');
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    }
+  }, [])
+
   // Handle going live from backstage
   const handleGoLive = () => {
     setBackstageMode(false)
@@ -833,12 +858,38 @@ const Video: React.FC<VideoProps> = () => {
   // --- Token helpers ---
   const getStreamToken = useCallback(
     async (type: 'video' | 'chat'): Promise<string> => {
+      // FORCE clear any cached Stream data before getting new tokens
+      if (type === 'video') {
+        try {
+          // Clear localStorage that might cache Stream data
+          localStorage.removeItem('stream_video_token');
+          localStorage.removeItem('stream_user_token');
+          localStorage.removeItem('stream_video_client');
+          localStorage.removeItem(`stream_video_user_${sanitizedUserId || anonymousViewerId}`);
+          
+          // Clear sessionStorage as well
+          sessionStorage.removeItem('stream_video_token');
+          sessionStorage.removeItem('stream_user_token');
+          sessionStorage.removeItem('stream_video_client');
+          
+          console.log('🧹 CLEARED all potential cached Stream video data');
+        } catch (e) {
+          console.log('⚠️ Error clearing cached data:', e);
+        }
+      }
       // Handle anonymous viewers
       if (isAnonymousViewer && anonymousViewerId) {
+        const cacheBuster = Date.now();
+        console.log('🔄 VIDEO: Requesting fresh anonymous video token with cache-buster:', cacheBuster);
+        
         const res = await fetch('/api/stream/auth-tokens', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'X-Cache-Buster': cacheBuster.toString()
           },
           body: JSON.stringify({
             type,
@@ -846,7 +897,8 @@ const Video: React.FC<VideoProps> = () => {
             userProfile: {
               name: 'Anonymous Viewer',
               image: undefined,
-              role: 'user' // Anonymous viewers get user role
+              role: 'admin', // Demo app - even anonymous users get admin role for video features
+              cacheBuster: cacheBuster // Force backend to process fresh request
             }
           }),
         })
@@ -860,11 +912,20 @@ const Video: React.FC<VideoProps> = () => {
 
       // Handle authenticated users (both viewers and streamers)
       const accessToken = await getAccessTokenSilently()
+      
+      // Add cache-buster to force fresh token generation
+      const cacheBuster = Date.now();
+      console.log('🔄 VIDEO: Requesting fresh video token with cache-buster:', cacheBuster);
+      
       const res = await fetch('/api/stream/auth-tokens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Cache-Buster': cacheBuster.toString()
         },
         body: JSON.stringify({
           type,
@@ -872,7 +933,8 @@ const Video: React.FC<VideoProps> = () => {
           userProfile: {
             name: user?.name || user?.email || `User_${sanitizedUserId}`,
             image: user?.picture || undefined,
-            role: isStreamer ? 'admin' : 'user' // Streamers get admin role, authenticated viewers get user role
+            role: 'admin', // Demo app - all authenticated users get admin role for video features
+            cacheBuster: cacheBuster // Force backend to process fresh request
           }
         }),
       })
@@ -893,9 +955,23 @@ const Video: React.FC<VideoProps> = () => {
       ? anonymousViewerId
       : sanitizedUserId
       
-    if (!apiKey || !effectiveUserId || videoClientRef.current) {
-      console.log('🚫 Skipping video client initialization:', { hasApiKey: !!apiKey, hasEffectiveUserId: !!effectiveUserId, hasExistingClient: !!videoClientRef.current })
+    if (!apiKey || !effectiveUserId) {
+      console.log('🚫 Skipping video client initialization:', { hasApiKey: !!apiKey, hasEffectiveUserId: !!effectiveUserId })
       return
+    }
+
+    // FORCE destroy existing client to prevent cached user data
+    if (videoClientRef.current) {
+      console.log('🧹 FORCE destroying existing video client to clear cached user data');
+      try {
+        await videoClientRef.current.disconnectUser();
+        videoClientRef.current = null;
+        setVideoClientReady(false);
+      } catch (e) {
+        console.log('⚠️ Error destroying previous client:', e);
+        videoClientRef.current = null;
+        setVideoClientReady(false);
+      }
     }
 
     try {

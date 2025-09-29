@@ -1131,6 +1131,10 @@
   display: none !important;
 }
 
+.str-chat__edit-message-cancel {
+  margin-right: 10px !important;
+}
+
 /* Custom Send Button for Mobile */
 .mobile-view .custom-send-button {
   width: 36px !important;
@@ -1258,7 +1262,6 @@
 .mobile-view .custom-message-input {
   width: 100% !important;
   max-width: 100% !important;
-  overflow: hidden !important;
 }
 
 /* Make sure the Stream Chat message input takes remaining space */

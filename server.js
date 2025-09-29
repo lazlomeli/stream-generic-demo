@@ -1685,7 +1685,8 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
       console.log('📹 AUTH-TOKENS: Generating video token for:', userId);
       
       // For video tokens, create JWT token directly
-      const userRole = userProfile?.role || 'user';
+      // Demo app - all users get admin for video features
+      const userRole = 'admin';
       
       const tokenPayload = {
         user_id: userId,
@@ -1728,6 +1729,171 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
     console.error('❌ AUTH-TOKENS: Critical error generating token:', error);
     res.status(500).json({ 
       error: 'Failed to generate token',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// --- Chat operations endpoint ---
+app.post("/api/stream/chat-operations", async (req, res) => {
+  try {
+    console.log('💬 CHAT-OPERATIONS: Request received:', { type: req.body?.type, userId: req.body?.userId });
+    
+    const { type, userId, channelId, channelName, selectedUsers, currentUserId, isDM, channelImage } = req.body;
+
+    if (!userId || !type) {
+      console.error('❌ CHAT-OPERATIONS: Missing required fields:', { userId: !!userId, type: !!type });
+      return res.status(400).json({ error: 'userId and type are required' });
+    }
+
+    if (!['create-livestream-channel', 'create-channel', 'add-to-general', 'leave-channel'].includes(type)) {
+      console.error('❌ CHAT-OPERATIONS: Invalid type:', type);
+      return res.status(400).json({ error: 'Invalid operation type' });
+    }
+
+    const streamApiKey = process.env.STREAM_API_KEY;
+    const streamSecret = process.env.STREAM_API_SECRET;
+
+    if (!streamApiKey || !streamSecret) {
+      console.error('❌ CHAT-OPERATIONS: Missing Stream API credentials');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    // Initialize Stream Chat client
+    const client = StreamChat.getInstance(streamApiKey, streamSecret);
+
+    if (type === 'create-livestream-channel') {
+      console.log('🎬 CHAT-OPERATIONS: Creating livestream channel:', channelId);
+      
+      if (!channelId) {
+        return res.status(400).json({ error: 'channelId is required for create-livestream-channel' });
+      }
+
+      try {
+        // Create livestream channel
+        const channel = client.channel('livestream', channelId, {
+          name: `Live Stream ${channelId}`,
+          created_by_id: userId,
+          members: [userId]
+        });
+
+        await channel.create();
+        console.log('✅ CHAT-OPERATIONS: Livestream channel created successfully');
+
+        return res.status(200).json({
+          success: true,
+          channelId: channelId,
+          message: 'Livestream channel created successfully'
+        });
+      } catch (error) {
+        console.error('❌ CHAT-OPERATIONS: Error creating livestream channel:', error);
+        return res.status(500).json({ 
+          error: 'Failed to create livestream channel',
+          details: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    if (type === 'create-channel') {
+      console.log('💬 CHAT-OPERATIONS: Creating channel:', { channelName, isDM, selectedUsers });
+      
+      if (!channelName || !selectedUsers) {
+        return res.status(400).json({ error: 'channelName and selectedUsers are required for create-channel' });
+      }
+
+      try {
+        const parsedUsers = JSON.parse(selectedUsers);
+        const members = [currentUserId, ...parsedUsers].filter(Boolean);
+        
+        // Generate channel ID
+        const channelId = isDM ? 
+          `dm_${members.sort().join('_')}_${Date.now()}` : 
+          `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        const channelData = {
+          name: channelName,
+          created_by_id: currentUserId,
+          members: members,
+          isDM: isDM
+        };
+
+        if (channelImage) {
+          channelData.image = channelImage;
+        }
+
+        const channel = client.channel('messaging', channelId, channelData);
+        await channel.create();
+        console.log('✅ CHAT-OPERATIONS: Channel created successfully');
+
+        return res.status(200).json({
+          success: true,
+          channelId: channelId,
+          message: 'Channel created successfully'
+        });
+      } catch (error) {
+        console.error('❌ CHAT-OPERATIONS: Error creating channel:', error);
+        return res.status(500).json({ 
+          error: 'Failed to create channel',
+          details: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    if (type === 'add-to-general') {
+      console.log('🏠 CHAT-OPERATIONS: Adding user to general channel:', userId);
+      
+      try {
+        const channel = client.channel('messaging', 'general');
+        await channel.addMembers([userId]);
+        console.log('✅ CHAT-OPERATIONS: User added to general channel');
+
+        return res.status(200).json({
+          success: true,
+          message: 'User added to general channel successfully'
+        });
+      } catch (error) {
+        console.error('❌ CHAT-OPERATIONS: Error adding user to general:', error);
+        return res.status(500).json({ 
+          error: 'Failed to add user to general channel',
+          details: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    if (type === 'leave-channel') {
+      console.log('🚪 CHAT-OPERATIONS: User leaving channel:', { userId, channelId });
+      
+      if (!channelId) {
+        return res.status(400).json({ error: 'channelId is required for leave-channel' });
+      }
+
+      try {
+        const channel = client.channel('messaging', channelId);
+        await channel.removeMembers([userId]);
+        console.log('✅ CHAT-OPERATIONS: User removed from channel');
+
+        return res.status(200).json({
+          success: true,
+          message: 'User removed from channel successfully'
+        });
+      } catch (error) {
+        console.error('❌ CHAT-OPERATIONS: Error removing user from channel:', error);
+        return res.status(500).json({ 
+          error: 'Failed to remove user from channel',
+          details: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ CHAT-OPERATIONS: Critical error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: req.body?.type,
+      userId: req.body?.userId
+    });
+    res.status(500).json({ 
+      error: 'Failed to perform chat operation',
       details: error instanceof Error ? error.message : String(error)
     });
   }
@@ -1872,6 +2038,335 @@ app.post("/api/stream/notifications", async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to process notification request',
       details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// --- User Data endpoint ---
+app.post("/api/stream/user-data", async (req, res) => {
+  try {
+    console.log('🔧 USER-DATA: Request received:', {
+      method: req.method,
+      type: req.body?.type,
+      hasBody: !!req.body,
+      hasAuthHeader: !!req.headers.authorization,
+      bodyKeys: Object.keys(req.body || {})
+    });
+    
+    const { type } = req.body;
+
+    if (!type) {
+      console.log('❌ USER-DATA: Missing type parameter');
+      return res.status(400).json({ error: 'type is required' });
+    }
+
+    if (!['posts', 'resolve', 'chat-user'].includes(type)) {
+      console.log('❌ USER-DATA: Invalid type:', type);
+      return res.status(400).json({ error: 'type must be "posts", "resolve", or "chat-user"' });
+    }
+
+    // Handle user posts fetching
+    if (type === 'posts') {
+      console.log('📝 USER-DATA: Handling posts request...', {
+        userId: req.body?.userId,
+        targetUserId: req.body?.targetUserId
+      });
+      
+      const { userId, targetUserId, limit = 20 } = req.body;
+
+      if (!userId) {
+        console.log('❌ USER-DATA: Missing userId for posts');
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      if (!targetUserId) {
+        console.log('❌ USER-DATA: Missing targetUserId for posts');
+        return res.status(400).json({ error: 'targetUserId is required' });
+      }
+
+      console.log(`🔍 Fetching posts from user's personal feed: user:${targetUserId}`);
+
+      // Check if we need to map to a timestamped user ID
+      let actualUserId = targetUserId;
+      
+      // First try the original user ID
+      let result;
+      try {
+        const userFeed = serverFeedsClient.feed('user', targetUserId);
+        result = await userFeed.get({
+          limit: limit * 2,
+          offset: 0,
+          withReactionCounts: true,
+          withOwnReactions: true,
+        });
+        
+        console.log(`✅ Found ${result.results?.length || 0} activities in user:${targetUserId} feed`);
+      } catch (error) {
+        console.log(`⚠️ Failed to fetch from user:${targetUserId}, will try timestamped versions...`);
+        result = { results: [] };
+      }
+      
+      // If no posts found, try to find a timestamped version of this user
+      if (!result.results || result.results.length === 0) {
+        console.log(`🔍 No posts found for ${targetUserId}, searching for timestamped versions...`);
+        
+        try {
+          // Query global feed to find any activities by timestamped versions of this user
+          const globalFeed = serverFeedsClient.feed('flat', 'global');
+          const globalResult = await globalFeed.get({
+            limit: 100,
+            offset: 0,
+            withReactionCounts: true,
+            withOwnReactions: true,
+          });
+          
+          // Look for activities by users matching the pattern: targetUserId_timestamp
+          const timestampedActivities = globalResult.results?.filter((activity) => {
+            const actorId = activity.actor;
+            return actorId && actorId.startsWith(targetUserId + '_') && /\d{13}$/.test(actorId);
+          }) || [];
+          
+          console.log(`🔍 Found ${timestampedActivities.length} activities by timestamped versions of ${targetUserId}`);
+          
+          if (timestampedActivities.length > 0) {
+            // Get the most recent timestamped user ID
+            const timestampedUserIds = Array.from(new Set(timestampedActivities.map(a => a.actor)));
+            console.log(`🔍 Found timestamped user IDs:`, timestampedUserIds);
+            
+            // Use the first one (they should all be the same user anyway)
+            actualUserId = timestampedUserIds[0];
+            console.log(`🔄 Using timestamped user ID: ${actualUserId}`);
+            
+            // Now fetch from the correct timestamped user feed
+            const timestampedUserFeed = serverFeedsClient.feed('user', actualUserId);
+            result = await timestampedUserFeed.get({
+              limit: limit * 2,
+              offset: 0,
+              withReactionCounts: true,
+              withOwnReactions: true,
+            });
+            
+            console.log(`✅ Found ${result.results?.length || 0} activities in timestamped user:${actualUserId} feed`);
+          }
+        } catch (globalError) {
+          console.log(`⚠️ Failed to search global feed for timestamped users:`, globalError);
+        }
+      }
+
+      // Debug: Log what verbs we have before filtering
+      console.log(`🔍 DEBUG: Raw activities in user:${actualUserId} feed:`, 
+        (result.results || []).map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+      );
+
+      // Filter out notification activities to prevent them from showing as posts
+      const filteredPosts = (result.results || []).filter((activity) => 
+        activity.verb !== 'notification'
+      );
+      const limitedPosts = filteredPosts.slice(0, limit);
+
+      console.log(`✅ Found ${limitedPosts.length} posts in user:${actualUserId} feed`);
+      
+      // If no posts in user feed, fallback to global feed filtering (for backward compatibility)
+      if (limitedPosts.length === 0) {
+        console.log(`📋 No posts in user feed, trying global feed fallback...`);
+        
+        const globalFeed = serverFeedsClient.feed('flat', 'global');
+        const globalResult = await globalFeed.get({
+          limit: 100, // Get more to filter
+          offset: 0,
+          withReactionCounts: true,
+          withOwnReactions: true,
+        });
+
+        const fallbackPosts = globalResult.results?.filter((activity) => 
+          activity.actor === actualUserId
+        ) || [];
+        
+        const fallbackLimited = fallbackPosts.slice(0, limit);
+        console.log(`📋 Fallback: Found ${fallbackLimited.length} posts by filtering global feed`);
+        
+        // Use fallback posts if found
+        if (fallbackLimited.length > 0) {
+          limitedPosts.push(...fallbackLimited);
+        }
+      }
+
+      // Get user profile information for post authors  
+      const userIds = Array.from(new Set([targetUserId, actualUserId]));
+      let userProfiles = {};
+
+      try {
+        const userPromises = userIds.map(async (id) => {
+          try {
+            // Try to get user from Stream, but handle 404 gracefully
+            const user = await serverFeedsClient.user(id).get();
+            console.log(`✅ Found Stream user profile for ${id}:`, user.data?.name);
+            return { [id]: {
+              name: user.data?.name || id,
+              username: user.data?.username,
+              image: user.data?.image || user.data?.profile_image,
+              role: user.data?.role,
+              company: user.data?.company
+            }};
+          } catch (userError) {
+            // Handle user not found gracefully
+            if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
+              console.log(`👤 User ${id} not found in Stream user database - using fallback profile`);
+              
+              // Create a basic profile from the Auth0 ID
+              const fallbackName = id.includes('google-oauth2_') 
+                ? id.replace('google-oauth2_', '').replace(/^\d+/, 'User') // Clean up Google OAuth ID
+                : id.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()); // Format other IDs
+              
+              return { [id]: { 
+                name: fallbackName,
+                username: id,
+                image: undefined,
+                role: 'User',
+                company: undefined
+              }};
+            } else {
+              console.warn(`❌ Failed to get user profile for ${id}:`, userError?.message || userError);
+              return { [id]: { name: id } };
+            }
+          }
+        });
+
+        const userResults = await Promise.all(userPromises);
+        userProfiles = userResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+      } catch (profileError) {
+        console.warn('❌ Failed to fetch user profiles:', profileError);
+        // Fallback: create basic profile for target user
+        userProfiles = { [targetUserId]: { name: targetUserId } };
+      }
+
+      return res.status(200).json({
+        success: true,
+        posts: limitedPosts,
+        userProfiles,
+        count: limitedPosts.length,
+        totalUserPosts: limitedPosts.length,
+        mappedFromTimestampedUser: actualUserId !== targetUserId ? actualUserId : undefined
+      });
+    }
+
+    // Handle Stream Chat user data fetching
+    if (type === 'chat-user') {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      console.log(`🔍 Fetching Stream Chat user data for: ${userId}`);
+
+      try {
+        // Query the user from Stream Chat
+        const response = await serverChatClient.queryUsers(
+          { id: userId },
+          { id: 1 },
+          { limit: 1 }
+        );
+
+        if (response.users && response.users.length > 0) {
+          const user = response.users[0];
+          console.log(`✅ Found Stream Chat user data for ${userId}:`, {
+            name: user.name,
+            image: user.image,
+            role: user.role
+          });
+
+          return res.status(200).json({ 
+            success: true,
+            message: 'Success',
+            user: {
+              id: user.id,
+              name: user.name,
+              image: user.image,
+              role: user.role,
+              online: user.online,
+              last_active: user.last_active,
+              created_at: user.created_at,
+              updated_at: user.updated_at
+            }
+          });
+        } else {
+          console.log(`⚠️ No Stream Chat user found for ${userId}`);
+          return res.status(404).json({ 
+            success: false,
+            message: 'User not found in Stream Chat',
+            user: null 
+          });
+        }
+      } catch (chatError) {
+        console.warn(`Failed to fetch Stream Chat user ${userId}:`, chatError.message);
+        return res.status(404).json({ 
+          success: false,
+          message: 'User not found in Stream Chat',
+          user: null,
+          error: chatError.message
+        });
+      }
+    }
+
+    // Handle user ID resolution (for hashed user IDs)
+    if (type === 'resolve') {
+      const { hashedUserId } = req.body;
+
+      if (!hashedUserId) {
+        return res.status(400).json({ error: 'hashedUserId is required' });
+      }
+
+      try {
+        // Simple hash function to match frontend
+        function createPublicUserIdSync(auth0UserId) {
+          let hash = 0;
+          for (let i = 0; i < auth0UserId.length; i++) {
+            const char = auth0UserId.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+          }
+          
+          // Convert to positive hex string with consistent length
+          const hashHex = Math.abs(hash).toString(16).padStart(8, '0');
+          return hashHex + auth0UserId.length.toString(16).padStart(2, '0'); // Add length for extra uniqueness
+        }
+
+        // Query all users from Stream Chat (this might need pagination for large user bases)
+        const response = await serverChatClient.queryUsers({}, { id: 1 }, { limit: 1000 });
+        const users = response.users || [];
+
+        // Find the user whose hashed ID matches the requested one
+        for (const streamUser of users) {
+          const userHash = createPublicUserIdSync(streamUser.id);
+          if (userHash === hashedUserId) {
+            return res.status(200).json({ 
+              auth0UserId: streamUser.id,
+              userName: streamUser.name || streamUser.id 
+            });
+          }
+        }
+
+        // If no match found, return error
+        return res.status(404).json({ 
+          error: 'User not found',
+          message: `No user found with hashed ID: ${hashedUserId}` 
+        });
+
+      } catch (streamError) {
+        console.error('Stream Chat query error:', streamError);
+        return res.status(500).json({ 
+          error: 'Failed to query Stream Chat users',
+          details: streamError instanceof Error ? streamError.message : 'Unknown error'
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error in user-data handler:', error);
+    return res.status(500).json({
+      error: 'Internal server error',
+      details: error.message
     });
   }
 });
