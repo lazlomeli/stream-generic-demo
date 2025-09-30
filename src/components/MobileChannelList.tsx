@@ -5,6 +5,7 @@ import { Channel as StreamChannel } from 'stream-chat'
 import { useAuth0 } from '@auth0/auth0-react'
 import CreateChannelModal from './CreateChannelModal'
 import { listMyChannels, ChannelItem } from '../hooks/listMyChannels'
+import { useLastMessageListener } from '../hooks/useLastMessageListener'
 import FallbackAvatar from './FallbackAvatar'
 import LoadingIcon from './LoadingIcon'
 import ChannelTypingIndicator from './ChannelTypingIndicator'
@@ -46,6 +47,9 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
   const [channels, setChannels] = useState<ChannelItem[]>([])
   const [filteredChannels, setFilteredChannels] = useState<ChannelItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Listen for real-time message updates to keep mobile channel list current
+  useLastMessageListener(client, setChannels)
   const [showOptionsMenu, setShowOptionsMenu] = useState<string | null>(null)
   const { getAccessTokenSilently } = useAuth0()
   const { showSuccess, showError } = useToast()

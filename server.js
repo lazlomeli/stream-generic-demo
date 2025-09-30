@@ -2034,13 +2034,13 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
 // --- Chat operations endpoint ---
 app.post("/api/stream/chat-operations", async (req, res) => {
   try {
-    console.log('💬 CHAT-OPERATIONS: Request received:', { type: req.body?.type, userId: req.body?.userId });
+    console.log('💬 CHAT-OPERATIONS: Request received:', { type: req.body?.type, currentUserId: req.body?.currentUserId });
     
     const { type, userId, channelId, channelName, selectedUsers, currentUserId, isDM, channelImage } = req.body;
 
-    if (!userId || !type) {
-      console.error('❌ CHAT-OPERATIONS: Missing required fields:', { userId: !!userId, type: !!type });
-      return res.status(400).json({ error: 'userId and type are required' });
+    if (!currentUserId || !type) {
+      console.error('❌ CHAT-OPERATIONS: Missing required fields:', { currentUserId: !!currentUserId, type: !!type });
+      return res.status(400).json({ error: 'currentUserId and type are required' });
     }
 
     if (!['create-livestream-channel', 'create-channel', 'add-to-general', 'leave-channel'].includes(type)) {
@@ -2102,11 +2102,10 @@ app.post("/api/stream/chat-operations", async (req, res) => {
         const parsedUsers = JSON.parse(selectedUsers);
         const members = [currentUserId, ...parsedUsers].filter(Boolean);
         
-        // Generate channel ID
-        const channelId = isDM ? 
-          `dm_${members.sort().join('_')}_${Date.now()}` : 
-          `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+        // Generate simple short channel IDs
+        const shortId = Math.random().toString(36).substr(2, 8); // 8 random chars
+        const channelId = isDM ? `dm_${shortId}` : `group_${shortId}`;
+        
         const channelData = {
           name: channelName,
           created_by_id: currentUserId,
@@ -2120,11 +2119,11 @@ app.post("/api/stream/chat-operations", async (req, res) => {
 
         const channel = client.channel('messaging', channelId, channelData);
         await channel.create();
-        console.log('✅ CHAT-OPERATIONS: Channel created successfully');
+        console.log('✅ CHAT-OPERATIONS: Channel created successfully with ID:', channel.id);
 
         return res.status(200).json({
           success: true,
-          channelId: channelId,
+          channelId: channel.id,
           message: 'Channel created successfully'
         });
       } catch (error) {

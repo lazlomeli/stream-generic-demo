@@ -1870,6 +1870,14 @@ const Feeds = () => {
         </div>
       </div>
 
+      {/* Desktop Feed Tabs */}
+      {!isMobileView && (
+        <div className="desktop-feed-tabs">
+          <div style={{ borderBottomLeftRadius: '0.75rem' }} className="feed-tab active">For You</div>
+          <div style={{ borderBottomRightRadius: '0.75rem' }} className="feed-tab">Following</div>
+        </div>
+      )}
+
       {/* Mobile Feed Tabs */}
       {isMobileView && (
         <div className="mobile-feed-tabs">

@@ -3,6 +3,7 @@ import { useChatContext } from 'stream-chat-react';
 import CreateChannelModal from './CreateChannelModal';
 import ChannelList from './ChannelList';
 import { listMyChannels, ChannelItem } from '../hooks/listMyChannels';
+import { useLastMessageListener } from '../hooks/useLastMessageListener';
 import usersGroupIcon from '../icons/users-group.svg';
 import userIcon from '../icons/user.svg';
 import sendIcon from '../icons/send.svg';
@@ -29,6 +30,9 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [selectedChannelId, setSelectedChannelId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Listen for real-time message updates to keep channel list current
+  useLastMessageListener(client, setChannels);
   const [filteredChannels, setFilteredChannels] = useState<ChannelItem[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
