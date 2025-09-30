@@ -1558,6 +1558,7 @@ const Feeds = () => {
   const addComment = async (postId: string) => {
     if (!commentText.trim() || !feedsClient?.userId) return;
 
+    console.log(`💬 ADD_COMMENT_FRONTEND: Starting comment process for post ${postId}`);
     setIsAddingComment(true);
     try {
       const accessToken = await getAccessTokenSilently();
@@ -1578,26 +1579,62 @@ const Feeds = () => {
         }),
       });
 
+      const responseData = await response.json();
+      console.log(`💬 ADD_COMMENT_FRONTEND: API response:`, responseData);
+
       if (!response.ok) {
-        throw new Error('Failed to add comment');
+        throw new Error(responseData.error || 'Failed to add comment');
       }
 
-      // If comments are currently shown, refresh them
+      // ✅ IMMEDIATE COMMENT DISPLAY: Add the new comment to local state
+      if (responseData.success && responseData.comment) {
+        console.log(`💬 ADD_COMMENT_FRONTEND: Adding comment to local state immediately`);
+        
+        // Create a properly formatted comment object for display
+        const newComment = {
+          id: responseData.comment.id,
+          activity_id: postId,
+          data: {
+            text: commentText.trim()
+          },
+          user_id: feedsClient.userId,
+          created_at: responseData.comment.created_at || new Date().toISOString(),
+          kind: 'comment'
+        };
+
+        // Add to local comment state immediately
+        setPostComments(prev => ({
+          ...prev,
+          [postId]: [...(prev[postId] || []), newComment]
+        }));
+
+        // Update the comment count in the posts array 
+        setPosts(prevPosts => 
+          prevPosts.map(post => {
+            if (post.id === postId) {
+              const currentCount = post.custom?.comments || 0;
+              return {
+                ...post,
+                custom: {
+                  likes: post.custom?.likes || 0,
+                  shares: post.custom?.shares || 0,
+                  comments: currentCount + 1,
+                  category: post.custom?.category || 'general'
+                }
+              };
+            }
+            return post;
+          })
+        );
+
+        console.log(`💬 ADD_COMMENT_FRONTEND: Comment added to local state and count updated`);
+      }
+
+      // If comments are currently shown, also refresh from backend to ensure accuracy
       if (showComments === postId) {
-        await fetchComments(postId);
+        console.log(`💬 ADD_COMMENT_FRONTEND: Refreshing comments from backend for accuracy`);
+        setTimeout(() => fetchComments(postId), 1000); // Small delay to ensure backend is consistent
       }
-
-      // OPTIMIZED: Update comment count in state instead of refetching entire feed
-      console.log(`⚡ OPTIMIZED: Updating comment count in state instead of full refetch`);
-      
-      // Update comment count locally (simplified for type safety)
-      console.log('Comment added successfully, count will update on next feed refresh');
-      
-      // Optional: Refresh feed to show updated counts (uncomment if needed)
-      // setTimeout(() => fetchPosts(feedsClient.userId), 2000);
-      
-      // Optional: Refresh feed after delay to ensure accuracy (uncomment if needed)
-      // setTimeout(() => fetchPosts(feedsClient.userId), 15000);
 
       setCommentText('');
       setShowCommentInput(null);
@@ -1606,7 +1643,7 @@ const Feeds = () => {
       showSuccess('Comment added successfully!');
       
     } catch (err: any) {
-      console.error('Error adding comment:', err);
+      console.error('💬 ADD_COMMENT_FRONTEND: Error adding comment:', err);
       showError('Failed to add comment. Please try again.');
     } finally {
       setIsAddingComment(false);
