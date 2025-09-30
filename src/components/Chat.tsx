@@ -409,7 +409,9 @@ const Chat: React.FC<ChatProps> = () => {
               <CustomChannelHeader />
               <div className="message-area-container">
                 <PinnedMessages />
-                <MessageList />
+                <MessageList 
+                  disableDateSeparator={false}
+                />
               </div>
               <CustomMessageInput />
             </Window>

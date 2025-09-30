@@ -1335,9 +1335,6 @@
 }
 
 .str-chat__message-input .str-chat__textarea {
-  width: 350px !important;
-  min-width: 350px !important;
-  max-width: 350px !important;
   flex: none !important;
   background: #f1f3f4 !important;
   border: none !important;
