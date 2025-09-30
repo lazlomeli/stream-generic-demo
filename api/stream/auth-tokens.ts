@@ -152,8 +152,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ]
       };
       
-      // NUCLEAR OPTION: Add EVERY possible capability to bypass all permission checks
+      // Complete set of video and livestream capabilities
       tokenPayload.capabilities = [
+        // Basic video call capabilities
         'join-call',
         'send-audio', 
         'send-video',
@@ -163,17 +164,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'end-call', 
         'create-call',
         'update-call-permissions',
+        // Livestream specific capabilities  
         'create-livestream',
         'join-livestream',
         'end-livestream',
         'update-livestream-settings',
+        'livestream-admin',
+        // Additional admin capabilities
         'pin-for-everyone',
         'screenshare',
         'send-reaction',
         'manage-call-settings',
         'call-admin',
-        'super-admin',
-        '*' // Wildcard permission (if supported)
+        'super-admin'
       ];
       
       tokenPayload.call_cids = ['*']; // Allow access to all calls

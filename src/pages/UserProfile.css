@@ -1,30 +1,93 @@
-/* User Profile Styles */
+/* User Profile Styles - Base */
 .user-profile-header {
   background-color: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
-  padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile-specific styles */
+.user-profile-header.mobile {
+  padding: 1.5rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  min-height: 200px; /* Ensure sufficient height */
+  text-align: center;
+  gap: 1.5rem;
+}
+
+/* Desktop-specific layout improvements */
+.user-profile-header.desktop {
+  padding: 2.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 3rem;
+  min-height: 200px;
 }
 
 .profile-left-section {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Mobile profile left section */
+.profile-left-section.mobile {
   gap: 1.5rem;
+}
+
+/* Desktop profile left section */
+.profile-left-section.desktop {
+  gap: 1rem;
+}
+
+/* Follow button under avatar for desktop */
+.profile-follow-button.under-avatar {
+  width: 140px;
+  min-width: 140px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 .profile-details {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   flex: 1;
+}
+
+/* Mobile profile details */
+.profile-details.mobile {
+  align-items: center;
+  text-align: center;
+}
+
+/* Desktop profile details */
+.profile-details.desktop {
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* Header row for name */
+.profile-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 2rem;
+}
+
+/* Mobile header row */
+.profile-header-row.mobile {
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Desktop header row */
+.profile-header-row.desktop {
+  align-items: flex-start;
 }
 
 .profile-avatar {
@@ -57,15 +120,20 @@
 
 
 .profile-name {
-  display: flex;
-  width: 100%;
   font-size: 2rem;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 0.75rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  margin: 0;
   line-height: 1.2;
+  flex: 1;
+}
+
+@media (min-width: 769px) {
+  .profile-name {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+    margin-right: 2rem;
+  }
 }
 
 .profile-role {
@@ -77,8 +145,19 @@
 
 .profile-stats {
   display: flex;
-  gap: 2rem;
   margin-bottom: 1rem;
+}
+
+/* Mobile stats */
+.profile-stats.mobile {
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+/* Desktop stats */
+.profile-stats.desktop {
+  gap: 1rem;
 }
 
 .stat {
@@ -106,7 +185,16 @@
 .profile-join-date {
   font-size: 0.875rem;
   color: #9ca3af;
+}
+
+/* Mobile join date */
+.profile-join-date.mobile {
   margin: 0;
+}
+
+/* Desktop join date */
+.profile-join-date.desktop {
+  margin-left: 18px;
 }
 
 .profile-action-buttons {
@@ -114,8 +202,40 @@
   flex-direction: column;
   gap: 1rem;
   align-items: center;
-  flex-shrink: 0; /* Prevent buttons from shrinking */
   min-width: 150px; /* Ensure minimum width */
+}
+
+/* Desktop action buttons - cleaner horizontal layout */
+@media (min-width: 769px) {
+  .profile-action-buttons.desktop {
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: auto;
+    width: auto;
+    margin: 1rem 0;
+    padding: 1rem 0;
+  }
+  
+  .profile-action-buttons.desktop .profile-message-button,
+  .profile-action-buttons.desktop .profile-call-button {
+    /* width: 120px; */
+    /* min-width: 120px; */
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+    /* LAZ */
+    width: 20px !important;
+  }
+  
+  .profile-action-buttons.mobile {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f3f4f6;
+  }
 }
 
 .profile-message-button {
@@ -129,7 +249,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  width: 150px;
+  /* width: 150px; */
   text-align: center;
   display: flex;
   align-items: center;
@@ -159,7 +279,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  width: 150px;
+  /* width: 150px; */
   text-align: center;
   display: flex;
   align-items: center;
@@ -247,6 +367,26 @@
   justify-content: center;
 }
 
+/* Desktop follow button - positioned inline with name (now removed) */
+@media (min-width: 769px) {
+  .profile-header-row .profile-follow-button {
+    display: none; /* Hide the header follow button since we have one under avatar */
+  }
+  
+  /* Follow button under avatar styling */
+  .profile-follow-button.under-avatar {
+    border-radius: 0.5rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .profile-follow-button.under-avatar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
 .profile-follow-button:hover {
   background-color: #3b82f6;
   color: white;
@@ -300,27 +440,52 @@
     opacity: 1 !important;
   }
   
+  /* General desktop button styling */
   .profile-message-button,
-  .profile-call-button,
-  .profile-follow-button {
-    width: 150px;
-    min-width: 150px;
+  .profile-call-button {
+    /* width: 150px; */
+    /* min-width: 150px; */
+    border-radius: 9999px;
+    font-weight: 600;
+    /* LAZ */
+    width: 20px !important;
+  }
+  
+  /* Enhanced desktop layout with better spacing and visual hierarchy */
+  .user-profile-header {
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .profile-left-section {
+    align-self: center;
+  }
+  
+  .profile-avatar {
+    width: 140px;
+    height: 140px;
+    border: 5px solid #f8fafc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat {
+    width: auto !important;
+    min-width: 80px;
+  }
+  
+  .stat strong {
+    font-size: 1.75rem;
+  }
+  
+  .stat span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6b7280;
   }
 }
 
-/* Responsive Design */
+/* Mobile-specific responsive overrides */
 @media (max-width: 768px) {
-  .user-profile-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-
-  .profile-left-section {
-    gap: 1rem;
-  }
-
   .profile-avatar {
     width: 100px;
     height: 100px;
@@ -332,12 +497,6 @@
 
   .profile-name {
     font-size: 1.5rem;
-  }
-
-  .profile-stats {
-    justify-content: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
   }
 
   .stat strong {
@@ -371,7 +530,6 @@
 
   .profile-name {
     font-size: 1.25rem;
-    margin-bottom: 1rem;
   }
 
   .profile-stats {

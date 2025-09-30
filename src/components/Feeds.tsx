@@ -309,10 +309,14 @@ const Feeds = () => {
   // Fetch posts when feedsClient is ready
   useEffect(() => {
     if (feedsClient?.userId) {
-
+        console.log(`🚀 FEEDS INIT: FeedsClient ready, initializing feeds for user ${feedsClient.userId}`);
+        console.log(`🚀 FEEDS INIT: Starting parallel fetch of posts, bookmarks, and following users...`);
+        
         fetchPosts(feedsClient.userId);
         fetchBookmarkedPosts(feedsClient.userId);
         fetchFollowingUsers(feedsClient.userId);
+    } else {
+        console.log(`🚀 FEEDS INIT: FeedsClient not ready yet, waiting...`);
     }
   }, [feedsClient]);
 
@@ -575,9 +579,13 @@ const Feeds = () => {
   // Function to fetch bookmarked posts to sync bookmark state
   const fetchBookmarkedPosts = async (userId?: string) => {
     const userIdToUse = userId || feedsClient?.userId;
-    if (!userIdToUse) return;
+    if (!userIdToUse) {
+      console.log('🔖 FETCH_BOOKMARKS: No userId available, skipping fetch');
+      return;
+    }
 
     try {
+      console.log(`🔖 FETCH_BOOKMARKS: Starting fetch for user ${userIdToUse}`);
       const accessToken = await getAccessTokenSilently();
       
       const response = await fetch('/api/stream/feed-actions', {
@@ -597,17 +605,24 @@ const Feeds = () => {
       }
 
       const data = await response.json();
+      console.log(`🔖 FETCH_BOOKMARKS: API response:`, data);
 
       if (data.success && data.bookmarkedPosts) {
         // Extract post IDs and update bookmarked posts state
         const bookmarkedPostIds = new Set<string>(data.bookmarkedPosts.map((post: any) => post.id as string));
+        console.log(`🔖 FETCH_BOOKMARKS: Found ${bookmarkedPostIds.size} bookmarked posts:`, Array.from(bookmarkedPostIds));
 
         setBookmarkedPosts(bookmarkedPostIds);
-
+        console.log(`🔖 FETCH_BOOKMARKS: Updated bookmark state with ${bookmarkedPostIds.size} posts`);
+      } else {
+        console.log(`🔖 FETCH_BOOKMARKS: No bookmarked posts found or unsuccessful response`);
+        setBookmarkedPosts(new Set<string>());
       }
     } catch (error) {
-      console.error('Error fetching bookmarked posts:', error);
+      console.error('🔖 FETCH_BOOKMARKS: Error fetching bookmarked posts:', error);
       // Don't show error to user as this is background sync
+      // But ensure we have a clean state
+      setBookmarkedPosts(new Set<string>());
     }
   };
 
@@ -1271,7 +1286,12 @@ const Feeds = () => {
     const isCurrentlyBookmarked = bookmarkedPosts.has(postId);
     const action = isCurrentlyBookmarked ? 'remove_bookmark' : 'bookmark_post';
     
-
+    console.log(`🔖 HANDLE_BOOKMARK: Starting ${action} for post ${postId}`);
+    console.log(`🔖 HANDLE_BOOKMARK: Current bookmark state before action:`, {
+      isCurrentlyBookmarked,
+      totalBookmarkedPosts: bookmarkedPosts.size,
+      allBookmarkedPostIds: Array.from(bookmarkedPosts)
+    });
     
     try {
       const accessToken = await getAccessTokenSilently();
@@ -1290,31 +1310,36 @@ const Feeds = () => {
       });
 
       const responseData = await response.json();
-
+      console.log(`🔖 HANDLE_BOOKMARK: API response for ${action}:`, responseData);
 
       if (!response.ok) {
         throw new Error(`Failed to update bookmark: ${responseData.error || response.statusText}`);
       }
 
-      // Update local state
-      setBookmarkedPosts(prev => {
-        const newBookmarked = new Set(prev);
-        if (isCurrentlyBookmarked) {
-
-          newBookmarked.delete(postId);
-        } else {
-
-          newBookmarked.add(postId);
-        }
-
-        return newBookmarked;
-      });
+      // CRITICAL FIX: Refresh bookmark state from backend after successful operation
+      console.log(`🔖 HANDLE_BOOKMARK: ${action} successful, refreshing bookmark state from backend...`);
+      
+      // Store previous state for comparison
+      const previousBookmarkState = new Set(bookmarkedPosts);
+      console.log(`🔖 HANDLE_BOOKMARK: Previous bookmark state:`, Array.from(previousBookmarkState));
+      
+      await fetchBookmarkedPosts(feedsClient.userId);
+      
+      // Log state after refresh
+      setTimeout(() => {
+        console.log(`🔖 HANDLE_BOOKMARK: Bookmark state after refresh:`, {
+          currentBookmarkedPosts: bookmarkedPosts.size,
+          allBookmarkedPostIds: Array.from(bookmarkedPosts),
+          wasPostBookmarked: bookmarkedPosts.has(postId),
+          expectedState: !isCurrentlyBookmarked
+        });
+      }, 100); // Small delay to ensure state has updated
       
       // Show success toast
       showSuccess(isCurrentlyBookmarked ? 'Bookmark removed!' : 'Post bookmarked!');
       
     } catch (err: any) {
-      console.error('Error updating bookmark:', err);
+      console.error('🔖 HANDLE_BOOKMARK: Error updating bookmark:', err);
       showError('Failed to update bookmark. Please try again.');
     }
   };
@@ -2003,7 +2028,12 @@ const Feeds = () => {
                 </button>
                 <button 
                   className={`action-button bookmark-button ${bookmarkedPosts.has(post.id) ? 'bookmarked' : ''}`}
-                  onClick={() => handleBookmark(post.id)}
+                  onClick={() => {
+                    console.log(`🔖 BOOKMARK_CLICK: Post ${post.id}, currently bookmarked: ${bookmarkedPosts.has(post.id)}`);
+                    console.log(`🔖 BOOKMARK_CLICK: Current bookmark state:`, Array.from(bookmarkedPosts));
+                    handleBookmark(post.id);
+                  }}
+                  title={bookmarkedPosts.has(post.id) ? 'Remove bookmark' : 'Add bookmark'}
                 >
                   <img 
                     src={bookmarkedPosts.has(post.id) ? BookmarkFilledIcon : BookmarkIcon} 

@@ -917,6 +917,19 @@ const Video: React.FC<VideoProps> = () => {
       const cacheBuster = Date.now();
       console.log('🔄 VIDEO: Requesting fresh video token with cache-buster:', cacheBuster);
       
+      const requestPayload = {
+        type,
+        userId: sanitizedUserId,
+        userProfile: {
+          name: user?.name || user?.email || `User_${sanitizedUserId}`,
+          image: user?.picture || undefined,
+          role: 'admin', // Demo app - all authenticated users get admin role for video features
+          cacheBuster: cacheBuster // Force backend to process fresh request
+        }
+      };
+
+      console.log('🔧 VIDEO: Token request payload:', JSON.stringify(requestPayload, null, 2));
+
       const res = await fetch('/api/stream/auth-tokens', {
         method: 'POST',
         headers: {
@@ -927,22 +940,46 @@ const Video: React.FC<VideoProps> = () => {
           'Expires': '0',
           'X-Cache-Buster': cacheBuster.toString()
         },
-        body: JSON.stringify({
-          type,
-          userId: sanitizedUserId,
-          userProfile: {
-            name: user?.name || user?.email || `User_${sanitizedUserId}`,
-            image: user?.picture || undefined,
-            role: 'admin', // Demo app - all authenticated users get admin role for video features
-            cacheBuster: cacheBuster // Force backend to process fresh request
-          }
-        }),
+        body: JSON.stringify(requestPayload),
       })
       if (!res.ok) {
         const text = await res.text()
+        console.error('❌ VIDEO: Token request failed:', {
+          status: res.status,
+          statusText: res.statusText,
+          errorText: text
+        });
         throw new Error(`auth-tokens failed: ${res.status} ${text}`)
       }
       const json = await res.json()
+      console.log('✅ VIDEO: Token response received:', {
+        hasToken: !!json.token,
+        tokenLength: json.token?.length || 0,
+        userId: json.userId,
+        apiKey: json.apiKey,
+        tokenStart: json.token?.substring(0, 50) + '...' || 'none'
+      });
+      
+      // Try to decode the JWT to see what role it contains
+      if (json.token) {
+        try {
+          const tokenParts = json.token.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            console.log('🔍 VIDEO: Token payload contains:', {
+              user_id: payload.user_id,
+              role: payload.role,
+              call_role: payload.call_role,
+              livestream_role: payload.livestream_role,
+              capabilities: payload.capabilities?.slice(0, 5) || 'none',
+              totalCapabilities: payload.capabilities?.length || 0
+            });
+          }
+        } catch (decodeError) {
+          console.warn('⚠️ VIDEO: Could not decode token payload:', decodeError);
+        }
+      }
+      
       return json.token as string
     },
     [getAccessTokenSilently, user, sanitizedUserId, isAnonymousViewer, isStreamer, anonymousViewerId]
@@ -974,8 +1011,50 @@ const Video: React.FC<VideoProps> = () => {
       }
     }
 
+    // Force clear any browser storage related to Stream Video
+    try {
+      console.log('🧹 Clearing browser storage to eliminate token/permission caches...');
+      // Clear relevant localStorage keys
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('stream') || key.includes('video') || key.includes('call')) {
+          localStorage.removeItem(key);
+          console.log('🧹 Cleared localStorage key:', key);
+        }
+      });
+      
+      // Clear sessionStorage too
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.includes('stream') || key.includes('video') || key.includes('call')) {
+          sessionStorage.removeItem(key);
+          console.log('🧹 Cleared sessionStorage key:', key);
+        }
+      });
+    } catch (storageError) {
+      console.warn('⚠️ Could not clear storage:', storageError);
+    }
+
     try {
       console.log('🎥 Initializing video client for user:', effectiveUserId, isViewer ? '(viewer)' : '(streamer)')
+      
+      // FIRST: Configure call type permissions to fix the UpdateCallSettings error
+      try {
+        console.log('🔧 Configuring call type permissions before creating video client...');
+        const permissionsResponse = await fetch('/api/stream/configure-call-permissions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (permissionsResponse.ok) {
+          const permissionsData = await permissionsResponse.json();
+          console.log('✅ Call type permissions configured:', permissionsData);
+        } else {
+          console.warn('⚠️ Failed to configure call permissions (continuing anyway):', permissionsResponse.status);
+        }
+      } catch (permissionsError) {
+        console.warn('⚠️ Error configuring call permissions (continuing anyway):', permissionsError);
+      }
       
       const videoToken = await getStreamToken('video')
       console.log('🔑 Video token obtained:', videoToken.substring(0, 50) + '...')
@@ -1005,15 +1084,32 @@ const Video: React.FC<VideoProps> = () => {
       setCallId(sharedCallId)
       
       // Create or join a livestream call
+      // Try 'default' call type first as it typically has broader permissions
       console.log('📞 Creating call with ID:', sharedCallId, 'for user role: admin')
-      const call = videoClient.call('livestream', sharedCallId)
+      let call;
+      let callType = 'default'; // Start with default which typically has broader permissions
+      
+      try {
+        console.log('🔧 Attempting to create call with "default" call type...');
+        call = videoClient.call('default', sharedCallId);
+      } catch (defaultError) {
+        console.warn('⚠️ Default call type failed, trying livestream:', defaultError);
+        callType = 'livestream';
+        call = videoClient.call('livestream', sharedCallId);
+      }
       callRef.current = call
 
-      // Create the call with backstage explicitly disabled to avoid permission issues for viewers
+      // Create the call with proper member roles and settings for livestream
       try {
-        console.log('🔧 Creating/joining call with backstage disabled...')
+        console.log(`🔧 Creating/joining ${callType} call with proper admin permissions...`)
         await call.getOrCreate({
           data: {
+            members: [
+              {
+                user_id: effectiveUserId,
+                role: 'admin', // Use admin role for livestream permissions
+              }
+            ],
             settings_override: {
               backstage: {
                 enabled: false, // Explicitly disable backstage
@@ -1021,7 +1117,7 @@ const Video: React.FC<VideoProps> = () => {
             },
           },
         })
-        console.log('✅ Call created/joined successfully with backstage disabled')
+        console.log(`✅ ${callType} call created/joined successfully with backstage disabled`)
         
         if (isViewer) {
           // For viewers, join the call with viewer-specific options to avoid backstage permissions

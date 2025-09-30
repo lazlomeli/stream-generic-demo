@@ -1,6 +1,6 @@
 // import { FeedsClient } from '@stream-io/feeds-client'; // Disabled - V3 alpha causing 500 errors
 import { connect } from 'getstream'; // Use V2 for production stability
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Define a basic type for the user profile response
@@ -12,6 +12,87 @@ interface UserProfileResponse {
     profile_image?: string;
     role?: string;
     company?: string;
+  };
+}
+
+// Helper function to process a bookmarked activity
+async function processBookmarkedActivity(
+  activity: any,
+  bookmarkReaction: any,
+  serverClient: any,
+  trimmedUserId: string
+) {
+  console.log(`📖 Processing bookmarked activity: ${activity.id} by ${activity.actor}`);
+  
+  // Enrich with user information
+  let userInfo: {
+    name: string;
+    image: string | undefined;
+    role: string | undefined;
+    company: string | undefined;
+  } = {
+    name: activity.actor,
+    image: undefined,
+    role: undefined,
+    company: undefined
+  };
+  
+  try {
+    // Priority 1: Use userProfile data stored directly in the activity
+    if (activity.userProfile && activity.userProfile.name) {
+      console.log(`✅ Using stored userProfile for ${activity.actor}:`, activity.userProfile);
+      userInfo = {
+        name: activity.userProfile.name,
+        image: activity.userProfile.image || undefined,
+        role: activity.userProfile.role || undefined,
+        company: activity.userProfile.company || undefined
+      };
+    }
+    // Priority 2: Fallback to Stream's user profile system
+    else if (serverClient.getUsers) {
+      try {
+        const userProfile = await serverClient.getUsers([activity.actor]) as UserProfileResponse;
+        const userData = userProfile[activity.actor];
+        if (userData) {
+          userInfo = {
+            name: userData.name || userData.username || activity.actor,
+            image: userData.image || userData.profile_image || undefined,
+            role: userData.role || undefined,
+            company: userData.company || undefined
+          };
+        }
+      } catch (getUserError: any) {
+        // Handle user not found gracefully
+        if (getUserError?.response?.status === 404 || getUserError?.error?.status_code === 404) {
+          console.log(`👤 User ${activity.actor} not found in Stream user database - using fallback for bookmarks`);
+        } else {
+          console.warn(`❌ Failed to fetch user profile for ${activity.actor}:`, getUserError?.message);
+        }
+        // Keep the default userInfo (actor ID as name)
+      }
+    }
+  } catch (userError) {
+    console.warn(`Failed to fetch user profile for ${activity.actor}:`, userError);
+    // Keep the default userInfo (actor ID as name)
+  }
+  
+  return {
+    id: activity.id, // Use activity id for highlighting
+    activity_id: activity.id,
+    actor: activity.actor || 'Unknown',
+    verb: activity.verb || 'post',
+    object: activity.object || 'post',
+    text: activity.text || 'No content',
+    attachments: activity.attachments || [],
+    custom: activity.custom || {},
+    created_at: activity.created_at || activity.time,
+    time: activity.created_at || activity.time,
+    reaction_counts: activity.reaction_counts || {},
+    own_reactions: activity.own_reactions || {},
+    reaction_id: bookmarkReaction?.id, // Keep the reaction ID for removal
+    bookmarked_at: bookmarkReaction?.created_at, // When user bookmarked this post
+    userInfo: userInfo, // Add enriched user information
+    userProfile: activity.userProfile // Store the full user profile
   };
 }
 
@@ -482,16 +563,17 @@ export default async function handler(
         });
 
       case 'get_bookmarked_posts':
+        console.log(`🚨 NEW CODE LOADING: This is the updated get_bookmarked_posts implementation!`);
+        console.log(`📖 Getting bookmarked posts for user: ${trimmedUserId}`);
+        console.log(`📖 DEBUG: Starting get_bookmarked_posts implementation...`);
         
-        
-        // Get all bookmark reactions for the user with activity data
+        // Get all bookmark reactions for the user (activity data will be fetched separately)
         const bookmarkReactions = await serverClient.reactions.filter({
           kind: 'bookmark',
-          user_id: trimmedUserId,
-          with_activity_data: true
+          user_id: trimmedUserId
         });
 
-        
+        console.log(`📖 Bookmark reactions found: ${bookmarkReactions.results?.length || 0}`);
         
         if (!bookmarkReactions.results || bookmarkReactions.results.length === 0) {
           return res.json({
@@ -500,96 +582,110 @@ export default async function handler(
           });
         }
 
-        // Get activity IDs to fetch fresh data with reaction counts
+        // Get activity IDs to fetch from multiple feed sources
         const activityIds = bookmarkReactions.results.map(r => r.activity_id);
+        console.log(`📖 Activity IDs: ${JSON.stringify(activityIds)}`);
+        console.log(`📖 DEBUG: About to start multi-feed search for ${activityIds.length} activities...`);
         
-
-        // Fetch activities with current reaction counts from the global feed
-        const feed = serverClient.feed('flat', 'global');
-        const feedData = await feed.get({ 
-          limit: 100, 
-          withReactionCounts: true,
-          withOwnReactions: true
-        });
-
+        // ENHANCED APPROACH: Try to fetch activities from multiple feed sources
+        const foundActivities = new Map<string, any>();
         
-
-        // Filter feed activities to only bookmarked ones and merge data
-        const bookmarkedPosts = await Promise.all(
-          feedData.results
-            ?.filter(activity => activityIds.includes(activity.id))
-            .map(async (activity: any) => {
-              const bookmarkReaction = bookmarkReactions.results?.find(r => r.activity_id === activity.id);
-              
-              // Enrich with user information
-              let userInfo: {
-                name: string;
-                image: string | undefined;
-                role: string | undefined;
-                company: string | undefined;
-              } = {
-                name: activity.actor,
-                image: undefined,
-                role: undefined,
-                company: undefined
-              };
-              
-              try {
-                if (serverClient.getUsers) {
-                  const userProfile = await serverClient.getUsers([activity.actor]) as UserProfileResponse;
-                  const userData = userProfile[activity.actor];
-                  if (userData) {
-                    userInfo = {
-                      name: userData.name || userData.username || activity.actor,
-                      image: userData.image || userData.profile_image || undefined,
-                      role: userData.role || undefined,
-                      company: userData.company || undefined
-                    };
-                  }
-                }
-              } catch (userError: any) {
-                // Handle user not found gracefully
-                if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
-                  console.log(`👤 User ${activity.actor} not found in Stream user database - using fallback for bookmarks`);
-                } else {
-                  console.warn(`❌ Failed to fetch user profile for ${activity.actor}:`, userError?.message);
-                }
-                // Keep the default userInfo (actor ID as name)
+        // Try multiple feed sources to find the activities (prioritize timeline feed first)
+        const feedSources = [
+          { type: 'timeline', id: trimmedUserId }, // Try timeline first since that's where main posts come from
+          { type: 'user', id: trimmedUserId },
+          { type: 'flat', id: 'global' }
+        ];
+        
+        // Also search for timestamped user feeds (pattern: originalUserId_timestamp)
+        // Extract unique actors from activity IDs and add their user feeds
+        const uniqueActors = new Set<string>();
+        
+        // Try to extract actor IDs from the existing global feed to find timestamped users
+        try {
+          const globalFeed = serverClient.feed('flat', 'global');
+          const globalActivities = await globalFeed.get({ limit: 100 });
+          
+          if (globalActivities.results && globalActivities.results.length > 0) {
+            for (const activity of globalActivities.results) {
+              const activityAny = activity as any; // Cast to access actor property
+              if (activityAny.actor && activityAny.actor.includes('_') && /\d{13}$/.test(activityAny.actor)) {
+                uniqueActors.add(activityAny.actor);
               }
-              
-              return {
-                id: activity.id, // Use activity id for highlighting
-                activity_id: activity.id,
-                actor: activity.actor || 'Unknown',
-                verb: activity.verb || 'post',
-                object: activity.object || 'post',
-                text: activity.text || 'No content',
-                attachments: activity.attachments || [],
-                custom: activity.custom || {},
-                created_at: activity.created_at || activity.time,
-                time: activity.created_at || activity.time,
-                reaction_counts: activity.reaction_counts || {},
-                own_reactions: activity.own_reactions || {},
-                reaction_id: bookmarkReaction?.id, // Keep the reaction ID for removal
-                bookmarked_at: bookmarkReaction?.created_at, // When user bookmarked this post
-                userInfo: userInfo // Add enriched user information
-              };
-            }) || []
+            }
+          }
+          
+          // Add timestamped user feeds to search
+          for (const actor of Array.from(uniqueActors)) { // Convert Set to Array for iteration
+            feedSources.push({ type: 'user', id: actor });
+          }
+          
+          console.log(`📖 Added ${uniqueActors.size} timestamped user feeds to search`);
+        } catch (globalError) {
+          console.warn(`⚠️ Could not search global feed for timestamped users:`, globalError.message);
+        }
+        
+        console.log(`📖 DEBUG: Starting to search ${feedSources.length} feed sources...`);
+        
+        for (const feedSource of feedSources) {
+          try {
+            console.log(`📖 Searching for activities in ${feedSource.type}:${feedSource.id}...`);
+            const feed = serverClient.feed(feedSource.type, feedSource.id);
+            const feedData = await feed.get({ 
+              limit: 200, // Increase limit to find more activities
+              withReactionCounts: true,
+              withOwnReactions: true
+            });
+            
+            console.log(`📖 Feed activities found: ${feedData.results?.length || 0}`);
+            
+            // Find activities matching our bookmark activity IDs
+            if (feedData.results && feedData.results.length > 0) {
+              for (const activity of feedData.results) {
+                const activityAny = activity as any; // Cast to access properties
+                if (activityIds.includes(activityAny.id) && !foundActivities.has(activityAny.id)) {
+                  console.log(`✅ Found bookmarked activity ${activityAny.id} in ${feedSource.type}:${feedSource.id}`);
+                  foundActivities.set(activityAny.id, activityAny);
+                }
+              }
+            }
+          } catch (feedError) {
+            console.warn(`⚠️ Could not fetch from ${feedSource.type}:${feedSource.id}:`, feedError.message);
+          }
+        }
+        
+        console.log(`📖 Total activities found: ${foundActivities.size} out of ${activityIds.length} bookmarked`);
+        
+        // Process found activities and create bookmarked posts
+        const bookmarkedPosts = await Promise.all(
+          bookmarkReactions.results.map(async (bookmarkReaction: any) => {
+            const activity = foundActivities.get(bookmarkReaction.activity_id);
+            
+            if (!activity) {
+              console.warn(`⚠️ Activity ${bookmarkReaction.activity_id} not found in any feed, skipping...`);
+              return null;
+            }
+            
+            // Process the activity using the helper function
+            return await processBookmarkedActivity(activity, bookmarkReaction, serverClient, trimmedUserId);
+          })
         );
 
-        
-        
+        // Filter out any null entries and sort by bookmark date (newest bookmarks first)
+        const validBookmarkedPosts = bookmarkedPosts
+          .filter(post => post !== null)
+          .sort((a, b) => {
+            const dateA = a.bookmarked_at ? new Date(a.bookmarked_at).getTime() : 0;
+            const dateB = b.bookmarked_at ? new Date(b.bookmarked_at).getTime() : 0;
+            return dateB - dateA;
+          });
 
-        // Sort by bookmark date (newest bookmarks first)
-        const sortedBookmarkedPosts = bookmarkedPosts.sort((a, b) => {
-          const dateA = a.bookmarked_at ? new Date(a.bookmarked_at).getTime() : 0;
-          const dateB = b.bookmarked_at ? new Date(b.bookmarked_at).getTime() : 0;
-          return dateB - dateA;
-        });
+        console.log(`📖 Successfully processed ${validBookmarkedPosts.length} bookmarked posts`);
+        console.log(`📖 DEBUG: Final result - returning ${validBookmarkedPosts.length} bookmarked posts to frontend`);
 
         return res.json({
           success: true,
-          bookmarkedPosts: sortedBookmarkedPosts
+          bookmarkedPosts: validBookmarkedPosts
         });
 
       case 'follow_user':

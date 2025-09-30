@@ -1016,7 +1016,7 @@ const UserProfile = () => {
   const profileContent = (
     <div className="feeds-container">
       {/* User Profile Header */}
-      <div className="user-profile-header">
+      <div className={`user-profile-header ${isMobileView ? 'mobile' : 'desktop'}`}>
         {/* Logout button for own profile - top right corner (mobile only) */}
         {isOwnProfile && isMobileView && (
           <button 
@@ -1027,7 +1027,7 @@ const UserProfile = () => {
             <img src={LogoutIcon} alt="Logout" />
           </button>
         )}
-        <div className="profile-left-section">
+        <div className={`profile-left-section ${isMobileView ? 'mobile' : 'desktop'}`}>
           <div className="profile-avatar">
             {profile.image && !imageLoadError ? (
               <img 
@@ -1047,19 +1047,69 @@ const UserProfile = () => {
               </div>
             )}
           </div>
+          
+          {/* Desktop follow button - positioned under avatar */}
+          {!isOwnProfile && !isMobileView && (
+            <button 
+              className={`profile-follow-button under-avatar ${isFollowing ? 'following' : ''}`}
+              onClick={handleFollow}
+            >
+              {(() => {
+                console.log(`🔘 USERPROFILE: Rendering follow button under avatar, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
+                return isFollowing ? 'Following' : 'Follow';
+              })()}
+            </button>
+          )}
         </div>
-        <div className="profile-details">
-          <h1 className="profile-name">{profile.name}</h1>
-          <button 
-                className={`profile-follow-button ${isFollowing ? 'following' : ''}`}
-                onClick={handleFollow}
+        <div className={`profile-details ${isMobileView ? 'mobile' : 'desktop'}`}>
+          <div className={`profile-header-row ${isMobileView ? 'mobile' : 'desktop'}`}>
+            <h1 className="profile-name">{profile.name}</h1>
+          </div>
+          
+          {/* Desktop action buttons - positioned after header row */}
+          {!isOwnProfile && !isMobileView && (
+            <div className={`profile-action-buttons ${isMobileView ? 'mobile' : 'desktop'}`}>
+              <button 
+                className="profile-message-button"
+                onClick={handleMessageUser}
+                title="Send message"
               >
-                {(() => {
-                  console.log(`🔘 USERPROFILE: Rendering follow button, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
-                  return isFollowing ? 'Following' : 'Follow';
-                })()}
-          </button>
-          <div className="profile-stats">
+                <img src={MessageIcon} alt="Message" className="button-icon" />
+                {/* {isMobileView ? '' : 'Message'} */}
+              </button>
+              <button 
+                className="profile-call-button audio-call"
+                onClick={handleAudioCall}
+                title="Start audio call"
+              >
+                <img src={PhoneIcon} alt="Audio call" className="button-icon" />
+                {/* {isMobileView ? '' : 'Call'} */}
+              </button>
+              <button 
+                className="profile-call-button video-call"
+                onClick={handleVideoCall}
+                title="Start video call"
+              >
+                <img src={VideoIcon} alt="Video call" className="button-icon" />
+                {/* {isMobileView ? '' : 'Video'} */}
+              </button>
+            </div>
+          )}
+          
+          {/* Mobile follow button - keep it below name for mobile */}
+          {!isOwnProfile && isMobileView && (
+            <button 
+              className={`profile-follow-button ${isFollowing ? 'following' : ''}`}
+              onClick={handleFollow}
+            >
+              {(() => {
+                console.log(`🔘 USERPROFILE: Rendering follow button, isFollowing: ${isFollowing}, targetUserId: ${profile?.userId}`);
+                return isFollowing ? 'Following' : 'Follow';
+              })()}
+            </button>
+          )}
+          
+          <div className={`profile-stats ${isMobileView ? 'mobile' : 'desktop'}`}>
             <div className="stat">
               <strong>{profile.postCount}</strong>
               <span>Posts</span>
@@ -1073,36 +1123,38 @@ const UserProfile = () => {
               <span>Following</span>
             </div>
           </div>
-          <p className="profile-join-date">Joined {profile.joinDate}</p>
+          <p className={`profile-join-date ${isMobileView ? 'mobile' : 'desktop'}`}>Joined {profile.joinDate}</p>
+          
+          {/* Mobile action buttons - positioned at bottom for mobile */}
+          {!isOwnProfile && isMobileView && (
+            <div className={`profile-action-buttons ${isMobileView ? 'mobile' : 'desktop'}`}>
+              <button 
+                className="profile-message-button"
+                onClick={handleMessageUser}
+                title="Send message"
+              >
+                <img src={MessageIcon} alt="Message" className="button-icon" />
+                {/* {isMobileView ? '' : 'Message'} */}
+              </button>
+              <button 
+                className="profile-call-button audio-call"
+                onClick={handleAudioCall}
+                title="Start audio call"
+              >
+                <img src={PhoneIcon} alt="Audio call" className="button-icon" />
+                {/* {isMobileView ? '' : 'Call'} */}
+              </button>
+              <button 
+                className="profile-call-button video-call"
+                onClick={handleVideoCall}
+                title="Start video call"
+              >
+                <img src={VideoIcon} alt="Video call" className="button-icon" />
+                {/* {isMobileView ? '' : 'Video'} */}
+              </button>
+            </div>
+          )}
         </div>
-        {!isOwnProfile && (
-          <div className="profile-action-buttons">
-            <button 
-              className="profile-message-button"
-              onClick={handleMessageUser}
-              title="Send message"
-            >
-              <img src={MessageIcon} alt="Message" className="button-icon" />
-              {isMobileView ? '' : 'Message'}
-            </button>
-            <button 
-              className="profile-call-button audio-call"
-              onClick={handleAudioCall}
-              title="Start audio call"
-            >
-              <img src={PhoneIcon} alt="Audio call" className="button-icon" />
-              {isMobileView ? '' : 'Call'}
-            </button>
-            <button 
-              className="profile-call-button video-call"
-              onClick={handleVideoCall}
-              title="Start video call"
-            >
-              <img src={VideoIcon} alt="Video call" className="button-icon" />
-              {isMobileView ? '' : 'Video'}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* User's Posts */}

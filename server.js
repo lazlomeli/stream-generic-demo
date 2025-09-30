@@ -1004,14 +1004,45 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         }
 
         console.log('🔖 Bookmarking post:', postId, 'by user:', trimmedUserId);
-        // Add bookmark reaction using server client (V2 requires userId)
-        const bookmarkResult = await serverFeedsClient.reactions.add('bookmark', postId, {}, { userId: trimmedUserId });
-
-        return res.json({
-          success: true,
-          message: 'Post bookmarked successfully',
-          reactionId: bookmarkResult?.id
-        });
+        
+        // PREVENT DUPLICATES: Check if bookmark already exists
+        try {
+          // Get ALL user bookmark reactions and filter in JavaScript (API limitation)
+          const allUserBookmarks = await serverFeedsClient.reactions.filter({
+            kind: 'bookmark',
+            user_id: trimmedUserId
+          });
+          
+          const existingBookmarks = allUserBookmarks.results?.filter(
+            reaction => reaction.activity_id === postId
+          ) || [];
+          
+          if (existingBookmarks.length > 0) {
+            console.log(`🔖 Bookmark already exists for post ${postId} (${existingBookmarks.length} reactions found)`);
+            return res.json({
+              success: true,
+              message: 'Post already bookmarked',
+              reactionId: existingBookmarks[0].id
+            });
+          }
+          
+          console.log('🔖 No existing bookmark found, creating new one...');
+          // Add bookmark reaction using server client (V2 requires userId)
+          const bookmarkResult = await serverFeedsClient.reactions.add('bookmark', postId, {}, { userId: trimmedUserId });
+          
+          console.log('✅ BOOKMARK: New bookmark created successfully');
+          return res.json({
+            success: true,
+            message: 'Post bookmarked successfully',
+            reactionId: bookmarkResult?.id
+          });
+        } catch (error) {
+          console.error('❌ BOOKMARK: Error checking/creating bookmark:', error);
+          return res.status(500).json({ 
+            error: 'Failed to bookmark post',
+            details: error.message 
+          });
+        }
 
       case 'remove_bookmark':
         if (!postId) {
@@ -1021,23 +1052,37 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         console.log('🔖 Removing bookmark for post:', postId, 'for user:', trimmedUserId);
         
         try {
-          // Get user's bookmark reactions using the correct API approach
-          const userBookmarkReactions = await serverFeedsClient.reactions.filter({
+          // STEP 1: Get ALL bookmark reactions for the user (API limitation: can't filter by both user_id and activity_id)
+          const allUserBookmarkReactions = await serverFeedsClient.reactions.filter({
             kind: 'bookmark',
             user_id: trimmedUserId
           });
 
-          console.log('🔖 Found total bookmark reactions for user:', userBookmarkReactions.results?.length || 0);
+          console.log(`🔖 Found ${allUserBookmarkReactions.results?.length || 0} total bookmark reactions for user`);
 
-          // Filter to find reactions for this specific activity
-          const activityReaction = userBookmarkReactions.results?.find(reaction => reaction.activity_id === postId);
+          // STEP 2: Filter in JavaScript to find reactions for this specific activity
+          const activityBookmarkReactions = allUserBookmarkReactions.results?.filter(
+            reaction => reaction.activity_id === postId
+          ) || [];
 
-          if (activityReaction) {
-            console.log('🔖 Deleting bookmark reaction:', activityReaction.id);
-            await serverFeedsClient.reactions.delete(activityReaction.id);
-            console.log('🔖 Bookmark reaction deleted successfully');
+          console.log(`🔖 Found ${activityBookmarkReactions.length} bookmark reactions for post ${postId}`);
+
+          // STEP 3: Remove ALL bookmark reactions for this activity (fix for duplicates)
+          if (activityBookmarkReactions.length > 0) {
+            console.log(`🔖 Deleting ${activityBookmarkReactions.length} bookmark reactions...`);
+            
+            for (const reaction of activityBookmarkReactions) {
+              try {
+                console.log(`🔖 Deleting bookmark reaction: ${reaction.id}`);
+                await serverFeedsClient.reactions.delete(reaction.id);
+              } catch (deleteError) {
+                console.error(`❌ UNBOOKMARK: Failed to delete reaction ${reaction.id}:`, deleteError);
+              }
+            }
+            
+            console.log('✅ UNBOOKMARK: All bookmark reactions deleted successfully');
           } else {
-            console.log('🔖 No bookmark reaction found for this activity');
+            console.log('🔖 No bookmark reactions found for this activity');
           }
 
           return res.json({
@@ -1045,7 +1090,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
             message: 'Bookmark removed successfully'
           });
         } catch (error) {
-          console.error('🔖 Error removing bookmark:', error);
+          console.error('❌ UNBOOKMARK: Error removing bookmark:', error);
           return res.status(500).json({ 
             error: 'Failed to remove bookmark',
             details: error instanceof Error ? error.message : 'Unknown error'
@@ -1075,23 +1120,67 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         const activityIds = bookmarkReactions.results.map(r => r.activity_id);
         console.log('📖 Activity IDs:', activityIds);
 
-        // Fetch activities with current reaction counts from the global feed (V2) - server-side access
-        const globalFeedForBookmarks = serverFeedsClient.feed('flat', 'global');
-        const feedData = await globalFeedForBookmarks.get({ 
-          limit: 25, // Reduced to avoid rate limits
-          withReactionCounts: true,
-          withOwnReactions: true
-        });
-
-        console.log('📖 Feed activities found:', feedData.results?.length || 0);
-
-        // Filter feed activities to only bookmarked ones and merge data
-        const bookmarkedPosts = feedData.results
-          ?.filter(activity => activityIds.includes(activity.id))
-          .map(activity => {
-            const bookmarkReaction = bookmarkReactions.results?.find(r => r.activity_id === activity.id);
+        // ENHANCED MULTI-FEED SEARCH: Try to fetch activities from multiple feed sources
+        console.log('🔍 BOOKMARKS: Starting multi-feed search for activities...');
+        const foundActivities = new Map();
+        
+        // Try multiple feed sources to find the activities (prioritize timeline feed)
+        const feedSources = [
+          { type: 'timeline', id: trimmedUserId },
+          { type: 'user', id: trimmedUserId },
+          { type: 'flat', id: 'global' }
+        ];
+        
+        for (const feedSource of feedSources) {
+          try {
+            console.log(`🔍 BOOKMARKS: Searching ${feedSource.type}:${feedSource.id}...`);
+            const feed = serverFeedsClient.feed(feedSource.type, feedSource.id);
+            const feedData = await feed.get({ 
+              limit: 100,
+              withReactionCounts: true,
+              withOwnReactions: true
+            });
             
-            return {
+            console.log(`🔍 BOOKMARKS: Found ${feedData.results?.length || 0} activities in ${feedSource.type}:${feedSource.id}`);
+            
+            // Find activities matching our bookmark activity IDs
+            if (feedData.results && feedData.results.length > 0) {
+              for (const activity of feedData.results) {
+                if (activityIds.includes(activity.id) && !foundActivities.has(activity.id)) {
+                  console.log(`✅ BOOKMARKS: Found bookmarked activity ${activity.id} in ${feedSource.type}:${feedSource.id}`);
+                  foundActivities.set(activity.id, activity);
+                }
+              }
+            }
+          } catch (feedError) {
+            console.warn(`⚠️ BOOKMARKS: Could not fetch from ${feedSource.type}:${feedSource.id}:`, feedError.message);
+          }
+        }
+        
+        console.log(`🔍 BOOKMARKS: Total activities found: ${foundActivities.size} out of ${activityIds.length} bookmarked`);
+
+        // Process found activities and create bookmarked posts (DEDUPLICATE)
+        const bookmarkedPostsMap = new Map(); // Use Map to deduplicate by activity ID
+        
+        for (const bookmarkReaction of bookmarkReactions.results) {
+          const activity = foundActivities.get(bookmarkReaction.activity_id);
+          
+          if (!activity) {
+            console.warn(`⚠️ BOOKMARKS: Activity ${bookmarkReaction.activity_id} not found in any feed, skipping...`);
+            continue;
+          }
+          
+          // Only add if we haven't seen this activity before (deduplicate)
+          if (!bookmarkedPostsMap.has(activity.id)) {
+            // Find the most recent bookmark reaction for this activity
+            const allReactionsForActivity = bookmarkReactions.results.filter(r => r.activity_id === activity.id);
+            const mostRecentReaction = allReactionsForActivity.sort((a, b) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0];
+            
+            console.log(`📌 BOOKMARKS: Adding unique post ${activity.id} (${allReactionsForActivity.length} reactions found)`);
+            
+            bookmarkedPostsMap.set(activity.id, {
               id: activity.id, // Use activity id for highlighting
               activity_id: activity.id,
               actor: activity.actor || 'Unknown',
@@ -1104,12 +1193,25 @@ app.post('/api/stream/feed-actions', async (req, res) => {
               time: activity.created_at || activity.time,
               reaction_counts: activity.reaction_counts || {},
               own_reactions: activity.own_reactions || {},
-              reaction_id: bookmarkReaction?.id, // Keep the reaction ID for removal
-              bookmarked_at: bookmarkReaction?.created_at // When user bookmarked this post
-            };
-          })
-          // Sort by bookmark date (newest bookmarks first)
-          .sort((a, b) => new Date(b.bookmarked_at).getTime() - new Date(a.bookmarked_at).getTime()) || [];
+              reaction_id: mostRecentReaction?.id, // Keep the most recent reaction ID for removal
+              bookmarked_at: mostRecentReaction?.created_at, // When user bookmarked this post
+              userInfo: {
+                name: activity.actor,
+                image: undefined,
+                role: undefined,
+                company: undefined
+              },
+              userProfile: activity.userProfile // Store the full user profile
+            });
+          }
+        }
+        
+        const bookmarkedPosts = Array.from(bookmarkedPostsMap.values());
+        
+        // Sort by bookmark date (newest bookmarks first)
+        bookmarkedPosts.sort((a, b) => new Date(b.bookmarked_at).getTime() - new Date(a.bookmarked_at).getTime());
+        
+        console.log(`✅ BOOKMARKS: Successfully processed ${bookmarkedPosts.length} bookmarked posts`);
 
         return res.json({
           success: true,
@@ -1597,6 +1699,113 @@ app.post("/api/stream/reset", async (req, res) => {
   }
 });
 
+// --- Configure Video Call Type Permissions ---
+app.post("/api/stream/configure-call-permissions", async (req, res) => {
+  try {
+    console.log('🔧 CONFIGURE-PERMISSIONS: Configuring call type permissions for livestream...');
+
+    const apiKey = process.env.STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      return res.status(500).json({ error: 'Missing Stream API credentials' });
+    }
+
+    // Initialize Stream Video client
+    const { StreamClient } = await import('@stream-io/node-sdk');
+    const streamClient = new StreamClient(apiKey, apiSecret);
+
+    try {
+      // First, let's see what call types exist and their current permissions
+      console.log('🔍 CONFIGURE-PERMISSIONS: Checking existing call types...');
+      
+      const callTypes = await streamClient.video.listCallTypes();
+      console.log('📋 CONFIGURE-PERMISSIONS: Existing call types:', callTypes.call_types ? Object.keys(callTypes.call_types) : 'none');
+      
+      // Configure the 'livestream' call type to give 'user' role the necessary permissions
+      const callTypeName = 'livestream';
+      
+      // Get current call type configuration
+      let currentCallType;
+      try {
+        currentCallType = callTypes.call_types && callTypes.call_types[callTypeName];
+        console.log('🔍 CONFIGURE-PERMISSIONS: Current livestream call type config:', currentCallType ? 'exists' : 'not found');
+      } catch (e) {
+        console.log('⚠️ CONFIGURE-PERMISSIONS: Livestream call type may not exist, will create/update...');
+      }
+
+      // Define the permissions we need for 'user' role
+      const requiredUserPermissions = [
+        'create-call',
+        'join-call',
+        'send-audio',
+        'send-video',
+        'update-call-settings',
+        'update-call-permissions',
+        'mute-users',
+        'remove-call-member',
+        'end-call'
+      ];
+
+      // Get existing user grants or start with empty array
+      const currentUserGrants = currentCallType?.grants?.user || [];
+      console.log('📋 CONFIGURE-PERMISSIONS: Current user grants:', currentUserGrants);
+      
+      // Merge required permissions with existing ones (avoiding duplicates)
+      const updatedUserGrants = [...new Set([...currentUserGrants, ...requiredUserPermissions])];
+      console.log('📋 CONFIGURE-PERMISSIONS: Updated user grants:', updatedUserGrants);
+
+      // Update the call type with enhanced permissions
+      await streamClient.video.updateCallType({
+        name: callTypeName,
+        grants: {
+          user: updatedUserGrants,
+          // Keep existing grants for other roles if they exist
+          ...(currentCallType?.grants && Object.fromEntries(
+            Object.entries(currentCallType.grants).filter(([role]) => role !== 'user')
+          ))
+        },
+      });
+
+      console.log('✅ CONFIGURE-PERMISSIONS: Successfully updated livestream call type permissions');
+      
+      // Also configure 'default' call type for good measure
+      try {
+        await streamClient.video.updateCallType({
+          name: 'default',
+          grants: {
+            user: updatedUserGrants,
+          },
+        });
+        console.log('✅ CONFIGURE-PERMISSIONS: Successfully updated default call type permissions');
+      } catch (defaultError) {
+        console.warn('⚠️ CONFIGURE-PERMISSIONS: Could not update default call type:', defaultError.message);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Call type permissions configured successfully',
+        callType: callTypeName,
+        userPermissions: updatedUserGrants
+      });
+
+    } catch (configError) {
+      console.error('❌ CONFIGURE-PERMISSIONS: Error configuring call type:', configError);
+      return res.status(500).json({
+        error: 'Failed to configure call type permissions',
+        details: configError.message
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ CONFIGURE-PERMISSIONS: Critical error:', error);
+    return res.status(500).json({
+      error: 'Internal server error configuring permissions',
+      details: error.message
+    });
+  }
+});
+
 // --- Auth tokens endpoint ---
 app.post("/api/stream/auth-tokens", async (req, res) => {
   try {
@@ -1683,41 +1892,92 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
     // Handle video token generation
     if (type === 'video') {
       console.log('📹 AUTH-TOKENS: Generating video token for:', userId);
+      console.log('🔧 AUTH-TOKENS: Full request body:', JSON.stringify(req.body, null, 2));
+      console.log('🔧 AUTH-TOKENS: Request headers:', {
+        'content-type': req.headers['content-type'],
+        'cache-control': req.headers['cache-control'],
+        'x-cache-buster': req.headers['x-cache-buster']
+      });
       
       // For video tokens, create JWT token directly
       // Demo app - all users get admin for video features
       const userRole = 'admin';
       
+      const now = Math.floor(Date.now() / 1000);
       const tokenPayload = {
         user_id: userId,
         iss: 'stream-video',
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
-        iat: Math.floor(Date.now() / 1000),
+        exp: now + (24 * 60 * 60), // 24 hours
+        iat: now,
+        nbf: now, // Not before - ensure token is valid immediately
+        // Add unique identifier to force token refresh
+        jti: `video_${userId}_${now}_${Math.random().toString(36).substr(2, 9)}`,
+        // Include ALL video and livestream capabilities
         capabilities: [
+          // Basic video call capabilities
           'join-call',
           'send-audio', 
           'send-video',
-          'mute-users'
-        ]
-      };
-      
-      // For admin users, add additional capabilities for livestreaming
-      if (userRole === 'admin') {
-        tokenPayload.capabilities.push(
+          'mute-users',
           'remove-call-member',
           'update-call-settings',
           'end-call',
           'create-call',
-          'update-call-permissions'
-        );
-        tokenPayload.call_cids = ['*']; // Allow access to all calls
-      }
+          'update-call-permissions',
+          // Livestream specific capabilities
+          'create-livestream',
+          'join-livestream',
+          'end-livestream',
+          'update-livestream-settings',
+          'livestream-admin',
+          // Additional admin capabilities
+          'pin-for-everyone',
+          'screenshare',
+          'send-reaction',
+          'manage-call-settings',
+          'call-admin',
+          'super-admin'
+        ],
+        call_cids: ['*'], // Allow access to all calls
+        // Add role information
+        role: 'admin',
+        call_role: 'admin',
+        livestream_role: 'admin'
+      };
+      
+      console.log('🔧 AUTH-TOKENS: Video token payload with livestream capabilities:', {
+        user_id: tokenPayload.user_id,
+        capabilities: tokenPayload.capabilities,
+        role: tokenPayload.role,
+        call_cids: tokenPayload.call_cids
+      });
       
       const videoToken = jwt.sign(tokenPayload, apiSecret, {
         algorithm: 'HS256'
       });
 
-      console.log('✅ AUTH-TOKENS: Video token generated successfully');
+      console.log('✅ AUTH-TOKENS: Video token generated with livestream permissions');
+      console.log('🔧 AUTH-TOKENS: Generated token (first 100 chars):', videoToken.substring(0, 100) + '...');
+      
+      // Try to decode and log the token payload for verification
+      try {
+        const tokenParts = videoToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+          console.log('🔍 AUTH-TOKENS: Generated token payload verification:', {
+            user_id: payload.user_id,
+            role: payload.role,
+            call_role: payload.call_role,
+            livestream_role: payload.livestream_role,
+            capabilities: payload.capabilities?.slice(0, 5) || 'none',
+            totalCapabilities: payload.capabilities?.length || 0,
+            call_cids: payload.call_cids
+          });
+        }
+      } catch (decodeError) {
+        console.warn('⚠️ AUTH-TOKENS: Could not decode generated token:', decodeError);
+      }
+      
       return res.status(200).json({
         token: videoToken,
         apiKey: apiKey,
@@ -2379,8 +2639,59 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
+// Auto-configure call type permissions on server startup
+async function configureCallTypePermissions() {
+  try {
+    console.log('🔧 AUTO-CONFIGURE: Setting up video call type permissions on startup...');
+    
+    const apiKey = process.env.STREAM_API_KEY;
+    const apiSecret = process.env.STREAM_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ AUTO-CONFIGURE: Missing Stream API credentials, skipping call type configuration');
+      return;
+    }
+
+    // Initialize Stream Video client
+    const { StreamClient } = await import('@stream-io/node-sdk');
+    const streamClient = new StreamClient(apiKey, apiSecret);
+
+    // Configure permissions for both livestream and default call types
+    const callTypes = ['livestream', 'default'];
+    const requiredUserPermissions = [
+      'create-call',
+      'join-call',
+      'send-audio',
+      'send-video',
+      'update-call-settings',
+      'update-call-permissions',
+      'mute-users',
+      'remove-call-member',
+      'end-call'
+    ];
+
+    for (const callTypeName of callTypes) {
+      try {
+        await streamClient.video.updateCallType({
+          name: callTypeName,
+          grants: {
+            user: requiredUserPermissions,
+          },
+        });
+        console.log(`✅ AUTO-CONFIGURE: Updated ${callTypeName} call type permissions`);
+      } catch (error) {
+        console.warn(`⚠️ AUTO-CONFIGURE: Could not update ${callTypeName} call type:`, error.message);
+      }
+    }
+
+    console.log('✅ AUTO-CONFIGURE: Call type permissions configuration completed');
+  } catch (error) {
+    console.warn('⚠️ AUTO-CONFIGURE: Error setting up call type permissions:', error.message);
+  }
+}
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Stream Demo Server running on port ${PORT}`);
   console.log(`📍 URL: http://localhost:${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
@@ -2399,6 +2710,9 @@ app.listen(PORT, () => {
   console.log('');
   if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
     console.log('⚠️  WARNING: Missing Stream API credentials!');
+  } else {
+    // Configure call type permissions after server starts
+    await configureCallTypePermissions();
   }
 });
 

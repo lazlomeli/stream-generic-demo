@@ -223,14 +223,18 @@ const BookmarkedPosts = () => {
   }, [isAuthenticated, user, getAccessTokenSilently]);
 
   useEffect(() => {
-    if (!feedsClient) return;
+    if (!feedsClient) {
+      console.log('📚 BOOKMARKED_POSTS: FeedsClient not ready yet, waiting...');
+      return;
+    }
+    console.log(`📚 BOOKMARKED_POSTS: FeedsClient ready, initializing bookmarked posts for user ${feedsClient.userId}`);
     fetchBookmarkedPosts();
   }, [feedsClient]);
 
   // Refresh bookmarked posts when user returns to the page
   useEffect(() => {
     const handleFocus = () => {
-
+      console.log('📚 BOOKMARKED_POSTS: Window focus detected, refreshing bookmarked posts...');
       if (feedsClient?.userId) {
         fetchBookmarkedPosts();
       }
@@ -238,7 +242,7 @@ const BookmarkedPosts = () => {
 
     const handleVisibilityChange = () => {
       if (!document.hidden && feedsClient?.userId) {
-
+        console.log('📚 BOOKMARKED_POSTS: Page became visible, refreshing bookmarked posts...');
         fetchBookmarkedPosts();
       }
     };
@@ -253,9 +257,13 @@ const BookmarkedPosts = () => {
   }, [feedsClient]);
 
   const fetchBookmarkedPosts = async () => {
-    if (!feedsClient?.userId) return;
+    if (!feedsClient?.userId) {
+      console.log('📚 BOOKMARKED_POSTS: No userId available, skipping fetch');
+      return;
+    }
 
     try {
+      console.log(`📚 BOOKMARKED_POSTS: Starting fetch for user ${feedsClient.userId}`);
       setLoading(true);
       const accessToken = await getAccessTokenSilently();
       
@@ -277,8 +285,7 @@ const BookmarkedPosts = () => {
       }
 
       const data = await response.json();
-
-
+      console.log(`📚 BOOKMARKED_POSTS: API response:`, data);
       
       // Transform posts to include user info
       const transformedPosts = (data.bookmarkedPosts || []).map((post: any) => {
@@ -305,9 +312,10 @@ const BookmarkedPosts = () => {
         };
       });
       
+      console.log(`📚 BOOKMARKED_POSTS: Transformed ${transformedPosts.length} posts for display`);
       setBookmarkedPosts(transformedPosts);
     } catch (err: any) {
-      console.error('Error fetching bookmarked posts:', err);
+      console.error('📚 BOOKMARKED_POSTS: Error fetching bookmarked posts:', err);
       setError(err.message);
     } finally {
       setLoading(false);
