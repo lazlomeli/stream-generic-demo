@@ -313,6 +313,7 @@ const Feeds = () => {
         console.log(`🚀 FEEDS INIT: Starting parallel fetch of posts, bookmarks, and following users...`);
         
         fetchPosts(feedsClient.userId);
+        fetchLikedPosts(feedsClient.userId);
         fetchBookmarkedPosts(feedsClient.userId);
         fetchFollowingUsers(feedsClient.userId);
     } else {
@@ -575,6 +576,56 @@ const Feeds = () => {
   };
 
 
+
+  // Function to fetch liked posts to sync like state
+  const fetchLikedPosts = async (userId?: string) => {
+    const userIdToUse = userId || feedsClient?.userId;
+    if (!userIdToUse) {
+      console.log('❤️ FETCH_LIKES: No userId available, skipping fetch');
+      return;
+    }
+
+    try {
+      console.log(`❤️ FETCH_LIKES: Starting fetch for user ${userIdToUse}`);
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/feed-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          action: 'get_liked_posts',
+          userId: userIdToUse
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch liked posts');
+      }
+
+      const data = await response.json();
+      console.log(`❤️ FETCH_LIKES: API response:`, data);
+
+      if (data.success && data.likedPostIds) {
+        // Update liked posts state
+        const likedPostIds = new Set<string>(data.likedPostIds as string[]);
+        console.log(`❤️ FETCH_LIKES: Found ${likedPostIds.size} liked posts:`, Array.from(likedPostIds));
+
+        setLikedPosts(likedPostIds);
+        console.log(`❤️ FETCH_LIKES: Updated liked state with ${likedPostIds.size} posts`);
+      } else {
+        console.log(`❤️ FETCH_LIKES: No liked posts found or unsuccessful response`);
+        setLikedPosts(new Set<string>());
+      }
+    } catch (error) {
+      console.error('❤️ FETCH_LIKES: Error fetching liked posts:', error);
+      // Don't show error to user as this is background sync
+      // But ensure we have a clean state
+      setLikedPosts(new Set<string>());
+    }
+  };
 
   // Function to fetch bookmarked posts to sync bookmark state
   const fetchBookmarkedPosts = async (userId?: string) => {
@@ -1223,6 +1274,14 @@ const Feeds = () => {
     if (!feedsClient?.userId) return;
 
     const isCurrentlyLiked = likedPosts.has(postId);
+    const action = isCurrentlyLiked ? 'unlike_post' : 'like_post';
+
+    console.log(`❤️ HANDLE_LIKE: Starting ${action} for post ${postId}`);
+    console.log(`❤️ HANDLE_LIKE: Current like state before action:`, {
+      isCurrentlyLiked,
+      totalLikedPosts: likedPosts.size,
+      allLikedPostIds: Array.from(likedPosts)
+    });
     
     try {
       const accessToken = await getAccessTokenSilently();
@@ -1234,48 +1293,61 @@ const Feeds = () => {
           'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          action: isCurrentlyLiked ? 'unlike_post' : 'like_post',
+          action,
           userId: feedsClient.userId,
           postId
         }),
       });
 
+      const responseData = await response.json();
+      console.log(`❤️ HANDLE_LIKE: API response for ${action}:`, responseData);
+
       if (!response.ok) {
-        throw new Error('Failed to update like');
+        throw new Error(responseData.error || 'Failed to update like');
       }
 
-      // Update local state
-      setLikedPosts(prev => {
-        const newLiked = new Set(prev);
-        if (isCurrentlyLiked) {
-          newLiked.delete(postId);
-        } else {
-          newLiked.add(postId);
-        }
-        return newLiked;
-      });
+      // CRITICAL FIX: Refresh like state from backend after successful operation
+      console.log(`❤️ HANDLE_LIKE: ${action} successful, refreshing like state from backend...`);
 
-      // Update post like count
+      // Store previous state for comparison
+      const previousLikeState = new Set(likedPosts);
+      console.log(`❤️ HANDLE_LIKE: Previous like state:`, Array.from(previousLikeState));
+
+      await fetchLikedPosts(feedsClient.userId);
+
+      // Log state after refresh
+      setTimeout(() => {
+        console.log(`❤️ HANDLE_LIKE: Like state after refresh:`, {
+          currentLikedPosts: likedPosts.size,
+          allLikedPostIds: Array.from(likedPosts),
+          wasPostLiked: likedPosts.has(postId),
+          expectedState: !isCurrentlyLiked
+        });
+      }, 100); // Small delay to ensure state has updated
+
+      // Update post like count in local state  
       setPosts(prevPosts => 
         prevPosts.map(post => {
           if (post.id === postId && post.custom) {
             return {
               ...post,
               custom: {
-                ...post.custom,
-                likes: isCurrentlyLiked ? post.custom.likes - 1 : post.custom.likes + 1
+                likes: isCurrentlyLiked ? Math.max(0, post.custom.likes - 1) : post.custom.likes + 1,
+                shares: post.custom.shares,
+                comments: post.custom.comments,
+                category: post.custom.category
               }
             };
           }
           return post;
         })
       );
-      
+
       // Show success toast
-      showSuccess(isCurrentlyLiked ? 'Post unliked!' : 'Post liked!');
-      
+      showSuccess(isCurrentlyLiked ? 'Like removed!' : 'Post liked!');
+
     } catch (err: any) {
-      console.error('Error updating like:', err);
+      console.error('❤️ HANDLE_LIKE: Error updating like:', err);
       showError('Failed to update like. Please try again.');
     }
   };

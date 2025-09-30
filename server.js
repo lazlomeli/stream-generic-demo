@@ -366,13 +366,22 @@ app.post('/api/stream/get-posts', async (req, res) => {
       // Ensure we have a custom object
       const customData = activity.custom || {};
       
+      // Get the actual like count from reaction_counts (prioritize over custom data)
+      let likeCount = customData.likes || 0;
+      if (activity.reaction_counts && typeof activity.reaction_counts.like === 'number') {
+        likeCount = activity.reaction_counts.like;
+        console.log(`✅ Using reaction_counts for activity ${activity.id}: ${likeCount} likes`);
+      } else {
+        console.log(`🔍 No reaction_counts.like for activity ${activity.id}, using custom: ${likeCount}`);
+      }
+
       return {
         ...activity,
         custom: {
           ...customData,
           comments: commentCount,
-          // Ensure other custom fields exist
-          likes: customData.likes || 0,
+          // Use reaction_counts.like if available, otherwise fall back to custom data
+          likes: likeCount,
           shares: customData.shares || 0,
           category: customData.category || 'general'
         }
@@ -820,20 +829,14 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           }
         };
 
-        // Create post in BOTH global feed AND user's personal feed
-        console.log('📝 Creating post in both global and user feeds...');
-        const [globalActivity, userActivity] = await Promise.all([
-          // Global feed for main feed display
-          serverFeedsClient.feed('flat', 'global').addActivity(activityData),
-          // User's personal feed for profile and follow relationships
-          serverFeedsClient.feed('user', trimmedUserId).addActivity(activityData)
-        ]);
+        // Create post ONLY in user's personal feed (timeline aggregation will handle display)
+        console.log('📝 Creating post in user feed only...');
+        const userActivity = await serverFeedsClient.feed('user', trimmedUserId).addActivity(activityData);
 
-        console.log('✅ Post created in global feed with ID:', globalActivity.id);
         console.log('✅ Post created in user feed with ID:', userActivity.id);
 
-        // Return the global activity (for consistency with existing code)
-        const newActivity = globalActivity;
+        // Return the user activity
+        const newActivity = userActivity;
         console.log('✅ Post created with ID:', newActivity.id);
         return res.json({
           success: true,
@@ -1093,6 +1096,40 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           console.error('❌ UNBOOKMARK: Error removing bookmark:', error);
           return res.status(500).json({ 
             error: 'Failed to remove bookmark',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+
+      case 'get_liked_posts':
+        console.log('❤️ Getting liked posts for user:', trimmedUserId);
+
+        try {
+          // Get all 'like' reactions for the user
+          const likeReactions = await serverFeedsClient.reactions.filter({
+            kind: 'like',
+            user_id: trimmedUserId
+          });
+
+          console.log(`❤️ Like reactions found: ${likeReactions.results?.length || 0}`);
+
+          if (!likeReactions.results || likeReactions.results.length === 0) {
+            return res.json({
+              success: true,
+              likedPostIds: []
+            });
+          }
+
+          const activityIds = likeReactions.results.map(reaction => reaction.activity_id);
+          console.log('❤️ Activity IDs:', activityIds);
+
+          return res.json({
+            success: true,
+            likedPostIds: activityIds
+          });
+        } catch (error) {
+          console.error('❌ LIKED_POSTS: Error getting liked posts:', error);
+          return res.status(500).json({
+            error: 'Failed to get liked posts',
             details: error instanceof Error ? error.message : 'Unknown error'
           });
         }

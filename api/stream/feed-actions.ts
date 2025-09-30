@@ -344,20 +344,14 @@ export default async function handler(
           console.log(`ℹ️ Self-follow already exists or error (this is normal):`, followError.message);
         }
 
-        // Create post in BOTH global feed AND user's personal feed
-        console.log('📝 Creating post in both global and user feeds...');
-        const [globalActivity, userActivity] = await Promise.all([
-          // Global feed for main feed display
-          serverClient.feed('flat', 'global').addActivity(activityData),
-          // User's personal feed for profile and follow relationships
-          serverClient.feed('user', trimmedUserId).addActivity(activityData)
-        ]);
+        // Create post ONLY in user's personal feed (timeline aggregation will handle display)
+        console.log('📝 Creating post in user feed only...');
+        const userActivity = await serverClient.feed('user', trimmedUserId).addActivity(activityData);
 
-        console.log('✅ Post created in global feed with ID:', globalActivity.id);
         console.log('✅ Post created in user feed with ID:', userActivity.id);
 
-        // Return the global activity (for consistency with existing code)
-        const newActivity = globalActivity;
+        // Return the user activity
+        const newActivity = userActivity;
 
         console.log('✅ Post created with ID:', newActivity.id);
 
@@ -561,6 +555,40 @@ export default async function handler(
           success: true,
           comments: comments.results || []
         });
+
+      case 'get_liked_posts':
+        console.log('❤️ GET_LIKED_POSTS: Getting liked posts for user:', trimmedUserId);
+
+        try {
+          // Get all 'like' reactions for the user
+          const likeReactions = await serverClient.reactions.filter({
+            kind: 'like',
+            user_id: trimmedUserId
+          });
+
+          console.log(`❤️ GET_LIKED_POSTS: Like reactions found: ${likeReactions.results?.length || 0}`);
+
+          if (!likeReactions.results || likeReactions.results.length === 0) {
+            return res.json({
+              success: true,
+              likedPostIds: []
+            });
+          }
+
+          const activityIds = likeReactions.results.map(reaction => reaction.activity_id);
+          console.log('❤️ GET_LIKED_POSTS: Activity IDs:', activityIds);
+
+          return res.json({
+            success: true,
+            likedPostIds: activityIds
+          });
+        } catch (error) {
+          console.error('❌ GET_LIKED_POSTS: Error getting liked posts:', error);
+          return res.status(500).json({
+            error: 'Failed to get liked posts',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
 
       case 'get_bookmarked_posts':
         console.log(`🚨 NEW CODE LOADING: This is the updated get_bookmarked_posts implementation!`);

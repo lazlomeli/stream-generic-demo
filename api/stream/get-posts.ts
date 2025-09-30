@@ -68,8 +68,8 @@ export default async function handler(
     // Limit after filtering
     const limitedResults = filteredResults.slice(0, limit);
     
-    // Update result to use filtered activities
-    result.results = limitedResults;
+    // Update result to use filtered activities (cast to avoid type issues)
+    (result as any).results = limitedResults;
     console.log(`🔍 withReactionCounts enabled: true`);
     
     // Debug: Log the first activity to see its structure
@@ -194,13 +194,22 @@ export default async function handler(
         // Ensure we have a custom object with comment count
         const customData = activity.custom || {};
         
+        // Get the actual like count from reaction_counts (prioritize over custom data)
+        let likeCount = customData.likes || 0;
+        if (activity.reaction_counts && typeof activity.reaction_counts.like === 'number') {
+          likeCount = activity.reaction_counts.like;
+          console.log(`✅ Using reaction_counts for activity ${activity.id}: ${likeCount} likes`);
+        } else {
+          console.log(`🔍 No reaction_counts.like for activity ${activity.id}, using custom: ${likeCount}`);
+        }
+
         return {
           ...activity,
           custom: {
             ...customData,
             comments: commentCount,
-            // Ensure other custom fields exist
-            likes: customData.likes || 0,
+            // Use reaction_counts.like if available, otherwise fall back to custom data
+            likes: likeCount,
             shares: customData.shares || 0,
             category: customData.category || 'general'
           }
