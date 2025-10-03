@@ -1,0 +1,71 @@
+/* Enriched text links styling */
+.enriched-link {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  word-break: break-word;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  margin: -0.125rem -0.25rem;
+}
+
+.enriched-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.enriched-link:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Ensure links don't break the layout */
+.enriched-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* For very long URLs, show them on their own line */
+.enriched-link[href*="amazon."],
+.enriched-link[href*="google."],
+.enriched-link[href*="facebook."] {
+  display: block;
+  margin: 0.5rem 0;
+  white-space: normal;
+  word-break: break-all;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.enriched-link[href*="amazon."]:hover,
+.enriched-link[href*="google."]:hover,
+.enriched-link[href*="facebook."]:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .enriched-link {
+    font-size: 0.875rem;
+  }
+  
+  /* Long URLs on mobile */
+  .enriched-link[href*="amazon."],
+  .enriched-link[href*="google."],
+  .enriched-link[href*="facebook."] {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+  }
+}

@@ -123,6 +123,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // SIMPLIFIED APPROACH: Use original user ID but force admin role more aggressively
       let finalUserId = userId;
       
+      // Special handling for demo users - create only if needed
+      if (userId === 'demo_user_2025') {
+        console.log('👥 AUTH-TOKENS: Handling demo user demo_user_2025');
+        try {
+          // First check if user exists by trying to query it
+          const existingUser = await streamClient.queryUsers({ id: 'demo_user_2025' });
+          if (existingUser.users.length === 0) {
+            console.log('🔧 AUTH-TOKENS: Demo user does not exist, creating...');
+            await streamClient.upsertUser({ 
+              id: 'demo_user_2025',
+              name: 'Demo User',
+              image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+            });
+            console.log('✅ AUTH-TOKENS: Demo user demo_user_2025 created');
+          } else {
+            console.log('✅ AUTH-TOKENS: Demo user demo_user_2025 already exists, skipping creation');
+          }
+        } catch (error) {
+          console.log('⚠️ AUTH-TOKENS: Error handling demo user, but continuing:', error);
+        }
+      }
+      
       // Skip user profile updating entirely - rely on token capabilities only
       console.log('⚡ AUTH-TOKENS: SKIPPING user profile updates - using token-only approach');
 

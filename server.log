@@ -1,0 +1,1850 @@
+[dotenv@17.2.1] injecting env (6) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+🚀 Stream Demo Server running on port 5000
+📍 URL: http://localhost:5000
+📡 Health check: http://localhost:5000/health
+
+🎯 UNIFIED SEEDING SYSTEM:
+🌱 Unified seeding: http://localhost:5000/api/stream/seed
+🔄 App reset: http://localhost:5000/api/stream/reset
+
+✅ Single source of truth: api/_utils/seeding.ts
+✅ No more duplicate seeding files!
+
+🔧 Environment Variables Debug:
+   PORT: 5000 (default)
+   STREAM_API_KEY: ✅ Set
+   STREAM_API_SECRET: ✅ Set
+
+🔧 AUTO-CONFIGURE: Setting up video call type permissions on startup...
+✅ AUTO-CONFIGURE: Updated livestream call type permissions
+🎯 Processing feed action: like_post for userId: lazlo_user_test
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'lazlo_user_test',
+  trimmedUserId: 'lazlo_user_test',
+  userIdLength: 15,
+  action: 'like_post'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Liking post: 6f7d753a-a03f-11f0-a4fb-06efd237be49 by user: lazlo_user_test
+✅ AUTO-CONFIGURE: Updated default call type permissions
+✅ AUTO-CONFIGURE: Call type permissions configuration completed
+🔔 LIKE_DEBUG: About to create like notification for post: 6f7d753a-a03f-11f0-a4fb-06efd237be49
+🔔 LIKE_DEBUG: Like actor (who's liking): lazlo_user_test
+🔍 AUTHOR_DEBUG: Looking for post author for postId: 6f7d753a-a03f-11f0-a4fb-06efd237be49
+🔍 AUTHOR_DEBUG: Retrieved 7 activities from global feed
+🔍 AUTHOR_DEBUG: Activity IDs in global feed: [
+  '6f99d39e-a03f-11f0-a4fc-06efd237be49',
+  '34fad02c-a03f-11f0-99de-0249411e1141',
+  'b1ab0373-a03d-11f0-9f6d-06efd237be49',
+  '8405a702-a03d-11f0-9eeb-06efd237be49',
+  '5e6a0726-a03d-11f0-9e65-06efd237be49',
+  '77aa16f7-9dd7-11f0-bc8c-06efd237be49',
+  '6ab85b8e-9dd7-11f0-9acb-0249411e1141'
+]
+⚠️ AUTHOR_DEBUG: Could not find post author for post 6f7d753a-a03f-11f0-a4fb-06efd237be49 in global feed
+🔍 AUTHOR_DEBUG: Trying fallback approach - checking recent user activities...
+🔍 AUTHOR_DEBUG: Searching in feeds for users: [
+  'lazlo_user_test',
+  'lazlo_fernandez_test',
+  'alice_smith',
+  'bob_johnson',
+  'carol_williams',
+  'google-oauth2_113714394737973100008',
+  'google-oauth2_108922242653550022044'
+]
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 16 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+📍 AUTHOR_DEBUG: Found post author via user feed search: google-oauth2_113714394737973100008 for post 6f7d753a-a03f-11f0-a4fb-06efd237be49
+🔔 LIKE_DEBUG: Found post author: google-oauth2_113714394737973100008
+🔔 LIKE_DEBUG: Will skip notification? NO
+🔔 Creating like notification: lazlo_user_test → google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Found 7 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+⚠️ Could not fetch user profile for lazlo_user_test, using fallback
+✅ Notification created: 927f9b00-a03f-11f0-a569-06efd237be49
+✅ LIKE_DEBUG: Like notification creation completed: 927f9b00-a03f-11f0-a569-06efd237be49
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_notifications',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_NOTIFICATIONS: Fetching notifications for user google-oauth2_113714394737973100008
+✅ Found 1 notifications for user google-oauth2_113714394737973100008
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 17 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 7 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_notifications',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_NOTIFICATIONS: Fetching notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'mark_read',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 MARK_READ: Marking 1 notifications as read for user google-oauth2_113714394737973100008
+✅ Marked notification 927f9b00-a03f-11f0-a569-06efd237be49 as read
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_notifications',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_NOTIFICATIONS: Fetching notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'mark_read',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 MARK_READ: Marking 1 notifications as read for user google-oauth2_113714394737973100008
+✅ Marked notification 927f9b00-a03f-11f0-a569-06efd237be49 as read
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 17 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 7 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔧 AUTH-TOKENS: Request received: { type: 'feed', userId: 'google-oauth2_108922242653550022044' }
+🍃 AUTH-TOKENS: Generating feed token for: google-oauth2_108922242653550022044
+✅ AUTH-TOKENS: Feed token generated successfully
+📊 Fetching posts from feed: timeline:google-oauth2_108922242653550022044 for userId: google-oauth2_108922242653550022044
+🔍 MAIN_FEED_DEBUG: This is for main feed view, fetching timeline:google-oauth2_108922242653550022044
+🎯 Processing feed action: get_liked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_liked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Getting liked posts for user: google-oauth2_108922242653550022044
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+🎯 Processing feed action: get_following for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_following'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+👥 Getting following for user: google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 17 activities in timeline:google-oauth2_108922242653550022044
+🔍 DEBUG: Raw activities in timeline:google-oauth2_108922242653550022044: [
+  {
+    id: '927f9b00-a03f-11f0-a569-06efd237be49',
+    verb: 'notification',
+    actor: 'lazlo_user_test',
+    text: 'lazlo_user_test liked your post'
+  },
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '7066989f-992a-11f0-ab39-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hello!!'
+  },
+  {
+    id: '21255930-9925-11f0-9445-0aab263b1ff3',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: '7d61c27b-9924-11f0-9419-06efd237be49',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: 'ac384c1f-9922-11f0-8c67-06efd237be49',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 liked your pos'
+  },
+  {
+    id: 'aa8b636d-9922-11f0-89f2-0aab263b1ff3',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: 'a2cfa415-9922-11f0-aa9c-0249411e1141',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: 'b815a3b8-83f1-11f0-9cf1-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  },
+  {
+    id: 'b8088d70-83f1-11f0-81b3-0249411e1141',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  }
+]
+🔧 Filtered to 11 non-notification activities
+🔍 DEBUG: Filtered activities: [
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '7066989f-992a-11f0-ab39-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hello!!'
+  },
+  {
+    id: 'b815a3b8-83f1-11f0-9cf1-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  },
+  {
+    id: 'b8088d70-83f1-11f0-81b3-0249411e1141',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  }
+]
+🔍 withReactionCounts enabled: true
+🔍 Sample activity reaction_counts: { like: 2 }
+🔍 Sample activity custom: { category: 'general', comments: 0, likes: 0, shares: 0 }
+🔄 Manually counting comments for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49...
+✅ Manual count for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 2 likes
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 2 comments
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 1 likes
+🔄 Manually counting comments for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3...
+✅ Manual count for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 0 comments
+✅ Using reaction_counts for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3...
+✅ Manual count for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3...
+✅ Manual count for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3, using custom: 0
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 comments
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3...
+✅ Manual count for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49...
+✅ Manual count for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 likes
+🔄 Manually counting comments for activity 7066989f-992a-11f0-ab39-0aab263b1ff3...
+✅ Manual count for activity 7066989f-992a-11f0-ab39-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 7066989f-992a-11f0-ab39-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity b815a3b8-83f1-11f0-9cf1-06efd237be49...
+✅ Manual count for activity b815a3b8-83f1-11f0-9cf1-06efd237be49: 0 comments
+🔍 No reaction_counts.like for activity b815a3b8-83f1-11f0-9cf1-06efd237be49, using custom: 0
+🔄 Manually counting comments for activity b8088d70-83f1-11f0-81b3-0249411e1141...
+✅ Manual count for activity b8088d70-83f1-11f0-81b3-0249411e1141: 0 comments
+🔍 No reaction_counts.like for activity b8088d70-83f1-11f0-81b3-0249411e1141, using custom: 0
+📊 Batch fetching user counts for 1 users
+❤️ Like reactions found: 7
+❤️ Activity IDs: [
+  '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+  '77b0f032-9e02-11f0-a946-06efd237be49',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49'
+]
+✅ User google-oauth2_108922242653550022044 is following 3 users
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+✅ Successfully fetched counts for 1 users
+🔍 BOOKMARKS: Found 17 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 7 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🔧 AUTH-TOKENS: Request received: { type: 'feed', userId: 'google-oauth2_113714394737973100008' }
+🍃 AUTH-TOKENS: Generating feed token for: google-oauth2_113714394737973100008
+✅ AUTH-TOKENS: Feed token generated successfully
+📊 Fetching posts from feed: timeline:google-oauth2_113714394737973100008 for userId: google-oauth2_113714394737973100008
+🔍 MAIN_FEED_DEBUG: This is for main feed view, fetching timeline:google-oauth2_113714394737973100008
+🎯 Processing feed action: get_liked_posts for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_liked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Getting liked posts for user: google-oauth2_113714394737973100008
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_113714394737973100008
+🎯 Processing feed action: get_following for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_following'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+👥 Getting following for user: google-oauth2_113714394737973100008
+❤️ Like reactions found: 10
+❤️ Activity IDs: [
+  'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+  'e7208f5a-9923-11f0-8f58-0aab263b1ff3',
+  '9cfd2e1a-9922-11f0-8c22-06efd237be49',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  'e902d10f-8f0d-11f0-8ada-0249411e1141',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '1d7c767e-8f02-11f0-a7a0-06efd237be49'
+]
+📖 Bookmark reactions found: 10
+📖 Activity IDs: [
+  'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+  '7fde3900-9d06-11f0-8080-8000725da553',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '48ee056f-8f06-11f0-b0c2-0249411e1141',
+  '1d7c767e-8f02-11f0-a7a0-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '36a07547-896a-11f0-b611-0aab263b1ff3',
+  '4254cdd1-84df-11f0-a6a6-0aab263b1ff3',
+  'e8ec8ecf-81ab-11f0-ab53-06efd237be49',
+  'e8ec8ecf-81ab-11f0-ab53-06efd237be49'
+]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_113714394737973100008...
+✅ User google-oauth2_113714394737973100008 is following 20 users
+✅ Found 12 activities in timeline:google-oauth2_113714394737973100008
+🔍 DEBUG: Raw activities in timeline:google-oauth2_113714394737973100008: [
+  {
+    id: '927f9b00-a03f-11f0-a569-06efd237be49',
+    verb: 'notification',
+    actor: 'lazlo_user_test',
+    text: 'lazlo_user_test liked your post'
+  },
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '0018ea00-9d2c-11f0-8080-80004566447b',
+    verb: 'post',
+    actor: 'emma_davis_1759147273027',
+    text: 'Building scalable chat and feeds is no joke! 💪 St'
+  },
+  {
+    id: 'fffc1330-9d2b-11f0-8080-8001718f113a',
+    verb: 'post',
+    actor: 'alice_smith_1759147273027',
+    text: "✨ Demo time! This activity feed you're looking at "
+  },
+  {
+    id: 'ffdea020-9d2b-11f0-8080-800050398b63',
+    verb: 'post',
+    actor: 'david_brown_1759147273027',
+    text: '🚀 Just launched our new real-time activity feeds '
+  }
+]
+🔧 Filtered to 11 non-notification activities
+🔍 DEBUG: Filtered activities: [
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '0018ea00-9d2c-11f0-8080-80004566447b',
+    verb: 'post',
+    actor: 'emma_davis_1759147273027',
+    text: 'Building scalable chat and feeds is no joke! 💪 St'
+  },
+  {
+    id: 'fffc1330-9d2b-11f0-8080-8001718f113a',
+    verb: 'post',
+    actor: 'alice_smith_1759147273027',
+    text: "✨ Demo time! This activity feed you're looking at "
+  },
+  {
+    id: 'ffdea020-9d2b-11f0-8080-800050398b63',
+    verb: 'post',
+    actor: 'david_brown_1759147273027',
+    text: '🚀 Just launched our new real-time activity feeds '
+  }
+]
+🔍 withReactionCounts enabled: true
+🔍 Sample activity reaction_counts: { like: 2 }
+🔍 Sample activity custom: { category: 'general', comments: 0, likes: 0, shares: 0 }
+🔄 Manually counting comments for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49...
+✅ Manual count for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 2 likes
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 2 comments
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 1 likes
+🔄 Manually counting comments for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3...
+✅ Manual count for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 0 comments
+✅ Using reaction_counts for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3...
+✅ Manual count for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3...
+✅ Manual count for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3, using custom: 0
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 comments
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3...
+✅ Manual count for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49...
+✅ Manual count for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 likes
+✅ Using reaction_counts for activity 0018ea00-9d2c-11f0-8080-80004566447b: 1 comments
+✅ Using reaction_counts for activity 0018ea00-9d2c-11f0-8080-80004566447b: 0 likes
+✅ Using reaction_counts for activity fffc1330-9d2b-11f0-8080-8001718f113a: 1 comments
+✅ Using reaction_counts for activity fffc1330-9d2b-11f0-8080-8001718f113a: 0 likes
+✅ Using reaction_counts for activity ffdea020-9d2b-11f0-8080-800050398b63: 1 comments
+✅ Using reaction_counts for activity ffdea020-9d2b-11f0-8080-800050398b63: 0 likes
+📊 Batch fetching user counts for 4 users
+🔍 BOOKMARKS: Found 12 activities in timeline:google-oauth2_113714394737973100008
+✅ BOOKMARKS: Found bookmarked activity c3a834a4-9de1-11f0-911a-0aab263b1ff3 in timeline:google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Searching user:google-oauth2_113714394737973100008...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Searching flat:global...
+✅ Successfully fetched counts for 4 users
+🔍 BOOKMARKS: Found 7 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 1 out of 10 bookmarked
+📌 BOOKMARKS: Adding unique post c3a834a4-9de1-11f0-911a-0aab263b1ff3 (1 reactions found)
+⚠️ BOOKMARKS: Activity 7fde3900-9d06-11f0-8080-8000725da553 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 5478045d-8f0f-11f0-8fb1-0249411e1141 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 48ee056f-8f06-11f0-b0c2-0249411e1141 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 1d7c767e-8f02-11f0-a7a0-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 4dada8b0-896d-11f0-becc-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 36a07547-896a-11f0-b611-0aab263b1ff3 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 4254cdd1-84df-11f0-a6a6-0aab263b1ff3 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity e8ec8ecf-81ab-11f0-ab53-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity e8ec8ecf-81ab-11f0-ab53-06efd237be49 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 1 bookmarked posts
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔧 AUTH-TOKENS: Request received: { type: 'feed', userId: 'google-oauth2_113714394737973100008' }
+🍃 AUTH-TOKENS: Generating feed token for: google-oauth2_113714394737973100008
+✅ AUTH-TOKENS: Feed token generated successfully
+📊 Fetching posts from feed: timeline:google-oauth2_113714394737973100008 for userId: google-oauth2_113714394737973100008
+🔍 MAIN_FEED_DEBUG: This is for main feed view, fetching timeline:google-oauth2_113714394737973100008
+🎯 Processing feed action: get_liked_posts for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_liked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Getting liked posts for user: google-oauth2_113714394737973100008
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_113714394737973100008
+🎯 Processing feed action: get_following for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_following'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+👥 Getting following for user: google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 1 unread notifications for user google-oauth2_113714394737973100008
+❤️ Like reactions found: 10
+❤️ Activity IDs: [
+  'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+  'e7208f5a-9923-11f0-8f58-0aab263b1ff3',
+  '9cfd2e1a-9922-11f0-8c22-06efd237be49',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  'e902d10f-8f0d-11f0-8ada-0249411e1141',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '1d7c767e-8f02-11f0-a7a0-06efd237be49'
+]
+📖 Bookmark reactions found: 10
+📖 Activity IDs: [
+  'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+  '7fde3900-9d06-11f0-8080-8000725da553',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '48ee056f-8f06-11f0-b0c2-0249411e1141',
+  '1d7c767e-8f02-11f0-a7a0-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '36a07547-896a-11f0-b611-0aab263b1ff3',
+  '4254cdd1-84df-11f0-a6a6-0aab263b1ff3',
+  'e8ec8ecf-81ab-11f0-ab53-06efd237be49',
+  'e8ec8ecf-81ab-11f0-ab53-06efd237be49'
+]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_113714394737973100008...
+✅ User google-oauth2_113714394737973100008 is following 20 users
+✅ Found 12 activities in timeline:google-oauth2_113714394737973100008
+🔍 DEBUG: Raw activities in timeline:google-oauth2_113714394737973100008: [
+  {
+    id: '927f9b00-a03f-11f0-a569-06efd237be49',
+    verb: 'notification',
+    actor: 'lazlo_user_test',
+    text: 'lazlo_user_test liked your post'
+  },
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '0018ea00-9d2c-11f0-8080-80004566447b',
+    verb: 'post',
+    actor: 'emma_davis_1759147273027',
+    text: 'Building scalable chat and feeds is no joke! 💪 St'
+  },
+  {
+    id: 'fffc1330-9d2b-11f0-8080-8001718f113a',
+    verb: 'post',
+    actor: 'alice_smith_1759147273027',
+    text: "✨ Demo time! This activity feed you're looking at "
+  },
+  {
+    id: 'ffdea020-9d2b-11f0-8080-800050398b63',
+    verb: 'post',
+    actor: 'david_brown_1759147273027',
+    text: '🚀 Just launched our new real-time activity feeds '
+  }
+]
+🔧 Filtered to 11 non-notification activities
+🔍 DEBUG: Filtered activities: [
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '0018ea00-9d2c-11f0-8080-80004566447b',
+    verb: 'post',
+    actor: 'emma_davis_1759147273027',
+    text: 'Building scalable chat and feeds is no joke! 💪 St'
+  },
+  {
+    id: 'fffc1330-9d2b-11f0-8080-8001718f113a',
+    verb: 'post',
+    actor: 'alice_smith_1759147273027',
+    text: "✨ Demo time! This activity feed you're looking at "
+  },
+  {
+    id: 'ffdea020-9d2b-11f0-8080-800050398b63',
+    verb: 'post',
+    actor: 'david_brown_1759147273027',
+    text: '🚀 Just launched our new real-time activity feeds '
+  }
+]
+🔍 withReactionCounts enabled: true
+🔍 Sample activity reaction_counts: { like: 2 }
+🔍 Sample activity custom: { category: 'general', comments: 0, likes: 0, shares: 0 }
+🔄 Manually counting comments for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49...
+✅ Manual count for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 2 likes
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 2 comments
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 1 likes
+🔄 Manually counting comments for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3...
+✅ Manual count for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 0 comments
+✅ Using reaction_counts for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3...
+✅ Manual count for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3...
+✅ Manual count for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3, using custom: 0
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 comments
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3...
+✅ Manual count for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49...
+✅ Manual count for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 likes
+✅ Using reaction_counts for activity 0018ea00-9d2c-11f0-8080-80004566447b: 1 comments
+✅ Using reaction_counts for activity 0018ea00-9d2c-11f0-8080-80004566447b: 0 likes
+✅ Using reaction_counts for activity fffc1330-9d2b-11f0-8080-8001718f113a: 1 comments
+✅ Using reaction_counts for activity fffc1330-9d2b-11f0-8080-8001718f113a: 0 likes
+✅ Using reaction_counts for activity ffdea020-9d2b-11f0-8080-800050398b63: 1 comments
+✅ Using reaction_counts for activity ffdea020-9d2b-11f0-8080-800050398b63: 0 likes
+📊 Batch fetching user counts for 4 users
+🔍 BOOKMARKS: Found 12 activities in timeline:google-oauth2_113714394737973100008
+✅ BOOKMARKS: Found bookmarked activity c3a834a4-9de1-11f0-911a-0aab263b1ff3 in timeline:google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Searching user:google-oauth2_113714394737973100008...
+✅ Successfully fetched counts for 4 users
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 7 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 1 out of 10 bookmarked
+📌 BOOKMARKS: Adding unique post c3a834a4-9de1-11f0-911a-0aab263b1ff3 (1 reactions found)
+⚠️ BOOKMARKS: Activity 7fde3900-9d06-11f0-8080-8000725da553 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 5478045d-8f0f-11f0-8fb1-0249411e1141 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 48ee056f-8f06-11f0-b0c2-0249411e1141 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 1d7c767e-8f02-11f0-a7a0-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 4dada8b0-896d-11f0-becc-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 36a07547-896a-11f0-b611-0aab263b1ff3 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 4254cdd1-84df-11f0-a6a6-0aab263b1ff3 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity e8ec8ecf-81ab-11f0-ab53-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity e8ec8ecf-81ab-11f0-ab53-06efd237be49 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 1 bookmarked posts
+🎯 Processing feed action: create_post for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'create_post'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📝 Creating post: hello everyone...
+👤 User profile data: {
+  "name": "Lazlo",
+  "image": "https://lh3.googleusercontent.com/a/ACg8ocLW_6gy5VAxNy4rzciL-AF4HCjFYM6dONMFBbsliTR5Kiuzn4Ce=s96-c",
+  "role": "User",
+  "given_name": "Lazlo",
+  "nickname": "lazlomeli",
+  "email": "lazlomeli@gmail.com",
+  "sub": "google-oauth2|113714394737973100008"
+}
+✅ Ensured self-follow: timeline:google-oauth2_113714394737973100008 → user:google-oauth2_113714394737973100008
+📝 Creating post in user feed with ID: post_google-oauth2_113714394737973100008_1759485672056_z1873ppxi
+✅ Post created in user feed with ID: e44473df-a03f-11f0-a67e-06efd237be49
+📝 Also adding post to global feed for notifications with same ID...
+✅ Post also added to global feed with ID: e4605b80-a03f-11f0-9c17-0249411e1141
+✅ Post created with ID: e44473df-a03f-11f0-a67e-06efd237be49
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 18 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 8 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔧 AUTH-TOKENS: Request received: { type: 'feed', userId: 'google-oauth2_108922242653550022044' }
+🍃 AUTH-TOKENS: Generating feed token for: google-oauth2_108922242653550022044
+✅ AUTH-TOKENS: Feed token generated successfully
+📊 Fetching posts from feed: timeline:google-oauth2_108922242653550022044 for userId: google-oauth2_108922242653550022044
+🔍 MAIN_FEED_DEBUG: This is for main feed view, fetching timeline:google-oauth2_108922242653550022044
+🎯 Processing feed action: get_following for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_following'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+👥 Getting following for user: google-oauth2_108922242653550022044
+🎯 Processing feed action: get_liked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_liked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Getting liked posts for user: google-oauth2_108922242653550022044
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ User google-oauth2_108922242653550022044 is following 3 users
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+❤️ Like reactions found: 7
+❤️ Activity IDs: [
+  '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+  '77b0f032-9e02-11f0-a946-06efd237be49',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49'
+]
+✅ Found 18 activities in timeline:google-oauth2_108922242653550022044
+🔍 DEBUG: Raw activities in timeline:google-oauth2_108922242653550022044: [
+  {
+    id: 'e44473df-a03f-11f0-a67e-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hello everyone'
+  },
+  {
+    id: '927f9b00-a03f-11f0-a569-06efd237be49',
+    verb: 'notification',
+    actor: 'lazlo_user_test',
+    text: 'lazlo_user_test liked your post'
+  },
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '7066989f-992a-11f0-ab39-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hello!!'
+  },
+  {
+    id: '21255930-9925-11f0-9445-0aab263b1ff3',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: '7d61c27b-9924-11f0-9419-06efd237be49',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: 'ac384c1f-9922-11f0-8c67-06efd237be49',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 liked your pos'
+  },
+  {
+    id: 'aa8b636d-9922-11f0-89f2-0aab263b1ff3',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: 'a2cfa415-9922-11f0-aa9c-0249411e1141',
+    verb: 'notification',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'google-oauth2_113714394737973100008 commented on y'
+  },
+  {
+    id: 'b815a3b8-83f1-11f0-9cf1-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  },
+  {
+    id: 'b8088d70-83f1-11f0-81b3-0249411e1141',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  }
+]
+🔧 Filtered to 12 non-notification activities
+🔍 DEBUG: Filtered activities: [
+  {
+    id: 'e44473df-a03f-11f0-a67e-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hello everyone'
+  },
+  {
+    id: '6f7d753a-a03f-11f0-a4fb-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'Test post from real user for notifications'
+  },
+  {
+    id: '77b0f032-9e02-11f0-a946-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: '8b3d4d5b-9dff-11f0-85db-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c1883f1b-9dfe-11f0-8267-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'https://github.com/'
+  },
+  {
+    id: 'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hey guys'
+  },
+  {
+    id: '77aa0316-9dd7-11f0-a2a1-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_113714394737973100008',
+    text: 'hi'
+  },
+  {
+    id: '6ab8a509-9dd7-11f0-bb27-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hey'
+  },
+  {
+    id: '7066989f-992a-11f0-ab39-0aab263b1ff3',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'hello!!'
+  },
+  {
+    id: 'b815a3b8-83f1-11f0-9cf1-06efd237be49',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  },
+  {
+    id: 'b8088d70-83f1-11f0-81b3-0249411e1141',
+    verb: 'post',
+    actor: 'google-oauth2_108922242653550022044',
+    text: 'Check this out !'
+  }
+]
+🔍 withReactionCounts enabled: true
+🔍 Sample activity reaction_counts: {}
+🔍 Sample activity custom: { category: 'general', comments: 0, likes: 0, shares: 0 }
+🔄 Manually counting comments for activity e44473df-a03f-11f0-a67e-06efd237be49...
+✅ Manual count for activity e44473df-a03f-11f0-a67e-06efd237be49: 0 comments
+🔍 No reaction_counts.like for activity e44473df-a03f-11f0-a67e-06efd237be49, using custom: 0
+🔄 Manually counting comments for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49...
+✅ Manual count for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6f7d753a-a03f-11f0-a4fb-06efd237be49: 2 likes
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 2 comments
+✅ Using reaction_counts for activity 77b0f032-9e02-11f0-a946-06efd237be49: 1 likes
+🔄 Manually counting comments for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3...
+✅ Manual count for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 0 comments
+✅ Using reaction_counts for activity 8483253a-9e00-11f0-8a96-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3...
+✅ Manual count for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 8b3d4d5b-9dff-11f0-85db-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3...
+✅ Manual count for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity c1883f1b-9dfe-11f0-8267-0aab263b1ff3, using custom: 0
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 comments
+✅ Using reaction_counts for activity c3a834a4-9de1-11f0-911a-0aab263b1ff3: 1 likes
+🔄 Manually counting comments for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3...
+✅ Manual count for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 77aa0316-9dd7-11f0-a2a1-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49...
+✅ Manual count for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 comments
+✅ Using reaction_counts for activity 6ab8a509-9dd7-11f0-bb27-06efd237be49: 0 likes
+🔄 Manually counting comments for activity 7066989f-992a-11f0-ab39-0aab263b1ff3...
+✅ Manual count for activity 7066989f-992a-11f0-ab39-0aab263b1ff3: 0 comments
+🔍 No reaction_counts.like for activity 7066989f-992a-11f0-ab39-0aab263b1ff3, using custom: 0
+🔄 Manually counting comments for activity b815a3b8-83f1-11f0-9cf1-06efd237be49...
+✅ Manual count for activity b815a3b8-83f1-11f0-9cf1-06efd237be49: 0 comments
+🔍 No reaction_counts.like for activity b815a3b8-83f1-11f0-9cf1-06efd237be49, using custom: 0
+🔄 Manually counting comments for activity b8088d70-83f1-11f0-81b3-0249411e1141...
+✅ Manual count for activity b8088d70-83f1-11f0-81b3-0249411e1141: 0 comments
+🔍 No reaction_counts.like for activity b8088d70-83f1-11f0-81b3-0249411e1141, using custom: 0
+📊 Batch fetching user counts for 1 users
+🔍 BOOKMARKS: Found 18 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+✅ Successfully fetched counts for 1 users
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 8 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🎯 Processing feed action: add_comment for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'add_comment'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+💬 COMMENT_DEBUG: Starting comment process
+💬 COMMENT_DEBUG: postId: e44473df-a03f-11f0-a67e-06efd237be49
+💬 COMMENT_DEBUG: trimmedUserId: google-oauth2_108922242653550022044
+💬 COMMENT_DEBUG: commentText: hi
+✅ COMMENT_DEBUG: Comment added successfully: 0727659d-0023-4ca3-843b-6d7f5e2658ca
+🔔 COMMENT_DEBUG: About to create comment notification for post: e44473df-a03f-11f0-a67e-06efd237be49
+🔍 AUTHOR_DEBUG: Looking for post author for postId: e44473df-a03f-11f0-a67e-06efd237be49
+🔍 AUTHOR_DEBUG: Retrieved 8 activities from global feed
+🔍 AUTHOR_DEBUG: Activity IDs in global feed: [
+  'e4605b80-a03f-11f0-9c17-0249411e1141',
+  '6f99d39e-a03f-11f0-a4fc-06efd237be49',
+  '34fad02c-a03f-11f0-99de-0249411e1141',
+  'b1ab0373-a03d-11f0-9f6d-06efd237be49',
+  '8405a702-a03d-11f0-9eeb-06efd237be49',
+  '5e6a0726-a03d-11f0-9e65-06efd237be49',
+  '77aa16f7-9dd7-11f0-bc8c-06efd237be49',
+  '6ab85b8e-9dd7-11f0-9acb-0249411e1141'
+]
+⚠️ AUTHOR_DEBUG: Could not find post author for post e44473df-a03f-11f0-a67e-06efd237be49 in global feed
+🔍 AUTHOR_DEBUG: Trying fallback approach - checking recent user activities...
+🔍 AUTHOR_DEBUG: Searching in feeds for users: [
+  'lazlo_user_test',
+  'lazlo_fernandez_test',
+  'alice_smith',
+  'bob_johnson',
+  'carol_williams',
+  'google-oauth2_113714394737973100008',
+  'google-oauth2_108922242653550022044'
+]
+📍 AUTHOR_DEBUG: Found post author via user feed search: google-oauth2_113714394737973100008 for post e44473df-a03f-11f0-a67e-06efd237be49
+🔔 COMMENT_DEBUG: Found comment post author: google-oauth2_113714394737973100008
+🔔 COMMENT_DEBUG: Creating notification: google-oauth2_108922242653550022044 → google-oauth2_113714394737973100008
+🔔 Creating comment notification: google-oauth2_108922242653550022044 → google-oauth2_113714394737973100008
+⚠️ Could not fetch user profile for google-oauth2_108922242653550022044, using fallback
+✅ Notification created: ea93b753-a03f-11f0-9c20-0249411e1141
+✅ COMMENT_DEBUG: Comment notification creation completed
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_113714394737973100008
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_113714394737973100008',
+  trimmedUserId: 'google-oauth2_113714394737973100008',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_113714394737973100008
+📖 Bookmark reactions found: 10
+📖 Activity IDs: [
+  'c3a834a4-9de1-11f0-911a-0aab263b1ff3',
+  '7fde3900-9d06-11f0-8080-8000725da553',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '48ee056f-8f06-11f0-b0c2-0249411e1141',
+  '1d7c767e-8f02-11f0-a7a0-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '36a07547-896a-11f0-b611-0aab263b1ff3',
+  '4254cdd1-84df-11f0-a6a6-0aab263b1ff3',
+  'e8ec8ecf-81ab-11f0-ab53-06efd237be49',
+  'e8ec8ecf-81ab-11f0-ab53-06efd237be49'
+]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_113714394737973100008...
+🔍 BOOKMARKS: Found 14 activities in timeline:google-oauth2_113714394737973100008
+✅ BOOKMARKS: Found bookmarked activity c3a834a4-9de1-11f0-911a-0aab263b1ff3 in timeline:google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Searching user:google-oauth2_113714394737973100008...
+🔍 BOOKMARKS: Found 10 activities in user:google-oauth2_113714394737973100008
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 8 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 1 out of 10 bookmarked
+📌 BOOKMARKS: Adding unique post c3a834a4-9de1-11f0-911a-0aab263b1ff3 (1 reactions found)
+⚠️ BOOKMARKS: Activity 7fde3900-9d06-11f0-8080-8000725da553 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 5478045d-8f0f-11f0-8fb1-0249411e1141 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 48ee056f-8f06-11f0-b0c2-0249411e1141 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 1d7c767e-8f02-11f0-a7a0-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 4dada8b0-896d-11f0-becc-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 36a07547-896a-11f0-b611-0aab263b1ff3 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity 4254cdd1-84df-11f0-a6a6-0aab263b1ff3 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity e8ec8ecf-81ab-11f0-ab53-06efd237be49 not found in any feed, skipping...
+⚠️ BOOKMARKS: Activity e8ec8ecf-81ab-11f0-ab53-06efd237be49 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 1 bookmarked posts
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 2 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 2 unread notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_notifications',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_NOTIFICATIONS: Fetching notifications for user google-oauth2_113714394737973100008
+✅ Found 2 notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'mark_read',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 MARK_READ: Marking 2 notifications as read for user google-oauth2_113714394737973100008
+✅ Marked notification ea93b753-a03f-11f0-9c20-0249411e1141 as read
+✅ Marked notification 927f9b00-a03f-11f0-a569-06efd237be49 as read
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 2 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 2 unread notifications for user google-oauth2_113714394737973100008
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 19 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🎯 Processing feed action: like_post for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'like_post'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Liking post: e44473df-a03f-11f0-a67e-06efd237be49 by user: google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔔 LIKE_DEBUG: About to create like notification for post: e44473df-a03f-11f0-a67e-06efd237be49
+🔔 LIKE_DEBUG: Like actor (who's liking): google-oauth2_108922242653550022044
+🔍 AUTHOR_DEBUG: Looking for post author for postId: e44473df-a03f-11f0-a67e-06efd237be49
+🔍 BOOKMARKS: Found 8 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🔍 AUTHOR_DEBUG: Retrieved 8 activities from global feed
+🔍 AUTHOR_DEBUG: Activity IDs in global feed: [
+  'e4605b80-a03f-11f0-9c17-0249411e1141',
+  '6f99d39e-a03f-11f0-a4fc-06efd237be49',
+  '34fad02c-a03f-11f0-99de-0249411e1141',
+  'b1ab0373-a03d-11f0-9f6d-06efd237be49',
+  '8405a702-a03d-11f0-9eeb-06efd237be49',
+  '5e6a0726-a03d-11f0-9e65-06efd237be49',
+  '77aa16f7-9dd7-11f0-bc8c-06efd237be49',
+  '6ab85b8e-9dd7-11f0-9acb-0249411e1141'
+]
+⚠️ AUTHOR_DEBUG: Could not find post author for post e44473df-a03f-11f0-a67e-06efd237be49 in global feed
+🔍 AUTHOR_DEBUG: Trying fallback approach - checking recent user activities...
+🔍 AUTHOR_DEBUG: Searching in feeds for users: [
+  'lazlo_user_test',
+  'lazlo_fernandez_test',
+  'alice_smith',
+  'bob_johnson',
+  'carol_williams',
+  'google-oauth2_113714394737973100008',
+  'google-oauth2_108922242653550022044'
+]
+📍 AUTHOR_DEBUG: Found post author via user feed search: google-oauth2_113714394737973100008 for post e44473df-a03f-11f0-a67e-06efd237be49
+🔔 LIKE_DEBUG: Found post author: google-oauth2_113714394737973100008
+🔔 LIKE_DEBUG: Will skip notification? NO
+🔔 Creating like notification: google-oauth2_108922242653550022044 → google-oauth2_113714394737973100008
+⚠️ Could not fetch user profile for google-oauth2_108922242653550022044, using fallback
+✅ Notification created: f4840520-a03f-11f0-a5a6-0aab263b1ff3
+✅ LIKE_DEBUG: Like notification creation completed: f4840520-a03f-11f0-a5a6-0aab263b1ff3
+🎯 Processing feed action: get_liked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_liked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+❤️ Getting liked posts for user: google-oauth2_108922242653550022044
+❤️ Like reactions found: 8
+❤️ Activity IDs: [
+  'e44473df-a03f-11f0-a67e-06efd237be49',
+  '8483253a-9e00-11f0-8a96-0aab263b1ff3',
+  '77b0f032-9e02-11f0-a946-06efd237be49',
+  '5478045d-8f0f-11f0-8fb1-0249411e1141',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49',
+  '4dada8b0-896d-11f0-becc-06efd237be49'
+]
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 3 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 3 unread notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_notifications',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_NOTIFICATIONS: Fetching notifications for user google-oauth2_113714394737973100008
+✅ Found 3 notifications for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'mark_read',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 MARK_READ: Marking 3 notifications as read for user google-oauth2_113714394737973100008
+✅ Marked notification ea93b753-a03f-11f0-9c20-0249411e1141 as read
+✅ Marked notification 927f9b00-a03f-11f0-a569-06efd237be49 as read
+✅ Marked notification f4840520-a03f-11f0-a5a6-0aab263b1ff3 as read
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_113714394737973100008',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_113714394737973100008
+✅ Found 3 unread notifications for user google-oauth2_113714394737973100008
+✅ Found 3 unread notifications for user google-oauth2_113714394737973100008
+🎯 Processing feed action: get_bookmarked_posts for userId: google-oauth2_108922242653550022044
+🔧 FEED-ACTIONS: Using userId for Stream API: {
+  originalUserId: 'google-oauth2_108922242653550022044',
+  trimmedUserId: 'google-oauth2_108922242653550022044',
+  userIdLength: 35,
+  action: 'get_bookmarked_posts'
+}
+🔑 Stream API Key configured: Yes
+🔑 Stream API Secret configured: Yes
+🔑 Stream API Key length: 12
+🔑 Stream API Secret length: 64
+📖 Getting bookmarked posts for user: google-oauth2_108922242653550022044
+📖 Bookmark reactions found: 1
+📖 Activity IDs: [ '01d63a14-828b-11f0-ba7b-0249411e1141' ]
+🔍 BOOKMARKS: Starting multi-feed search for activities...
+🔍 BOOKMARKS: Searching timeline:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 20 activities in timeline:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching user:google-oauth2_108922242653550022044...
+🔍 BOOKMARKS: Found 8 activities in user:google-oauth2_108922242653550022044
+🔍 BOOKMARKS: Searching flat:global...
+🔍 BOOKMARKS: Found 8 activities in flat:global
+🔍 BOOKMARKS: Total activities found: 0 out of 1 bookmarked
+⚠️ BOOKMARKS: Activity 01d63a14-828b-11f0-ba7b-0249411e1141 not found in any feed, skipping...
+✅ BOOKMARKS: Successfully processed 0 bookmarked posts
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+🔔 NOTIFICATIONS: Request received: {
+  action: 'get_unread_count',
+  userId: 'google-oauth2_108922242653550022044',
+  method: 'POST',
+  hasBody: true
+}
+🔔 GET_UNREAD_COUNT: Getting unread notification count for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044
+✅ Found 5 unread notifications for user google-oauth2_108922242653550022044

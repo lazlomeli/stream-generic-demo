@@ -82,15 +82,29 @@ export interface SeedingContext {
 
 /**
  * Resilient user management - handles hard deleted users by creating new versions
+ * Special handling for demo_user_2025 to keep it as persistent demo user for video calls
  */
 export async function createWorkingUsers(context: SeedingContext): Promise<any[]> {
   const { streamClient } = context;
   const workingUsers: any[] = [];
   const timestamp = Date.now();
   
+  // First, ensure the demo user exists
+  try {
+    const demoUser = {
+      id: 'demo_user_2025',
+      name: 'Demo User',
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+    };
+    await streamClient.upsertUser(demoUser);
+    console.log(`✅ Created/updated persistent demo user: ${demoUser.id}`);
+    workingUsers.push(demoUser);
+  } catch (error) {
+    console.log(`❌ Failed to create persistent demo user demo_user_2025:`, error);
+  }
+  
   for (const user of SAMPLE_USERS) {
-    // Skip reactivation attempts - just create new timestamped users directly
-    // This avoids issues with hard-deleted users that can't be recreated
+    // For sample users, create timestamped versions to avoid conflicts
     const newUser = {
       id: `${user.id}_${timestamp}`,
       name: user.name,
@@ -107,7 +121,7 @@ export async function createWorkingUsers(context: SeedingContext): Promise<any[]
     }
   }
   
-  console.log(`✅ Working with ${workingUsers.length} users`);
+  console.log(`✅ Working with ${workingUsers.length} users (including persistent demo_user_2025)`);
   return workingUsers;
 }
 
@@ -124,11 +138,14 @@ export async function createChatChannels(context: SeedingContext, workingUsers: 
   try {
     const generalMembers = [currentUserId, ...workingUsers.slice(0, 4).map(u => u.id)];
     const general = streamClient.channel("messaging", "general", {
-      name: "General",
       members: generalMembers,
       created_by_id: currentUserId
     });
     await general.create();
+    
+    // Update channel with display name after creation
+    await general.update({ name: "General" });
+    
     console.log(`✅ Created general channel with ${generalMembers.length} members`);
   } catch (error) {
     console.log(`⚠️ General channel creation failed (may already exist):`, error);
@@ -139,13 +156,12 @@ export async function createChatChannels(context: SeedingContext, workingUsers: 
   for (const u of workingUsers) {
     try {
       const dm = streamClient.channel("messaging", { 
-        name: u.name,
-        image: u.image,
         members: [currentUserId, u.id], 
         created_by_id: currentUserId 
       });
       await dm.create();
 
+      // Update channel with display metadata after creation
       const currentName = (dm.data?.name);
       const currentImage = (dm.data?.image);
       if (!currentName || !currentImage) {
@@ -409,6 +425,7 @@ export async function aggressiveCleanup(context: SeedingContext): Promise<void> 
     }
 
     // HARD DELETE ALL sample users (including timestamped versions) to make them completely disappear
+    // BUT PRESERVE bob_johnson for video call demo functionality
     const chatUserBaseIds = SAMPLE_USERS.map(u => u.id);
     
     // Find ALL existing timestamped versions by checking channels
@@ -425,8 +442,9 @@ export async function aggressiveCleanup(context: SeedingContext): Promise<void> 
       }
     });
     
-    const userIds = Array.from(discoveredUserIds).filter(id => id !== currentUserId);
-    console.log(`🗑️ HARD DELETING ${userIds.length} users (including timestamped versions):`, userIds);
+    // Filter out the new demo user 'demo_user_2025' to preserve it for video calls
+    const userIds = Array.from(discoveredUserIds).filter(id => id !== currentUserId && id !== 'demo_user_2025');
+    console.log(`🗑️ HARD DELETING ${userIds.length} users (including timestamped versions, but preserving demo_user_2025):`, userIds);
     
     for (const userId of userIds) {
       try {
@@ -454,7 +472,8 @@ export async function aggressiveCleanup(context: SeedingContext): Promise<void> 
     console.log('📰 Starting simplified feeds cleanup...');
     
     // Focus only on current user and sample user feeds for faster cleanup
-    const targetUserIds = [currentUserId, ...SAMPLE_USERS.map(u => u.id)];
+    // BUT PRESERVE demo_user_2025 feeds for video call demo functionality
+    const targetUserIds = [currentUserId, ...SAMPLE_USERS.map(u => u.id).filter(id => id !== 'demo_user_2025')];
     
     // Add any timestamped versions we can find from chat cleanup
     allChannels.forEach(channel => {
@@ -468,7 +487,7 @@ export async function aggressiveCleanup(context: SeedingContext): Promise<void> 
       }
     });
     
-    console.log(`🎯 Cleaning feeds for ${targetUserIds.length} users`);
+    console.log(`🎯 Cleaning feeds for ${targetUserIds.length} users (preserving demo_user_2025 feeds)`);
     
     // Only clean the essential feed types
     const feedTypes = ['user', 'timeline'];

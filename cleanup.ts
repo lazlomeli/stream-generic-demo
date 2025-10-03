@@ -14,12 +14,12 @@ async function cleanup() {
   try {
     
 
-    // Fake users to delete
+    // Fake users to delete - PRESERVE bob_johnson for video call demo
     const usersToDelete = [
       "emma_davis",
       "david_brown",
       "carol_williams",
-      "bob_johnson",
+      // "bob_johnson", // PRESERVED for video call demo functionality
       "alice_smith",
     ];
 

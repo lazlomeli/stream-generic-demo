@@ -330,13 +330,15 @@ const CallPage: React.FC<CallPageProps> = () => {
         return;
       }
       
-      // Reuse existing sample user instead of creating random ones
-      const demoUserId = 'bob_johnson';
-      const demoUserName = 'Bob Johnson';
+      // Use a new demo user ID since bob_johnson was hard deleted and cannot be recovered
+      const demoUserId = 'demo_user_2025';
+      const demoUserName = 'Demo User';
       const demoUserImage = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
       
       // Get token for demo user
       const accessToken = await getAccessTokenSilently();
+      console.log('🔑 Getting auth token for demo user:', demoUserId);
+      
       const response = await fetch('/api/stream/auth-tokens', {
         method: 'POST',
         headers: {
@@ -354,10 +356,13 @@ const CallPage: React.FC<CallPageProps> = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get demo user token');
+        const errorText = await response.text();
+        console.error('❌ Failed to get demo user token:', response.status, errorText);
+        throw new Error(`Failed to get demo user token: ${response.status} ${errorText}`);
       }
 
       const tokenData = await response.json();
+      console.log('✅ Successfully got token for demo user:', demoUserId);
       
       // Create demo user video client
       const demoUserClient = new StreamVideoClient({

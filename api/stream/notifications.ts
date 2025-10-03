@@ -115,11 +115,18 @@ export default async function handler(
             withOwnReactions: false,
           });
 
+          console.log(`🔔 GET_NOTIFICATIONS_DEBUG: Retrieved ${result.results?.length || 0} total activities for user ${trimmedUserId}`);
+          console.log(`🔔 GET_NOTIFICATIONS_DEBUG: Activity verbs found:`, result.results?.map((a: any) => a.verb) || []);
+
           // Filter for notification activities only
           const notifications = (result.results || []).filter(activity => 
             activity.verb === 'notification'
           ).slice(0, 25); // Take only the first 25 notifications
-          console.log(`✅ Found ${notifications.length} notifications for user ${trimmedUserId}`);
+          
+          console.log(`✅ GET_NOTIFICATIONS_DEBUG: Found ${notifications.length} notifications for user ${trimmedUserId}`);
+          console.log(`🔔 GET_NOTIFICATIONS_DEBUG: Notification types:`, notifications.map((n: any) => n.custom?.notification_type || 'unknown'));
+          console.log(`🔔 GET_NOTIFICATIONS_DEBUG: Notification actors:`, notifications.map((n: any) => n.actor));
+          console.log(`🔔 GET_NOTIFICATIONS_DEBUG: Notification targets:`, notifications.map((n: any) => n.target));
 
           // Enrich notifications with user information
           const enrichedNotifications: NotificationActivity[] = [];
@@ -146,9 +153,9 @@ export default async function handler(
               } catch (userError: any) {
                 // Handle user not found gracefully
                 if (userError?.response?.status === 404 || userError?.error?.status_code === 404) {
-                  console.log(`👤 User ${notification.actor} not found in Stream user database - using fallback for notifications`);
+                  console.log(`👤 GET_NOTIFICATIONS_DEBUG: User ${notification.actor} not found in Stream user database - using fallback for notifications`);
                 } else {
-                  console.warn(`❌ Failed to fetch user profile for ${notification.actor}:`, userError?.message);
+                  console.warn(`❌ GET_NOTIFICATIONS_DEBUG: Failed to fetch user profile for ${notification.actor}:`, userError?.message);
                 }
                 // Keep the default userInfo (actor ID as name)
               }
@@ -166,7 +173,7 @@ export default async function handler(
                 userInfo: userInfo
               });
             } catch (enrichError) {
-              console.warn(`❌ Failed to enrich notification ${notification.id}:`, enrichError);
+              console.warn(`❌ GET_NOTIFICATIONS_DEBUG: Failed to enrich notification ${notification.id}:`, enrichError);
               // Add the notification without enrichment
               enrichedNotifications.push({
                 id: notification.id,
@@ -182,12 +189,14 @@ export default async function handler(
             }
           }
 
+          console.log(`✅ GET_NOTIFICATIONS_DEBUG: Returning ${enrichedNotifications.length} enriched notifications`);
+
           return res.json({
             success: true,
             notifications: enrichedNotifications
           });
         } catch (error) {
-          console.error('❌ Error fetching notifications:', error);
+          console.error('❌ GET_NOTIFICATIONS_DEBUG: Error fetching notifications:', error);
           return res.status(500).json({
             error: 'Failed to fetch notifications',
             details: error instanceof Error ? error.message : 'Unknown error'

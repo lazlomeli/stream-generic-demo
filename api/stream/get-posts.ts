@@ -44,11 +44,27 @@ export default async function handler(
     // Initialize Stream Feeds client
     const streamFeedsClient = connect(apiKey, apiSecret);
 
+    // Try to fetch from enriched feed group first, fallback to regular feed
+    let targetFeedGroup = feedGroup;
+    if (feedGroup === 'user') {
+      targetFeedGroup = 'user_enriched';
+    } else if (feedGroup === 'timeline') {
+      targetFeedGroup = 'timeline_enriched';
+    }
+
     // Fetch activities from the specified feed
-    const feed = streamFeedsClient.feed(feedGroup, feedId);
-    console.log(`Fetching from feed: ${feedGroup}:${feedId} for user: ${userId}`);
+    let feed = streamFeedsClient.feed(targetFeedGroup, feedId);
+    let result;
     
-    const result = await feed.get({ limit: limit * 2, withReactionCounts: true }); // Get more to account for filtering
+    try {
+      console.log(`Fetching from enriched feed: ${targetFeedGroup}:${feedId} for user: ${userId}`);
+      result = await feed.get({ limit: limit * 2, withReactionCounts: true }); // Get more to account for filtering
+      console.log('✅ Successfully fetched from enriched feed group');
+    } catch (enrichedFeedError) {
+      console.log(`ℹ️  Enriched feed not available, falling back to standard feed: ${feedGroup}:${feedId}`);
+      feed = streamFeedsClient.feed(feedGroup, feedId);
+      result = await feed.get({ limit: limit * 2, withReactionCounts: true });
+    }
     console.log(`Found ${result.results.length} activities in ${feedGroup}:${feedId}`);
     
     // Debug: Log what verbs we have before filtering

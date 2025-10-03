@@ -95,21 +95,65 @@ async function createNotificationActivity(
 // Helper function to get post author from activity
 async function getPostAuthor(serverFeedsClient, postId) {
   try {
+    console.log(`🔍 AUTHOR_DEBUG: Looking for post author for postId: ${postId}`);
+    
     // Try to get the activity from global feed first
     const globalFeed = serverFeedsClient.feed('flat', 'global');
     const activities = await globalFeed.get({ limit: 100, withReactionCounts: false });
     
+    console.log(`🔍 AUTHOR_DEBUG: Retrieved ${activities.results?.length || 0} activities from global feed`);
+    console.log(`🔍 AUTHOR_DEBUG: Activity IDs in global feed:`, activities.results?.map((a) => a.id).slice(0, 10));
+    
     // Find the activity by ID
     const activity = activities.results?.find((act) => act.id === postId);
     if (activity && activity.actor) {
-      console.log(`📍 Found post author: ${activity.actor} for post ${postId}`);
+      console.log(`📍 AUTHOR_DEBUG: Found post author: ${activity.actor} for post ${postId}`);
+      console.log(`📍 AUTHOR_DEBUG: Full activity:`, { id: activity.id, actor: activity.actor, verb: activity.verb, text: activity.text?.substring(0, 50) });
       return activity.actor;
     }
 
-    console.log(`⚠️ Could not find post author for post ${postId}`);
+    console.log(`⚠️ AUTHOR_DEBUG: Could not find post author for post ${postId} in global feed`);
+    
+    // FALLBACK: Try to find the post in user feeds by examining recent user activities
+    console.log(`🔍 AUTHOR_DEBUG: Trying fallback approach - checking recent user activities...`);
+    
+    // Get a list of users to check - include common test users AND recent activity actors
+    let testUsers = ['lazlo_user_test', 'lazlo_fernandez_test', 'alice_smith', 'bob_johnson', 'carol_williams'];
+    
+    // DYNAMIC: Also check recent activity actors from global feed to catch real users
+    const recentActors = new Set();
+    if (activities.results) {
+      activities.results.forEach(activity => {
+        if (activity.actor && !testUsers.includes(activity.actor)) {
+          recentActors.add(activity.actor);
+        }
+      });
+    }
+    
+    // Add recent actors to search list
+    testUsers = [...testUsers, ...Array.from(recentActors)];
+    console.log(`🔍 AUTHOR_DEBUG: Searching in feeds for users:`, testUsers.slice(0, 10)); // Log first 10
+    
+    for (const userId of testUsers) {
+      try {
+        const userFeed = serverFeedsClient.feed('user', userId);
+        const userActivities = await userFeed.get({ limit: 10, withReactionCounts: false });
+        
+        const userActivity = userActivities.results?.find((act) => act.id === postId);
+        if (userActivity && userActivity.actor) {
+          console.log(`📍 AUTHOR_DEBUG: Found post author via user feed search: ${userActivity.actor} for post ${postId}`);
+          return userActivity.actor;
+        }
+      } catch (userFeedError) {
+        // Continue to next user if this one fails
+        console.log(`🔍 AUTHOR_DEBUG: Could not check feed for user ${userId}:`, userFeedError.message);
+      }
+    }
+    
+    console.log(`❌ AUTHOR_DEBUG: Could not find post author for post ${postId} in any feeds`);
     return null;
   } catch (error) {
-    console.error(`❌ Error getting post author for ${postId}:`, error);
+    console.error(`❌ AUTHOR_DEBUG: Error getting post author for ${postId}:`, error);
     return null;
   }
 }
@@ -735,6 +779,17 @@ app.post('/api/stream/get-user-counts-batch', async (req, res) => {
   }
 });
 
+// Setup Feed Groups with URL Enrichment endpoint
+app.post('/api/stream/setup-feed-groups', async (req, res) => {
+  try {
+    const setupFeedGroups = await import('./api/stream/setup-feed-groups.js');
+    await setupFeedGroups.default(req, res);
+  } catch (error) {
+    console.error('❌ SETUP-FEED-GROUPS: Error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
 // Stream Feeds Actions endpoint
 app.post('/api/stream/feed-actions', async (req, res) => {
   try {
@@ -829,11 +884,25 @@ app.post('/api/stream/feed-actions', async (req, res) => {
           }
         };
 
-        // Create post ONLY in user's personal feed (timeline aggregation will handle display)
-        console.log('📝 Creating post in user feed only...');
-        const userActivity = await serverFeedsClient.feed('user', trimmedUserId).addActivity(activityData);
+        // Generate a unique ID for this activity to use in both feeds
+        const activityId = `post_${trimmedUserId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        activityData.id = activityId;
 
+        // Create post in user's personal feed
+        console.log('📝 Creating post in user feed with ID:', activityId);
+        const userActivity = await serverFeedsClient.feed('user', trimmedUserId).addActivity(activityData);
+        
         console.log('✅ Post created in user feed with ID:', userActivity.id);
+        
+        // ALSO create the post in the global feed with the SAME ID so notifications can find the author
+        console.log('📝 Also adding post to global feed for notifications with same ID...');
+        try {
+          const globalActivity = await serverFeedsClient.feed('flat', 'global').addActivity(activityData);
+          console.log('✅ Post also added to global feed with ID:', globalActivity.id);
+        } catch (globalFeedError) {
+          console.warn('⚠️ Failed to add post to global feed (notifications may not work):', globalFeedError.message);
+          // Don't fail the entire request if global feed fails
+        }
 
         // Return the user activity
         const newActivity = userActivity;
@@ -870,18 +939,22 @@ app.post('/api/stream/feed-actions', async (req, res) => {
         const likeResult = await serverFeedsClient.reactions.add('like', postId, {}, { userId: trimmedUserId });
 
         // Create notification for the post author
-        console.log(`🔔 About to create like notification for post: ${postId}`);
+        console.log(`🔔 LIKE_DEBUG: About to create like notification for post: ${postId}`);
+        console.log(`🔔 LIKE_DEBUG: Like actor (who's liking): ${trimmedUserId}`);
+        
         const postAuthor = await getPostAuthor(serverFeedsClient, postId);
-        console.log(`🔔 Found post author: ${postAuthor}`);
+        console.log(`🔔 LIKE_DEBUG: Found post author: ${postAuthor}`);
+        console.log(`🔔 LIKE_DEBUG: Will skip notification? ${postAuthor === trimmedUserId ? 'YES (same user)' : 'NO'}`);
+        
         if (postAuthor) {
           try {
-            await createNotificationActivity(serverFeedsClient, 'like', trimmedUserId, postAuthor, postId);
-            console.log(`✅ Like notification creation completed`);
+            const notificationResult = await createNotificationActivity(serverFeedsClient, 'like', trimmedUserId, postAuthor, postId);
+            console.log(`✅ LIKE_DEBUG: Like notification creation completed:`, notificationResult?.id || 'success');
           } catch (notificationError) {
-            console.error(`❌ Like notification failed:`, notificationError);
+            console.error(`❌ LIKE_DEBUG: Like notification failed:`, notificationError);
           }
         } else {
-          console.log(`⚠️ No post author found, skipping like notification`);
+          console.log(`⚠️ LIKE_DEBUG: No post author found, skipping like notification`);
         }
 
         return res.json({
@@ -1935,6 +2008,28 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
         'cache-control': req.headers['cache-control'],
         'x-cache-buster': req.headers['x-cache-buster']
       });
+      
+      // Special handling for demo users - create only if needed
+      if (userId === 'demo_user_2025') {
+        console.log('👥 AUTH-TOKENS: Handling demo user demo_user_2025');
+        try {
+          // First check if user exists by trying to query it
+          const existingUser = await streamClient.queryUsers({ id: 'demo_user_2025' });
+          if (existingUser.users.length === 0) {
+            console.log('🔧 AUTH-TOKENS: Demo user does not exist, creating...');
+            await streamClient.upsertUser({ 
+              id: 'demo_user_2025',
+              name: 'Demo User',
+              image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+            });
+            console.log('✅ AUTH-TOKENS: Demo user demo_user_2025 created');
+          } else {
+            console.log('✅ AUTH-TOKENS: Demo user demo_user_2025 already exists, skipping creation');
+          }
+        } catch (error) {
+          console.log('⚠️ AUTH-TOKENS: Error handling demo user, but continuing:', error);
+        }
+      }
       
       // For video tokens, create JWT token directly
       // Demo app - all users get admin for video features

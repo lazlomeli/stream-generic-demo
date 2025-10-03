@@ -19,6 +19,7 @@ import ShareIcon from '../icons/share-3.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import BookmarkFilledIcon from '../icons/bookmark-filled.svg';
 import SmartImage from './SmartImage';
+import EnrichedText from './EnrichedText';
 import TrashIcon from '../icons/trash.svg';
 import CameraIcon from '../icons/camera.svg';
 import VideoIcon from '../icons/video.svg';
@@ -2046,7 +2047,7 @@ const Feeds = () => {
               
               <div className="post-content">
                 {post.text && post.text.trim() && post.text !== 'media' && post.text !== 'post' && (
-                  <p className="post-text">{post.text}</p>
+                  <EnrichedText text={post.text} className="post-text" />
                 )}
                 {post.attachments && post.attachments.length > 0 && (
                   <div className="post-attachments">
@@ -2102,6 +2103,45 @@ const Feeds = () => {
                             <div className="poll-footer">
                               Total votes: {(attachment as any).votes?.reduce((sum: number, v: number) => sum + v, 0) || 0}
                             </div>
+                          </div>
+                        ) : attachment.type === 'link_preview' ? (
+                          // Open Graph link preview card
+                          <div className="post-attachment-link-preview">
+                            <a
+                              href={(attachment as any).url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="link-preview-card"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {(attachment as any).image_url && (
+                                <div className="link-preview-image">
+                                  <img
+                                    src={(attachment as any).image_url}
+                                    alt={attachment.title || 'Link preview'}
+                                    className="preview-image"
+                                  />
+                                </div>
+                              )}
+                              <div className="link-preview-content">
+                                <div className="link-preview-title">
+                                  {attachment.title || (attachment as any).url}
+                                </div>
+                                {(attachment as any).description && (
+                                  <div className="link-preview-description">
+                                    {(attachment as any).description}
+                                  </div>
+                                )}
+                                <div className="link-preview-footer">
+                                  <span className="link-preview-site">
+                                    {(attachment as any).site_name || new URL((attachment as any).url).hostname}
+                                  </span>
+                                  <span className="link-preview-url">
+                                    {(attachment as any).url}
+                                  </span>
+                                </div>
+                              </div>
+                            </a>
                           </div>
                         ) : (
                           // Fallback for legacy attachments

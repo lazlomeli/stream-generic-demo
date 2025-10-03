@@ -106,13 +106,20 @@ async function createNotificationActivity(
   commentText?: string
 ) {
   try {
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Starting notification creation`);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Type: ${notificationType}`);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Actor: ${actorUserId}`);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Target: ${targetUserId}`);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: PostId: ${postId}`);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Comment: ${commentText?.substring(0, 50)}`);
+    
     // Don't create notifications for self-actions
     if (actorUserId === targetUserId) {
-      console.log(`🔔 Skipping notification: actor and target are the same user (${actorUserId})`);
+      console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Skipping notification: actor and target are the same user (${actorUserId})`);
       return;
     }
 
-    console.log(`🔔 Creating ${notificationType} notification: ${actorUserId} → ${targetUserId}`);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Creating ${notificationType} notification: ${actorUserId} → ${targetUserId}`);
 
     // Get actor user profile for the notification
     let actorProfile = {
@@ -128,9 +135,10 @@ async function createNotificationActivity(
           name: userData.name || userData.username || actorUserId,
           image: userData.image || userData.profile_image || undefined
         };
+        console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Got actor profile:`, actorProfile);
       }
     } catch (userError) {
-      console.log(`⚠️ Could not fetch user profile for ${actorUserId}, using fallback`);
+      console.log(`⚠️ NOTIFICATION_CREATE_DEBUG: Could not fetch user profile for ${actorUserId}, using fallback:`, userError?.message);
     }
 
     // Create notification activity data
@@ -163,37 +171,92 @@ async function createNotificationActivity(
         break;
     }
 
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Notification data prepared:`, notificationData);
+
     // Add notification to target user's personal feed with notification verb
     // We'll filter these out from regular feeds display but show them in notifications
     const userFeed = serverClient.feed('user', targetUserId);
+    console.log(`🔔 NOTIFICATION_CREATE_DEBUG: Adding to user feed: user:${targetUserId}`);
+    
     const notificationActivity = await userFeed.addActivity(notificationData);
     
-    console.log(`✅ Notification created: ${notificationActivity.id}`);
+    console.log(`✅ NOTIFICATION_CREATE_DEBUG: Notification created successfully:`, {
+      id: notificationActivity.id,
+      targetUser: targetUserId,
+      actorUser: actorUserId,
+      type: notificationType
+    });
     return notificationActivity;
   } catch (error) {
-    console.error(`❌ Failed to create ${notificationType} notification:`, error);
+    console.error(`❌ NOTIFICATION_CREATE_DEBUG: Failed to create ${notificationType} notification:`, error);
+    console.error(`❌ NOTIFICATION_CREATE_DEBUG: Error details:`, error?.message, error?.stack);
     // Don't throw error - notifications are not critical
+    return null;
   }
 }
 
 // Helper function to get post author from activity
 async function getPostAuthor(serverClient: any, postId: string): Promise<string | null> {
   try {
+    console.log(`🔍 AUTHOR_DEBUG: Looking for post author for postId: ${postId}`);
+    
     // Try to get the activity from global feed first
     const globalFeed = serverClient.feed('flat', 'global');
     const activities = await globalFeed.get({ limit: 100, withReactionCounts: false });
     
+    console.log(`🔍 AUTHOR_DEBUG: Retrieved ${activities.results?.length || 0} activities from global feed`);
+    console.log(`🔍 AUTHOR_DEBUG: Activity IDs in global feed:`, activities.results?.map((a: any) => a.id).slice(0, 10));
+    
     // Find the activity by ID
     const activity = activities.results?.find((act: any) => act.id === postId);
     if (activity && activity.actor) {
-      console.log(`📍 Found post author: ${activity.actor} for post ${postId}`);
+      console.log(`📍 AUTHOR_DEBUG: Found post author: ${activity.actor} for post ${postId}`);
+      console.log(`📍 AUTHOR_DEBUG: Full activity:`, { id: activity.id, actor: activity.actor, verb: activity.verb, text: activity.text?.substring(0, 50) });
       return activity.actor;
     }
 
-    console.log(`⚠️ Could not find post author for post ${postId}`);
+    console.log(`⚠️ AUTHOR_DEBUG: Could not find post author for post ${postId} in global feed`);
+    
+    // FALLBACK: Try to find the post in user feeds by examining recent user activities
+    console.log(`🔍 AUTHOR_DEBUG: Trying fallback approach - checking recent user activities...`);
+    
+    // Get a list of users to check - include common test users AND recent activity actors
+    let testUsers = ['lazlo_user_test', 'lazlo_fernandez_test', 'alice_smith', 'bob_johnson', 'carol_williams'];
+    
+    // DYNAMIC: Also check recent activity actors from global feed to catch real users
+    const recentActors = new Set<string>();
+    if (activities.results) {
+      activities.results.forEach((activity: any) => {
+        if (activity.actor && !testUsers.includes(activity.actor)) {
+          recentActors.add(activity.actor);
+        }
+      });
+    }
+    
+    // Add recent actors to search list
+    testUsers = [...testUsers, ...Array.from(recentActors)];
+    console.log(`🔍 AUTHOR_DEBUG: Searching in feeds for users:`, testUsers.slice(0, 10)); // Log first 10
+    
+    for (const userId of testUsers) {
+      try {
+        const userFeed = serverClient.feed('user', userId);
+        const userActivities = await userFeed.get({ limit: 10, withReactionCounts: false });
+        
+        const userActivity = userActivities.results?.find((act: any) => act.id === postId);
+        if (userActivity && userActivity.actor) {
+          console.log(`📍 AUTHOR_DEBUG: Found post author via user feed search: ${userActivity.actor} for post ${postId}`);
+          return userActivity.actor;
+        }
+      } catch (userFeedError: any) {
+        // Continue to next user if this one fails
+        console.log(`🔍 AUTHOR_DEBUG: Could not check feed for user ${userId}:`, userFeedError.message);
+      }
+    }
+    
+    console.log(`❌ AUTHOR_DEBUG: Could not find post author for post ${postId} in any feeds`);
     return null;
   } catch (error) {
-    console.error(`❌ Error getting post author for ${postId}:`, error);
+    console.error(`❌ AUTHOR_DEBUG: Error getting post author for ${postId}:`, error);
     return null;
   }
 }
@@ -344,11 +407,38 @@ export default async function handler(
           console.log(`ℹ️ Self-follow already exists or error (this is normal):`, followError.message);
         }
 
-        // Create post ONLY in user's personal feed (timeline aggregation will handle display)
-        console.log('📝 Creating post in user feed only...');
-        const userActivity = await serverClient.feed('user', trimmedUserId).addActivity(activityData);
+        // Create post in enriched user feed for URL processing
+        console.log('📝 Creating post in enriched user feed...');
+        
+        // Try to use enriched feed group if available, fallback to regular user feed
+        let targetFeedGroup = 'user';
+        try {
+          // Test if enriched feed group exists by attempting to get it
+          const enrichedFeed = serverClient.feed('user_enriched', trimmedUserId);
+          await enrichedFeed.get({ limit: 1 });
+          targetFeedGroup = 'user_enriched';
+          console.log('✅ Using enriched feed group for URL processing');
+        } catch (feedError) {
+          console.log('ℹ️  Enriched feed group not available, using standard user feed');
+        }
+        
+        // Generate a unique ID for this activity to use in both feeds
+        const activityId = `post_${trimmedUserId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        activityData.id = activityId;
+
+        const userActivity = await serverClient.feed(targetFeedGroup, trimmedUserId).addActivity(activityData);
 
         console.log('✅ Post created in user feed with ID:', userActivity.id);
+        
+        // ALSO create the post in the global feed with the SAME ID so notifications can find the author
+        console.log('📝 Also adding post to global feed for notifications with same ID...');
+        try {
+          const globalActivity = await serverClient.feed('flat', 'global').addActivity(activityData);
+          console.log('✅ Post also added to global feed with ID:', globalActivity.id);
+        } catch (globalFeedError) {
+          console.warn('⚠️ Failed to add post to global feed (notifications may not work):', globalFeedError.message);
+          // Don't fail the entire request if global feed fails
+        }
 
         // Return the user activity
         const newActivity = userActivity;
@@ -453,7 +543,13 @@ export default async function handler(
           return res.status(400).json({ error: 'postId and comment text are required' });
         }
 
-        console.log('💬 ADD_COMMENT: Adding comment reaction:', { userId, postId, text: postData.text.substring(0, 50) });
+        console.log('💬 ADD_COMMENT: Adding comment reaction:', { 
+          userId: trimmedUserId, 
+          postId, 
+          text: postData.text.substring(0, 50),
+          fullUserId: userId,
+          rawUserId: req.body.userId
+        });
         
         // Add comment using server client for proper attribution (V2 requires userId)
         const comment = await serverClient.reactions.add('comment', postId, {
@@ -463,18 +559,22 @@ export default async function handler(
         console.log('✅ ADD_COMMENT: Comment added successfully:', comment?.id || 'success');
 
         // Create notification for the post author
-        console.log(`🔔 About to create comment notification for post: ${postId}`);
+        console.log(`🔔 NOTIFICATION_DEBUG: About to create comment notification for post: ${postId}`);
+        console.log(`🔔 NOTIFICATION_DEBUG: Comment actor (who's commenting): ${trimmedUserId}`);
+        
         const commentPostAuthor = await getPostAuthor(serverClient, postId);
-        console.log(`🔔 Found comment post author: ${commentPostAuthor}`);
+        console.log(`🔔 NOTIFICATION_DEBUG: Found comment post author: ${commentPostAuthor}`);
+        console.log(`🔔 NOTIFICATION_DEBUG: Will skip notification? ${commentPostAuthor === trimmedUserId ? 'YES (same user)' : 'NO'}`);
+        
         if (commentPostAuthor) {
           try {
-            await createNotificationActivity(serverClient, 'comment', trimmedUserId, commentPostAuthor, postId, postData.text);
-            console.log(`✅ Comment notification creation completed`);
+            const notificationResult = await createNotificationActivity(serverClient, 'comment', trimmedUserId, commentPostAuthor, postId, postData.text);
+            console.log(`✅ NOTIFICATION_DEBUG: Comment notification creation completed:`, notificationResult?.id || 'success');
           } catch (notificationError) {
-            console.error(`❌ Comment notification failed:`, notificationError);
+            console.error(`❌ NOTIFICATION_DEBUG: Comment notification failed:`, notificationError);
           }
         } else {
-          console.log(`⚠️ No comment post author found, skipping comment notification`);
+          console.log(`⚠️ NOTIFICATION_DEBUG: No comment post author found, skipping comment notification`);
         }
 
         return res.json({
