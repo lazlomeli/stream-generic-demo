@@ -72,9 +72,9 @@ export default async function handler(
       result.results.map((a: any) => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
     );
     
-    // Filter out notification activities to prevent them from showing as posts
+    // Filter out notification activities and internal activities to prevent them from showing as posts
     const filteredResults = result.results.filter((activity: any) => 
-      activity.verb !== 'notification'
+      activity.verb !== 'notification' && activity.verb !== 'notifications_viewed'
     );
     console.log(`Filtered to ${filteredResults.length} non-notification activities`);
     console.log(`🔍 DEBUG: Filtered activities:`, 

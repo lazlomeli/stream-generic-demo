@@ -54,13 +54,31 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className = '', sho
         console.log('🔔 Notifications marked as read, refreshing badge count...');
         fetchUnreadCount();
       };
+
+      // Listen for entering notifications page event to immediately clear badge
+      const handleEnteringNotificationsPage = () => {
+        console.log('🔔 Entering notifications page, temporarily clearing badge...');
+        setUnreadCount(0); // Temporarily clear badge while on notifications page
+        // Also refresh count to get accurate data after a short delay
+        setTimeout(() => fetchUnreadCount(), 200);
+      };
+
+      // Listen for leaving notifications page event to refresh count
+      const handleLeavingNotificationsPage = () => {
+        console.log('🔔 Leaving notifications page, refreshing badge count...');
+        fetchUnreadCount();
+      };
       
       window.addEventListener('notificationsMarkedAsRead', handleNotificationsMarkedAsRead);
+      window.addEventListener('enteringNotificationsPage', handleEnteringNotificationsPage);
+      window.addEventListener('leavingNotificationsPage', handleLeavingNotificationsPage);
       
       // Return cleanup function
       return () => {
         clearInterval(interval);
         window.removeEventListener('notificationsMarkedAsRead', handleNotificationsMarkedAsRead);
+        window.removeEventListener('enteringNotificationsPage', handleEnteringNotificationsPage);
+        window.removeEventListener('leavingNotificationsPage', handleLeavingNotificationsPage);
       };
     }
   }, [isAuthenticated, user]);

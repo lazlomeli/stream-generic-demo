@@ -333,9 +333,9 @@ app.post('/api/stream/get-posts', async (req, res) => {
       result.results.map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
     );
     
-    // Filter out notification activities to prevent them from showing as posts
+    // Filter out notification activities and internal activities to prevent them from showing as posts
     const filteredResults = result.results.filter((activity) => 
-      activity.verb !== 'notification'
+      activity.verb !== 'notification' && activity.verb !== 'notifications_viewed'
     );
     console.log(`🔧 Filtered to ${filteredResults.length} non-notification activities`);
     console.log(`🔍 DEBUG: Filtered activities:`, 
@@ -2355,26 +2355,31 @@ app.post("/api/stream/notifications", async (req, res) => {
         try {
           console.log(`🔔 MARK_READ: Marking ${notificationIds.length} notifications as read for user ${trimmedUserId}`);
           
-          // Mark notifications as read by adding a "read" reaction to each notification
-          const markReadPromises = notificationIds.map(async (notificationId) => {
-            try {
-              await serverFeedsClient.reactions.add(
-                'read',
-                notificationId,
-                { read_at: new Date().toISOString() },
-                { userId: trimmedUserId }
-              );
-              console.log(`✅ Marked notification ${notificationId} as read`);
-            } catch (error) {
-              console.error(`❌ Failed to mark notification ${notificationId} as read:`, error);
-            }
-          });
+          // SIMPLIFIED APPROACH: Store the timestamp when user last viewed notifications
+          const lastViewedTimestamp = new Date().toISOString();
           
-          await Promise.all(markReadPromises);
-          
+          // Store this in user's feed
+          try {
+            const userFeed = serverFeedsClient.feed('user', trimmedUserId);
+            await userFeed.addActivity({
+              actor: trimmedUserId,
+              verb: 'notifications_viewed',
+              object: 'timestamp',
+              text: `User viewed notifications at ${lastViewedTimestamp}`,
+              custom: {
+                viewed_at: lastViewedTimestamp,
+                notification_count: notificationIds.length
+              }
+            });
+            console.log(`✅ Stored notifications viewed timestamp: ${lastViewedTimestamp}`);
+          } catch (timestampError) {
+            console.warn(`⚠️ Failed to store viewed timestamp:`, timestampError.message);
+          }
+
           return res.json({
             success: true,
-            message: `Marked ${notificationIds.length} notifications as read`
+            message: `Marked ${notificationIds.length} notifications as read`,
+            viewed_at: lastViewedTimestamp
           });
         } catch (error) {
           console.error('❌ Error marking notifications as read:', error);
@@ -2401,10 +2406,36 @@ app.post("/api/stream/notifications", async (req, res) => {
           const notifications = (result.results || []).filter(activity => 
             activity.verb === 'notification'
           );
+
+          // SIMPLIFIED APPROACH: Find the most recent "notifications_viewed" timestamp
+          const viewedActivities = (result.results || []).filter(activity => 
+            activity.verb === 'notifications_viewed' && activity.actor === trimmedUserId
+          );
+
+          let lastViewedTimestamp = null;
+          if (viewedActivities.length > 0) {
+            // Get the most recent viewed timestamp
+            const mostRecentViewed = viewedActivities.sort((a, b) => 
+              new Date(b.time || b.created_at).getTime() - new Date(a.time || a.created_at).getTime()
+            )[0];
+            lastViewedTimestamp = mostRecentViewed.custom?.viewed_at || mostRecentViewed.time || mostRecentViewed.created_at;
+            console.log(`📖 Found last viewed timestamp: ${lastViewedTimestamp}`);
+          }
+
+          // Count notifications that are newer than the last viewed timestamp
+          let unreadCount = notifications.length; // Default: all notifications are unread
           
-          // For simplicity, assume all notifications are unread
-          // (In production, you'd check for read reactions)
-          const unreadCount = notifications.length;
+          if (lastViewedTimestamp) {
+            const viewedTime = new Date(lastViewedTimestamp).getTime();
+            const unreadNotifications = notifications.filter(notification => {
+              const notificationTime = new Date(notification.time || notification.created_at).getTime();
+              return notificationTime > viewedTime;
+            });
+            unreadCount = unreadNotifications.length;
+            console.log(`📊 Notifications: ${notifications.length} total, ${unreadCount} unread (after ${lastViewedTimestamp})`);
+          } else {
+            console.log(`📊 No viewed timestamp found, treating all ${notifications.length} notifications as unread`);
+          }
           
           console.log(`✅ Found ${unreadCount} unread notifications for user ${trimmedUserId}`);
 
@@ -2549,9 +2580,9 @@ app.post("/api/stream/user-data", async (req, res) => {
         (result.results || []).map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
       );
 
-      // Filter out notification activities to prevent them from showing as posts
+      // Filter out notification activities and internal activities to prevent them from showing as posts
       const filteredPosts = (result.results || []).filter((activity) => 
-        activity.verb !== 'notification'
+        activity.verb !== 'notification' && activity.verb !== 'notifications_viewed'
       );
       const limitedPosts = filteredPosts.slice(0, limit);
 

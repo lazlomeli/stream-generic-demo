@@ -62,10 +62,20 @@ const Notifications = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Immediately trigger a badge refresh when entering notifications page
+      window.dispatchEvent(new CustomEvent('enteringNotificationsPage'));
+      
       fetchNotifications();
       const cleanup = setupRealTimeNotifications();
       
-      return cleanup; // Return the cleanup function from setupRealTimeNotifications
+      // Cleanup function to run when leaving the notifications page
+      return () => {
+        cleanup();
+        // Refresh badge count when leaving notifications page to ensure accuracy
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('leavingNotificationsPage'));
+        }, 100);
+      };
     }
   }, [isAuthenticated, user]);
 
@@ -92,8 +102,11 @@ const Notifications = () => {
       if (response.ok) {
         console.log(`✅ Marked ${notificationIds.length} notifications as read`);
         
-        // Trigger a custom event to refresh the notification bell count
-        window.dispatchEvent(new CustomEvent('notificationsMarkedAsRead'));
+        // Trigger a custom event to refresh the notification bell count with a small delay
+        // to ensure backend has processed the mark_read request
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('notificationsMarkedAsRead'));
+        }, 100);
       } else {
         console.error('Failed to mark notifications as read');
       }

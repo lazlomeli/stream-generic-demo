@@ -1060,22 +1060,16 @@ const UserProfile = () => {
               })()}
             </button>
           )}
-        </div>
-        <div className={`profile-details ${isMobileView ? 'mobile' : 'desktop'}`}>
-          <div className={`profile-header-row ${isMobileView ? 'mobile' : 'desktop'}`}>
-            <h1 className="profile-name">{profile.name}</h1>
-          </div>
           
-          {/* Desktop action buttons - positioned after header row */}
+          {/* Desktop action buttons - positioned under follow button */}
           {!isOwnProfile && !isMobileView && (
-            <div className={`profile-action-buttons ${isMobileView ? 'mobile' : 'desktop'}`}>
+            <div className={`profile-action-buttons ${isMobileView ? 'mobile' : 'desktop'} under-follow`}>
               <button 
                 className="profile-message-button"
                 onClick={handleMessageUser}
                 title="Send message"
               >
                 <img src={MessageIcon} alt="Message" className="button-icon" />
-                {/* {isMobileView ? '' : 'Message'} */}
               </button>
               <button 
                 className="profile-call-button audio-call"
@@ -1083,7 +1077,6 @@ const UserProfile = () => {
                 title="Start audio call"
               >
                 <img src={PhoneIcon} alt="Audio call" className="button-icon" />
-                {/* {isMobileView ? '' : 'Call'} */}
               </button>
               <button 
                 className="profile-call-button video-call"
@@ -1091,10 +1084,14 @@ const UserProfile = () => {
                 title="Start video call"
               >
                 <img src={VideoIcon} alt="Video call" className="button-icon" />
-                {/* {isMobileView ? '' : 'Video'} */}
               </button>
             </div>
           )}
+        </div>
+        <div className={`profile-details ${isMobileView ? 'mobile' : 'desktop'}`}>
+          <div className={`profile-header-row ${isMobileView ? 'mobile' : 'desktop'}`}>
+            <h1 className="profile-name">{profile.name}</h1>
+          </div>
           
           {/* Mobile follow button - keep it below name for mobile */}
           {!isOwnProfile && isMobileView && (

@@ -212,14 +212,35 @@ export default async function handler(
         try {
           console.log(`🔔 MARK_READ: Marking ${notificationIds.length} notifications as read for user ${trimmedUserId}`);
           
-          // Mark notifications as read by adding a "read" reaction to each notification
+          // SIMPLIFIED APPROACH: Store the timestamp when user last viewed notifications
+          // This is more reliable than tracking individual notification read status
+          const lastViewedTimestamp = new Date().toISOString();
+          
+          // Store this in user's profile or a simple way - we'll use a special notification activity
+          try {
+            const userFeed = serverClient.feed('user', trimmedUserId);
+            await userFeed.addActivity({
+              actor: trimmedUserId,
+              verb: 'notifications_viewed',
+              object: 'timestamp',
+              text: `User viewed notifications at ${lastViewedTimestamp}`,
+              custom: {
+                viewed_at: lastViewedTimestamp,
+                notification_count: notificationIds.length
+              }
+            });
+            console.log(`✅ Stored notifications viewed timestamp: ${lastViewedTimestamp}`);
+          } catch (timestampError) {
+            console.warn(`⚠️ Failed to store viewed timestamp:`, timestampError.message);
+          }
+
+          // Still try to add read reactions as backup
           const markReadPromises = notificationIds.map(async (notificationId: string) => {
             try {
-              // Add a "read" reaction to the notification
               await serverClient.reactions.add(
                 'read',
                 notificationId,
-                { read_at: new Date().toISOString() },
+                { read_at: lastViewedTimestamp },
                 { userId: trimmedUserId }
               );
               console.log(`✅ Marked notification ${notificationId} as read`);
@@ -232,7 +253,8 @@ export default async function handler(
           
           return res.json({
             success: true,
-            message: `Marked ${notificationIds.length} notifications as read`
+            message: `Marked ${notificationIds.length} notifications as read`,
+            viewed_at: lastViewedTimestamp
           });
         } catch (error) {
           console.error('❌ Error marking notifications as read:', error);
@@ -256,33 +278,39 @@ export default async function handler(
           });
 
           // Filter for notification activities only
-          const notifications = (result.results || []).filter(activity => 
+          const notifications = (result.results || []).filter((activity: any) => 
             activity.verb === 'notification'
           );
-          
-          // Check which notifications have been read by checking for "read" reactions
-          const unreadNotifications = [];
-          for (const notification of notifications) {
-            try {
-              // Check if this notification has a "read" reaction from this user
-              const readReactions = await serverClient.reactions.filter({
-                kind: 'read',
-                activity_id: notification.id,
-                limit: 1
-              });
-              
-              // If no read reaction found, it's unread
-              if (!readReactions.results || readReactions.results.length === 0) {
-                unreadNotifications.push(notification);
-              }
-            } catch (error) {
-              console.warn(`❌ Failed to check read status for notification ${notification.id}:`, error);
-              // If we can't check read status, assume it's unread
-              unreadNotifications.push(notification);
-            }
+
+          // SIMPLIFIED APPROACH: Find the most recent "notifications_viewed" timestamp
+          const viewedActivities = (result.results || []).filter((activity: any) => 
+            activity.verb === 'notifications_viewed' && activity.actor === trimmedUserId
+          );
+
+          let lastViewedTimestamp: string | null = null;
+          if (viewedActivities.length > 0) {
+            // Get the most recent viewed timestamp
+            const mostRecentViewed = viewedActivities.sort((a: any, b: any) => 
+              new Date(b.time || b.created_at).getTime() - new Date(a.time || a.created_at).getTime()
+            )[0];
+            lastViewedTimestamp = mostRecentViewed.custom?.viewed_at || mostRecentViewed.time || mostRecentViewed.created_at;
+            console.log(`📖 Found last viewed timestamp: ${lastViewedTimestamp}`);
           }
+
+          // Count notifications that are newer than the last viewed timestamp
+          let unreadCount = notifications.length; // Default: all notifications are unread
           
-          const unreadCount = unreadNotifications.length;
+          if (lastViewedTimestamp) {
+            const viewedTime = new Date(lastViewedTimestamp).getTime();
+            const unreadNotifications = notifications.filter((notification: any) => {
+              const notificationTime = new Date(notification.time || notification.created_at).getTime();
+              return notificationTime > viewedTime;
+            });
+            unreadCount = unreadNotifications.length;
+            console.log(`📊 Notifications: ${notifications.length} total, ${unreadCount} unread (after ${lastViewedTimestamp})`);
+          } else {
+            console.log(`📊 No viewed timestamp found, treating all ${notifications.length} notifications as unread`);
+          }
           
           console.log(`✅ Found ${unreadCount} unread notifications for user ${trimmedUserId}`);
 
