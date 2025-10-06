@@ -203,21 +203,27 @@ const CustomVoiceRecording: React.FC<{ attachment: VoiceRecordingAttachment; isQ
 };
 
 const CustomAttachment: React.FC<AttachmentProps> = (props) => {
-  // Check if any of the attachments are voice recordings
-  const voiceRecordingAttachment = props.attachments?.find(att => 
-    'type' in att && att.type === 'voiceRecording'
+  // Only handle voice recordings with our custom component
+  // For giphy and all other attachments, use the default Stream component
+  const hasVoiceRecording = props.attachments?.some(att => 
+    att && typeof att === 'object' && 'type' in att && att.type === 'voiceRecording'
   );
   
-  if (voiceRecordingAttachment && 'type' in voiceRecordingAttachment) {
+  if (hasVoiceRecording) {
+    const voiceRecordingAttachment = props.attachments?.find(att => 
+      att && typeof att === 'object' && 'type' in att && att.type === 'voiceRecording'
+    ) as VoiceRecordingAttachment;
+    
     return (
       <CustomVoiceRecording 
-        attachment={voiceRecordingAttachment as VoiceRecordingAttachment}
+        attachment={voiceRecordingAttachment}
         isQuoted={props.isQuoted}
       />
     );
   }
 
-  // For all other attachment types, use the default Attachment component
+  // For all other attachment types (including giphy with actions), use the default Attachment component
+  // This ensures giphy shuffle/send/cancel buttons work properly
   return <Attachment {...props} />;
 };
 

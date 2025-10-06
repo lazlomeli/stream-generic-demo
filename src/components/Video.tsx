@@ -737,7 +737,12 @@ const Video: React.FC<VideoProps> = () => {
       console.log('⚠️ User not yet loaded, using anonymous ID')
       return 'anonymous'
     }
-    return getSanitizedUserId(user)
+    const userId = getSanitizedUserId(user)
+    if (!userId || userId.trim() === '') {
+      console.warn('⚠️ getSanitizedUserId returned empty string, using fallback')
+      return user.sub?.replace(/[^a-zA-Z0-9_-]/g, '_') || 'anonymous'
+    }
+    return userId
   }, [user])
 
   // Check if there's a live stream ID in URL parameters
@@ -1245,11 +1250,12 @@ const Video: React.FC<VideoProps> = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
-            type: 'create-livestream-channel',
-            channelId: channelId,
-            userId: sanitizedUserId
-          }),
+        body: JSON.stringify({
+          type: 'create-livestream-channel',
+          channelId: channelId,
+          userId: sanitizedUserId || 'anonymous',
+          currentUserId: sanitizedUserId || 'anonymous' // Ensure never undefined
+        }),
         })
 
         if (!createChannelResponse.ok) {
@@ -1272,11 +1278,12 @@ const Video: React.FC<VideoProps> = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
-            type: 'create-livestream-channel', // This handles both create and join
-            channelId: channelId,
-            userId: sanitizedUserId
-          }),
+        body: JSON.stringify({
+          type: 'create-livestream-channel', // This handles both create and join
+          channelId: channelId,
+          userId: sanitizedUserId || 'anonymous',
+          currentUserId: sanitizedUserId || 'anonymous' // Ensure never undefined
+        }),
         })
 
         if (!joinChannelResponse.ok) {
@@ -1296,11 +1303,12 @@ const Video: React.FC<VideoProps> = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            type: 'create-livestream-channel', // This handles both create and join
-            channelId: channelId,
-            userId: sanitizedUserId // Use anonymous viewer ID
-          }),
+        body: JSON.stringify({
+          type: 'create-livestream-channel', // This handles both create and join
+          channelId: channelId,
+          userId: sanitizedUserId || 'anonymous', // Use anonymous viewer ID
+          currentUserId: sanitizedUserId || 'anonymous' // Ensure never undefined
+        }),
         })
 
         if (!joinChannelResponse.ok) {
@@ -1479,7 +1487,8 @@ const Video: React.FC<VideoProps> = () => {
         body: JSON.stringify({
           type: 'cleanup-livestream-channel',
           channelId: channelId,
-          userId: sanitizedUserId
+          userId: sanitizedUserId || 'anonymous',
+          currentUserId: sanitizedUserId || 'anonymous' // Ensure never undefined
         }),
       });
 

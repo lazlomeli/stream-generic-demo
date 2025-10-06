@@ -234,6 +234,10 @@ const Feeds = () => {
   const [postComments, setPostComments] = useState<{ [postId: string]: any[] }>({});
   const [loadingComments, setLoadingComments] = useState<string | null>(null);
   
+  // Add cooldown to prevent fetchPosts after optimistic updates
+  const [lastOptimisticUpdate, setLastOptimisticUpdate] = useState<number>(0);
+  const OPTIMISTIC_UPDATE_COOLDOWN = 3000; // 3 seconds
+  
   // Demo attachment state
   const [selectedAttachments, setSelectedAttachments] = useState<Array<{
     type: 'image' | 'video' | 'poll';
@@ -812,9 +816,21 @@ const Feeds = () => {
     const userIdToUse = userId || feedsClient?.userId;
     
     if (!userIdToUse) {
-
+      console.log('⚠️ No userId available for fetchPosts');
       return;
     }
+    
+    // Check if we just did an optimistic update - if so, skip fetch to prevent duplicates
+    const timeSinceLastOptimistic = Date.now() - lastOptimisticUpdate;
+    if (timeSinceLastOptimistic < OPTIMISTIC_UPDATE_COOLDOWN) {
+      console.log(`🔥 SKIPPING FETCH: ${timeSinceLastOptimistic}ms since optimistic update (cooldown: ${OPTIMISTIC_UPDATE_COOLDOWN}ms)`);
+      return;
+    } else if (lastOptimisticUpdate > 0) {
+      console.log(`✅ OPTIMISTIC COOLDOWN EXPIRED: ${timeSinceLastOptimistic}ms since last optimistic update - proceeding with fetch`);
+    }
+    
+    console.log('🚀 FETCHPOSTS: Starting fetch posts for user:', userIdToUse);
+    console.log('🚀 FETCHPOSTS: Current posts in state:', posts.length);
     
     try {
       const accessToken = await getAccessTokenSilently();
@@ -840,7 +856,16 @@ const Feeds = () => {
       if (timelineResponse.ok) {
         const timelineResult = await timelineResponse.json();
         timelinePosts = timelineResult.activities || [];
-
+        
+        // DEBUG: Check for duplicates in timeline response
+        console.log('🔍 TIMELINE POSTS DEBUG:', {
+          totalPosts: timelinePosts.length,
+          postIds: timelinePosts.map(p => p.id),
+          duplicateIds: timelinePosts.map(p => p.id).filter((id, index, arr) => arr.indexOf(id) !== index),
+          postTexts: timelinePosts.map(p => ({ id: p.id, text: p.text?.substring(0, 20) })),
+          postActors: timelinePosts.map(p => p.actor),
+          currentUserId: userIdToUse
+        });
       }
       
       // If timeline has few posts, supplement with global feed for discovery
@@ -923,13 +948,86 @@ const Feeds = () => {
         };
       });
       
-      setPosts(streamPosts);
+      setPosts(prevPosts => {
+        // DEDUPLICATION FIX: Merge new posts with existing posts and deduplicate
+        console.log('🔧 FETCH DEDUPLICATION: Starting merge', {
+          existingPosts: prevPosts.length,
+          newFetchedPosts: streamPosts.length,
+          existingPostIds: prevPosts.slice(0, 3).map(p => p.id),
+          fetchedPostIds: streamPosts.slice(0, 3).map(p => p.id)
+        });
+        
+        const allPostsCombined = [...prevPosts, ...streamPosts];
+        const deduplicatedPosts = allPostsCombined.filter((post, index, self) => {
+          const firstIndex = self.findIndex(p => p.id === post.id);
+          const isDuplicate = index !== firstIndex;
+          if (isDuplicate) {
+            console.log('🔧 DUPLICATE FOUND:', {
+              postId: post.id,
+              currentIndex: index,
+              firstIndex: firstIndex
+            });
+          }
+          return !isDuplicate;
+        });
+        
+        // Sort by creation time (newest first)
+        deduplicatedPosts.sort((a, b) => {
+          const timeA = new Date(a.time || a.created_at || 0).getTime();
+          const timeB = new Date(b.time || b.created_at || 0).getTime();
+          return timeB - timeA;
+        });
+        
+        console.log(`🔧 DEDUPLICATION: Combined ${prevPosts.length} existing + ${streamPosts.length} fetched = ${deduplicatedPosts.length} unique posts`);
+        return deduplicatedPosts;
+      });
 
       
     } catch (err: any) {
       console.error('❌ Error fetching posts:', err);
-      // Fallback to empty posts array if fetching fails
-      setPosts([]);
+      // Don't clear existing posts on error - keep optimistic updates
+      console.log('⚠️ Keeping existing posts due to fetch error');
+    }
+  };
+
+  // Function to remove self-follow relationships that cause duplicates
+  const removeSelfFollow = async () => {
+    if (!feedsClient?.userId) return;
+
+    try {
+      console.log('🧹 Removing self-follow relationship to fix duplicates...');
+      
+      const accessToken = await getAccessTokenSilently();
+      
+      const response = await fetch('/api/stream/feed-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action: 'remove_self_follow',
+          userId: feedsClient.userId
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Self-follow cleanup completed:', result.message);
+        showSuccess('Timeline feed optimized - duplicates should be resolved!');
+        
+        // Refresh the feed after cleanup
+        setTimeout(() => {
+          fetchPosts(feedsClient.userId);
+        }, 1000);
+      } else {
+        console.error('❌ Self-follow cleanup failed:', result);
+        showError('Failed to optimize timeline feed');
+      }
+    } catch (error) {
+      console.error('❌ Error during self-follow cleanup:', error);
+      showError('Error optimizing timeline feed');
     }
   };
 
@@ -1203,7 +1301,17 @@ const Feeds = () => {
         };
         
         // Add the new post to the beginning of posts array
-        setPosts(prevPosts => [newPost, ...prevPosts]);
+        setPosts(prevPosts => {
+          console.log('🔧 OPTIMISTIC UPDATE: Adding new post to existing posts', {
+            newPostId: newPost.id,
+            existingPostIds: prevPosts.slice(0, 3).map(p => p.id),
+            totalExistingPosts: prevPosts.length
+          });
+          return [newPost, ...prevPosts];
+        });
+        
+        // Set timestamp to prevent immediate fetchPosts calls
+        setLastOptimisticUpdate(Date.now());
         console.log('✅ New post added to feed immediately');
         
         // Show success toast

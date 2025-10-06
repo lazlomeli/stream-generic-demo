@@ -397,18 +397,11 @@ export default async function handler(
           }
         };
 
-        // Ensure user follows themselves (timeline:user follows user:user)
-        try {
-          const timelineFeed = serverClient.feed('timeline', trimmedUserId);
-          await timelineFeed.follow('user', trimmedUserId);
-          console.log(`✅ Ensured self-follow: timeline:${trimmedUserId} → user:${trimmedUserId}`);
-        } catch (followError) {
-          // This might fail if already following, which is fine
-          console.log(`ℹ️ Self-follow already exists or error (this is normal):`, followError.message);
-        }
-
         // Create post in enriched user feed for URL processing
         console.log('📝 Creating post in enriched user feed...');
+        
+        // NOTE: We do NOT create self-follow relationships here as they cause duplicates
+        // Stream timeline feeds already include the user's own posts by default
         
         // Try to use enriched feed group if available, fallback to regular user feed
         let targetFeedGroup = 'user';
@@ -424,7 +417,13 @@ export default async function handler(
         
         // Generate a unique ID for this activity to use in both feeds
         const activityId = `post_${trimmedUserId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        activityData.id = activityId;
+        const foreignId = `user_post_${trimmedUserId}_${Date.now()}`;
+        
+        // Use foreign_id to prevent duplicate activities across feeds
+        (activityData as any).foreign_id = foreignId;
+        (activityData as any).time = new Date().toISOString();
+        
+        console.log('📝 Creating post with foreign_id:', foreignId);
 
         const userActivity = await serverClient.feed(targetFeedGroup, trimmedUserId).addActivity(activityData);
 
@@ -1015,6 +1014,39 @@ export default async function handler(
           return res.json({
             success: true,
             isFollowing: false
+          });
+        }
+
+      case 'remove_self_follow':
+        // Remove self-follow relationship to fix duplicate posts in timeline
+        try {
+          console.log(`🧹 Removing self-follow relationship for user: ${trimmedUserId}`);
+          
+          const timelineFeed = serverClient.feed('timeline', trimmedUserId);
+          
+          try {
+            await timelineFeed.unfollow('user', trimmedUserId);
+            console.log(`✅ Successfully removed self-follow: timeline:${trimmedUserId} no longer follows user:${trimmedUserId}`);
+          } catch (unfollowError: any) {
+            // If unfollow fails, it might mean there was no self-follow relationship
+            if (unfollowError.message?.includes('not found') || unfollowError.message?.includes('does not follow')) {
+              console.log(`ℹ️ No self-follow relationship found for ${trimmedUserId} - this is good!`);
+            } else {
+              console.warn(`⚠️ Error removing self-follow for ${trimmedUserId}:`, unfollowError.message);
+            }
+          }
+
+          return res.json({
+            success: true,
+            message: 'Self-follow relationship removed (if it existed)',
+            userId: trimmedUserId,
+            timestamp: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('❌ Error removing self-follow:', error);
+          return res.status(500).json({ 
+            error: 'Failed to remove self-follow',
+            details: error instanceof Error ? error.message : 'Unknown error'
           });
         }
 
