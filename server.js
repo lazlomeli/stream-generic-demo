@@ -308,7 +308,7 @@ app.post('/api/stream/feed-token', async (req, res) => {
 });
 
 
-// Stream Feeds Get Posts endpoint
+// FEEDS - Stream Feeds Get Posts endpoint
 app.post('/api/stream/get-posts', async (req, res) => {
   try {
     const { userId, feedGroup = 'flat', feedId = 'global', limit = 20 } = req.body;
@@ -449,7 +449,7 @@ app.post('/api/stream/get-posts', async (req, res) => {
   }
 });
 
-// Stream Get User Posts endpoint
+// FEEDS -Stream Get User Posts endpoint
 app.post('/api/stream/get-user-posts', async (req, res) => {
   try {
     const { targetUserId, limit = 20 } = req.body;
@@ -561,7 +561,7 @@ app.post('/api/stream/get-user-posts', async (req, res) => {
   }
 });
 
-// Stream Get Chat User endpoint
+// CHAT - Stream Get Chat User endpoint
 app.post('/api/stream/get-chat-user', async (req, res) => {
   try {
     const { userId } = req.body;
@@ -627,7 +627,7 @@ app.post('/api/stream/get-chat-user', async (req, res) => {
   }
 });
 
-// Stream Resolve User ID endpoint
+// ??? - Stream Resolve User ID endpoint
 app.post('/api/stream/resolve-user-id', async (req, res) => {
   try {
     const { hashedUserId } = req.body;
@@ -699,7 +699,7 @@ app.post('/api/stream/resolve-user-id', async (req, res) => {
   }
 });
 
-// Stream Batch User Counts endpoint
+// ??? - Stream Batch User Counts endpoint
 app.post('/api/stream/get-user-counts-batch', async (req, res) => {
   try {
     const { userId, targetUserIds } = req.body;
@@ -779,7 +779,7 @@ app.post('/api/stream/get-user-counts-batch', async (req, res) => {
   }
 });
 
-// Setup Feed Groups with URL Enrichment endpoint
+// FEEDS - Setup Feed Groups with URL Enrichment endpoint
 app.post('/api/stream/setup-feed-groups', async (req, res) => {
   try {
     const setupFeedGroups = await import('./api/stream/setup-feed-groups.js');
@@ -790,7 +790,7 @@ app.post('/api/stream/setup-feed-groups', async (req, res) => {
   }
 });
 
-// Stream Feeds Actions endpoint
+// FEEDS - Stream Feeds Actions endpoint
 app.post('/api/stream/feed-actions', async (req, res) => {
   try {
     const { action, userId, postData, postId } = req.body;
@@ -1557,7 +1557,7 @@ app.post('/api/stream/feed-actions', async (req, res) => {
   }
 });
 
-// Stream Chat Create Channel endpoint
+// CHAT - Stream Chat Create Channel endpoint
 app.post('/api/stream/create-channel', upload.single('channelImage'), async (req, res) => {
   try {
     console.log('🏗️ Create channel request body:', req.body);
