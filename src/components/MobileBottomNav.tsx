@@ -80,7 +80,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentPath }) => {
         className={`mobile-nav-item ${currentPath === '/notifications' ? 'active' : ''}`}
         title="Alerts"
       >
-        <NotificationBell className="mobile-nav-bell" showClickHandler={false} />
+        {/* <NotificationBell className="mobile-nav-bell" showClickHandler={false} /> */}
         <span>Alerts</span>
       </button>
     </div>

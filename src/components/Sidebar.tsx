@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           className={`sidebar-button ${isActive('/notifications') ? 'active' : ''}`}
           title="Notifications"
         >
-          <NotificationBell className="sidebar-icon" showClickHandler={false} />
+          {/* <NotificationBell className="sidebar-icon" showClickHandler={false} /> */}
           <span className="sidebar-label">Notifications</span>
         </button>
       </nav>

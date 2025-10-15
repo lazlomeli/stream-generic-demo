@@ -14,10 +14,11 @@ import { ToastProvider } from './contexts/ToastContext'
 import { ResponsiveProvider, useResponsive } from './contexts/ResponsiveContext'
 import './App.css'
 import Feeds from './components/Feeds'
-import BookmarkedPosts from './pages/BookmarkedPosts'
-import UserProfile from './pages/UserProfile'
-import Notifications from './pages/Notifications'
+// import BookmarkedPosts from './pages/BookmarkedPosts'
+// import UserProfile from './pages/UserProfile'
+// import Notifications from './pages/Notifications'
 import Login from './pages/Login'
+import { QueryProvider } from './utils/queryProvider'
 
 // Context for controlling UI layout
 interface UILayoutContextType {
@@ -60,62 +61,67 @@ function AppContent() {
   }
 
   return (
-    <UILayoutContext.Provider value={{ hideHeader, setHideHeader }}>
-      <div className={`app ${shouldHideHeader ? 'fullscreen-mode' : ''} ${isMobileView ? 'mobile-app' : ''}`}>
-        {isAuthenticated && !shouldHideHeader && <Header showNavigation={!showSidebars && !isVideoPage && !isCallPage} />}
-        {showSidebars && <Sidebar />}
-        {showSidebars && <RightSidebar />}
-        <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${shouldHideHeader ? 'fullscreen' : ''} ${isMobileView ? 'mobile-main' : ''}`}>
-            <Routes>
-              <Route path="/" element={
-                isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />
-              } />
-              <Route path="/login" element={<Login />} />
-              <Route path="/chat" element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              } />
-              <Route path="/chat/:channelId" element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              } />
-              <Route path="/video" element={
-                <ProtectedRoute allowViewers={true}>
-                  <Video />
-                </ProtectedRoute>
-              } />
-              <Route path="/call/:callId" element={
-                <ProtectedRoute>
-                  <CallPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/feeds" element={
-                <ProtectedRoute>
-                  <Feeds />
-                </ProtectedRoute>
-              } />
-              <Route path="/bookmarked" element={
-                <ProtectedRoute>
-                  <BookmarkedPosts />
-                </ProtectedRoute>
-              } />
-              <Route path="/notifications" element={
-                <ProtectedRoute>
-                  <Notifications />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile/:userId" element={
-                <ProtectedRoute>
-                  <UserProfile />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </main>
-          <ToastContainer />
-        </div>
-    </UILayoutContext.Provider>
+    <QueryProvider>
+      <UILayoutContext.Provider value={{ hideHeader, setHideHeader }}>
+        <div className={`app ${shouldHideHeader ? 'fullscreen-mode' : ''} ${isMobileView ? 'mobile-app' : ''}`}>
+          {isAuthenticated && !shouldHideHeader && <Header showNavigation={!showSidebars && !isVideoPage && !isCallPage} />}
+          {showSidebars && <Sidebar />}
+          {showSidebars && <RightSidebar />}
+          <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${shouldHideHeader ? 'fullscreen' : ''} ${isMobileView ? 'mobile-main' : ''}`}>
+              <Routes>
+                <Route path="/" element={
+                  isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />
+                } />
+                <Route path="/login" element={<Login />} />
+                <Route path="/chat" element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                } />
+                <Route path="/chat/:channelId" element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                } />
+                <Route path="/video" element={
+                  <ProtectedRoute allowViewers={true}>
+                    <Video />
+                  </ProtectedRoute>
+                } />
+                <Route path="/call/:callId" element={
+                  <ProtectedRoute>
+                    <CallPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/feeds" element={
+                  <ProtectedRoute>
+                    <Feeds />
+                  </ProtectedRoute>
+                } />
+                <Route path="/bookmarked" element={
+                  <ProtectedRoute>
+                    {/* <BookmarkedPosts /> */}
+                    <></>
+                  </ProtectedRoute>
+                } />
+                <Route path="/notifications" element={
+                  <ProtectedRoute>
+                    {/* <Notifications /> */}
+                    <></>
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile/:userId" element={
+                  <ProtectedRoute>
+                    {/* <UserProfile /> */}
+                    <></>
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </main>
+            <ToastContainer />
+          </div>
+      </UILayoutContext.Provider>
+    </QueryProvider>
   )
 }
 

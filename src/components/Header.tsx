@@ -257,7 +257,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
                   </span>
                 </div>
                 {/* Notification Bell - in header right */}
-                <NotificationBell className="header-nav-button" />
+                {/* <NotificationBell className="header-nav-button" /> */}
                 
                 <button
                   onClick={handleLogout}

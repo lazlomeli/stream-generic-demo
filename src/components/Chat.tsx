@@ -63,6 +63,10 @@ const Chat: React.FC<ChatProps> = () => {
   // Memoize current user id once using shared utility
   const sanitizedUserId = useMemo(() => getSanitizedUserId(user), [user]);
 
+
+
+  console.log('👤 Chat: user', user);
+  
   // Mobile navigation functions
   const handleMobileChannelSelect = (channel: StreamChannel) => {
     setSelectedMobileChannel(channel);
