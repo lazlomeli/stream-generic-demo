@@ -20,7 +20,8 @@ import { getSanitizedUserId } from '../utils/userUtils';
 import { useToast } from '../contexts/ToastContext';
 import { useUILayout } from '../App';
 import { useResponsive } from '../contexts/ResponsiveContext';
-import { getFirstName } from '../utils/nameUtils';
+import nameUtils from '../utils/nameUtils';
+
 
 // Import icons
 import PhoneIcon from '../icons/phone.svg';
@@ -614,7 +615,7 @@ const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) =
             />
           </div>
           <h3 className="mobile-participant-name">
-            {getFirstName(localParticipant.name || localParticipant.userId)}
+            {nameUtils.getFirstName(localParticipant.name || localParticipant.userId)}
           </h3>
           <p className="mobile-call-status">Waiting for others to join...</p>
         </div>

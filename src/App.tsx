@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
-import RightSidebar from './components/RightSidebar'
+// import RightSidebar from './components/RightSidebar'
 import LoadingSpinner from './components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
@@ -15,7 +15,7 @@ import { ResponsiveProvider, useResponsive } from './contexts/ResponsiveContext'
 import './App.css'
 import Feeds from './components/Feeds'
 // import BookmarkedPosts from './pages/BookmarkedPosts'
-// import UserProfile from './pages/UserProfile'
+import { UserProfile } from './pages/UserProfile'
 // import Notifications from './pages/Notifications'
 import Login from './pages/Login'
 import { QueryProvider } from './utils/queryProvider'
@@ -66,7 +66,7 @@ function AppContent() {
         <div className={`app ${shouldHideHeader ? 'fullscreen-mode' : ''} ${isMobileView ? 'mobile-app' : ''}`}>
           {isAuthenticated && !shouldHideHeader && <Header showNavigation={!showSidebars && !isVideoPage && !isCallPage} />}
           {showSidebars && <Sidebar />}
-          {showSidebars && <RightSidebar />}
+          {/* {showSidebars && <RightSidebar />} */}
           <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${shouldHideHeader ? 'fullscreen' : ''} ${isMobileView ? 'mobile-main' : ''}`}>
               <Routes>
                 <Route path="/" element={
@@ -112,8 +112,7 @@ function AppContent() {
                 } />
                 <Route path="/profile/:userId" element={
                   <ProtectedRoute>
-                    {/* <UserProfile /> */}
-                    <></>
+                    <UserProfile />
                   </ProtectedRoute>
                 } />
               </Routes>

@@ -10,6 +10,10 @@ export const initializeFeedRoutes = (feedsClient: StreamClient) => {
   return router;
 }
 
+const sanitizeUserId = (userId: string) => {
+  return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
+}
+
 // Feeds V3 Token Generation and User Setup
 router.post('/feeds-token', async (req, res) => {
   try {
@@ -19,14 +23,21 @@ router.post('/feeds-token', async (req, res) => {
       return res.status(400).json({ error: "Missing user_id" });
     }
 
-    console.log('🍃 FEEDS-V3: Generating token for user:', user_id);
+    // Sanitize user_id to only allow safe characters
+    const sanitizedUserId = sanitizeUserId(user_id);
+    
+    if (!sanitizedUserId) {
+      return res.status(400).json({ error: "Invalid user_id format" });
+    }
+
+    console.log('🍃 FEEDS-V3: Generating token for user:', sanitizedUserId);
 
     // Create or update user if name is provided
     if (name) {
-      console.log('👤 FEEDS-V3: Creating/updating user:', { user_id, name });
+      console.log('👤 FEEDS-V3: Creating/updating user:', { user_id: sanitizedUserId, name });
       await streamFeedsClient.upsertUsers([
         {
-          id: user_id,
+          id: sanitizedUserId,
           name: name,
         },
       ]);
@@ -68,9 +79,9 @@ router.post('/feeds-token', async (req, res) => {
     }
 
     // Generate user token
-    const token = streamFeedsClient.generateUserToken({ user_id });
+    const token = streamFeedsClient.generateUserToken({ user_id: sanitizedUserId });
     
-    console.log('✅ FEEDS-V3: Token generated successfully for user:', user_id);
+    console.log('✅ FEEDS-V3: Token generated successfully for user:', sanitizedUserId);
 
     return res.json({ token });
   } catch (err) {

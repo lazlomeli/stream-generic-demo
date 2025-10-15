@@ -12,7 +12,7 @@ export function useUserActions(targetUserId: string) {
     addFollower,
     removeFollower,
   } = useFollowers();
-  const currentUserId = user?.id || "";
+  const currentUserId = user?.nickname || "";
   const [loading, setLoading] = useState(false);
   const isFollowing = followers.includes(targetUserId);
 

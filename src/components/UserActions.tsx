@@ -1,7 +1,4 @@
-"use client";
-
 import { UserPlus, UserMinus } from "lucide-react";
-// import { useUserActions } from "../hooks/useUserActions";
 import { Avatar } from "./Avatar";
 import { useUserActions } from "../hooks/feeds/useUserActions";
 

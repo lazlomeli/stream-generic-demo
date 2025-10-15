@@ -4,11 +4,14 @@ import { useFeedManager } from '../hooks/feeds/useFeedManager';
 import { useFeedActions } from '../hooks/feeds/useFeedActions';
 import { Composer } from './Composer';
 import Activity from './Activity';
+import { useEffect } from 'react';
+import { useSearch } from '../hooks/feeds/useSearch';
 
 const Feeds = () => {
   // const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const { user, client, loading, error, showUserModal, retryConnection } = useUser();
-  const { activities, feedType, loading: loadingFeeds, switchFeedType } = useFeedManager();
+  // const { activities, feedType, loading: loadingFeeds, switchFeedType } = useFeedManager();
+  const { activities: globalActivities, clearSearch, isLoading } = useSearch();
   const {
     posting,
     deleting,
@@ -21,17 +24,15 @@ const Feeds = () => {
     refetchFeedsMutation 
   } = useFeedActions();
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>
   }
-
-  console.log('activities', activities);
 
   return (
     <div>
       <Composer />
       <div>
-        {activities.map((activity) => (
+        {globalActivities.map((activity) => (
           <Activity key={`feed-${activity.id}`} activity={activity} />
         ))}
       </div>

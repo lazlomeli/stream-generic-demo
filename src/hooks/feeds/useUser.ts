@@ -4,24 +4,18 @@ import { FeedsClient } from "@stream-io/feeds-client";
 import toast from "react-hot-toast";
 import { useAuth0 } from "@auth0/auth0-react";
 import { User } from "@auth0/auth0-spa-js";
+import nameUtils from "../../utils/nameUtils";
 
-// Use VITE_ prefix for frontend environment variables
-const defaultApiKey = import.meta.env.VITE_STREAM_API_KEY!;
-// const defaultApiKey = import.meta.env.STREAM_API_KEY!;
-// For Stream Feeds, we should connect to Stream's servers, not localhost
 const streamBaseUrl = "https://chat.stream-io-api.com";
 
 interface AuthTokenResponse {
   token: string;
 }
 
-// Query key for user data
 const USER_QUERY_KEY = ["user"];
 
-// Connect user to Stream API
 const connectUser = async (user: User): Promise<FeedsClient> => {
   const apiKey = import.meta.env.VITE_STREAM_API_KEY!;
-  // const apiKey = import.meta.env.STREAM_API_KEY!;
 
   console.log('🔑 Connecting user with API key:', apiKey ? '✅ Set' : '❌ Missing');
 
@@ -51,6 +45,7 @@ const connectUser = async (user: User): Promise<FeedsClient> => {
   console.log('🔗 Connecting user to Stream Feeds...', { userId: user.nickname, hasToken: !!token });
   
   try {
+    console.log('userID useuser', user);
     await client.connectUser({ id: user.nickname! }, token);
     console.log('✅ Successfully connected to Stream Feeds');
   } catch (error) {
@@ -69,6 +64,11 @@ export function useUser() {
   const [showUserModal, setShowUserModal] = useState(false);
   const { isAuthenticated, user: auth0User } = useAuth0();
 
+  const sanitizedUser: User = {
+    ...auth0User,
+    nickname: nameUtils.sanitizeUserId(auth0User?.nickname!),
+  }
+
   // Query for user data
   const {
     data: user,
@@ -76,7 +76,7 @@ export function useUser() {
     error: userError,
   } = useQuery({
     queryKey: USER_QUERY_KEY,
-    queryFn: () => auth0User,
+    queryFn: () => sanitizedUser,
     staleTime: Infinity, 
     gcTime: Infinity, 
   });
@@ -92,8 +92,8 @@ export function useUser() {
     isLoading: clientLoading,
     error: clientError,
   } = useQuery({
-    queryKey: ["client", auth0User?.nickname],
-    queryFn: () => connectUser(auth0User!),
+    queryKey: ["client", sanitizedUser.nickname],
+    queryFn: () => connectUser(sanitizedUser),
     enabled: !!auth0User,
     staleTime: Infinity,
     gcTime: Infinity,
@@ -188,7 +188,7 @@ export function useUser() {
 //   const isAuthenticated = !!user;
 
   return {
-    user: auth0User,
+    user: sanitizedUser,
     client,
     loading: clientLoading,
     error: userError || clientError,

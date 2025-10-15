@@ -22,7 +22,7 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
       <div className="flex items-start space-x-3 mb-4">
         {activity.user?.id ? (
           <div 
-            onClick={() => handleUserClick(activity.user.id)}
+            onClick={() => {handleUserClick(activity.user.id); console.log('activity.user.id', activity.user.id)}}
             className="cursor-pointer hover:opacity-80 transition-opacity"
           >
             <UserAvatar userId={activity.user?.name || "..."} />
