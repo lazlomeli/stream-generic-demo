@@ -16,9 +16,9 @@ import './App.css'
 import Feeds from './components/Feeds'
 // import BookmarkedPosts from './pages/BookmarkedPosts'
 import { UserProfile } from './pages/UserProfile'
-// import Notifications from './pages/Notifications'
 import Login from './pages/Login'
 import { QueryProvider } from './utils/queryProvider'
+import NotificationsPage from './pages/Notifications'
 
 // Context for controlling UI layout
 interface UILayoutContextType {
@@ -106,7 +106,7 @@ function AppContent() {
                 } />
                 <Route path="/notifications" element={
                   <ProtectedRoute>
-                    {/* <Notifications /> */}
+                    <NotificationsPage />
                     <></>
                   </ProtectedRoute>
                 } />

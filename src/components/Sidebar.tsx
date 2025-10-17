@@ -4,14 +4,17 @@ import HomeIcon from '../icons/home.svg';
 import SendIcon from '../icons/send.svg';
 import CastIcon from '../icons/cast.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
-import NotificationBell from './NotificationBell';
+import NotificationIcon from '../icons/bell.svg';
+import { useNotifications } from '../hooks/feeds/useNotifications';
 import './Sidebar.css';
+import '../pages/Notifications.css';
 
 interface SidebarProps {}
 
 const Sidebar: React.FC<SidebarProps> = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { unreadCount } = useNotifications();
 
   const handleFeedsClick = () => {
     navigate('/feeds');
@@ -84,7 +87,14 @@ const Sidebar: React.FC<SidebarProps> = () => {
           className={`sidebar-button ${isActive('/notifications') ? 'active' : ''}`}
           title="Notifications"
         >
-          {/* <NotificationBell className="sidebar-icon" showClickHandler={false} /> */}
+          <div className="notification-icon-wrapper">
+            <img src={NotificationIcon} alt="Notifications" className="sidebar-icon" />
+            {unreadCount > 0 && (
+              <div className="notification-badge">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </div>
+            )}
+          </div>
           <span className="sidebar-label">Notifications</span>
         </button>
       </nav>

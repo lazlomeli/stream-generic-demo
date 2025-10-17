@@ -5,47 +5,7 @@
   background-color: white;
   border-radius: 0.5rem;
   padding: 1.5rem;
-  border: 1px solid rgb(229 231 235);
-}
-
-/* Header Section */
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.back-button {
-  color: rgb(107 114 128);
-  transition: color 0.2s ease;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-}
-
-.back-button:hover {
-  color: rgb(31 41 55);
-  background-color: rgb(243 244 246);
-}
-
-.header-content {
-  flex: 1;
-}
-
-.profile-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: rgb(31 41 55);
-  margin: 0;
-}
-
-.profile-handle {
-  color: rgb(107 114 128);
-  font-size: 0.875rem;
-  margin: 0.25rem 0 0 0;
+  border: 1px solid rgb(229, 231, 235);
 }
 
 /* Profile Info Section */
@@ -59,7 +19,7 @@
 .profile-avatar {
   width: 4rem;
   height: 4rem;
-  background-color: rgb(37 99 235);
+  background-color: rgb(37, 99, 235);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -79,14 +39,14 @@
 .profile-name {
   font-size: 1.125rem;
   font-weight: 600;
-  color: rgb(31 41 55);
-  margin: 0;
+  color: rgb(31, 41, 55);
+  margin: 0 0 0.25rem 0;
 }
 
 .profile-username {
-  color: rgb(107 114 128);
+  color: rgb(107, 114, 128);
   font-size: 0.875rem;
-  margin: 0.25rem 0 0 0;
+  margin: 0;
 }
 
 /* Follow Button */
@@ -103,21 +63,22 @@
 }
 
 .follow-toggle-button.following {
-  background-color: rgb(75 85 99);
-  color: white;
+  background-color: rgb(229, 231, 235);
+  color: rgb(31, 41, 55);
 }
 
 .follow-toggle-button.following:hover:not(:disabled) {
-  background-color: rgb(220 38 38);
+  background-color: rgb(220, 38, 38);
+  color: white;
 }
 
 .follow-toggle-button:not(.following) {
-  background-color: rgb(37 99 235);
+  background-color: rgb(37, 99, 235);
   color: white;
 }
 
 .follow-toggle-button:not(.following):hover:not(:disabled) {
-  background-color: rgb(29 78 216);
+  background-color: rgb(29, 78, 216);
 }
 
 .follow-toggle-button:disabled {
@@ -128,7 +89,7 @@
 .follow-loading-spinner {
   width: 1rem;
   height: 1rem;
-  border: 2px solid white;
+  border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -146,20 +107,30 @@
 
 /* Bio Section */
 .profile-bio-section {
-  border-top: 1px solid rgb(229 231 235);
+  border-top: 1px solid rgb(229, 231, 235);
   padding-top: 1.5rem;
 }
 
 .bio-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: rgb(31 41 55);
-  margin-bottom: 0.75rem;
+  color: rgb(31, 41, 55);
+  margin: 0 0 0.75rem 0;
 }
 
 .bio-text {
-  color: rgb(107 114 128);
+  color: rgb(107, 114, 128);
   line-height: 1.5;
+  margin: 0;
+}
+
+/* Not Found State */
+.user-not-found {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  color: rgb(31, 41, 55);
+  border: 1px solid rgb(229, 231, 235);
 }
 
 @keyframes spin {

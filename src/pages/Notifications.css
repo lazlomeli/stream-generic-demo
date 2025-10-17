@@ -1,0 +1,101 @@
+/* Notifications Page Styles */
+
+.notifications-container {
+  /* Main container styles handled by parent */
+}
+
+/* Header Section */
+.notifications-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgb(229, 231, 235);
+  font-weight: 700;
+  padding: 1rem 1rem 0 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.notifications-title {
+  font-size: 1.25rem;
+  color: rgb(31, 41, 55);
+  margin: 0 0 0.5rem 0;
+}
+
+.notifications-subtitle {
+  color: rgb(107, 114, 128);
+  font-size: 0.875rem;
+  font-weight: 300;
+  margin: 0 0 1rem 0;
+}
+
+/* Empty State */
+.notifications-empty {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.notifications-empty-title {
+  color: rgb(107, 114, 128);
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.notifications-empty-description {
+  color: rgb(156, 163, 175);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Notifications List */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notification-item {
+  /* Individual notification item styling */
+}
+
+/* Loading State */
+.notifications-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: rgb(31, 41, 55);
+}
+
+/* Error State */
+.notifications-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: rgb(239, 68, 68);
+}
+
+/* Notification Badge (for Sidebar) */
+.notification-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background-color: rgb(239, 68, 68);
+  color: white;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  height: 1.25rem;
+  width: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+}
