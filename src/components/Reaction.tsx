@@ -6,6 +6,7 @@ import { useUser } from "../hooks/feeds/useUser";
 import { ActivityResponse } from "@stream-io/feeds-client";
 import { Heart, Bookmark, Pin, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import "./Reaction.css";
 
 type Props = {
   activity: ActivityResponse;
@@ -167,14 +168,16 @@ export default function ReactionsPanel({ activity }: Props) {
 
   const getReactionStyles = (type: string) => {
     const hasReaction = userReactions.has(type);
-    const baseStyles =
-      "flex items-center space-x-2 text-gray-400 hover:text-red-400 cursor-pointer transition-colors";
-
+    
     switch (type) {
       case "like":
-        return `${baseStyles} ${hasReaction ? "text-red-400" : ""}`;
+        return `reaction-button like ${hasReaction ? "active" : ""}`;
+      case "pin":
+        return `reaction-button pin ${isPinned ? "active" : ""}`;
+      case "bookmark":
+        return `reaction-button bookmark ${isBookmarked ? "active" : ""}`;
       default:
-        return baseStyles;
+        return "reaction-button";
     }
   };
 
@@ -183,11 +186,11 @@ export default function ReactionsPanel({ activity }: Props) {
   };
 
   return (
-    <div className="flex items-center justify-between mt-4 pt-4">
-      <div className="flex items-center space-x-6">
-        <button title="Comments" className={getReactionStyles("messages")}>
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-sm">{activity.comment_count}</span>
+    <div className="reactions-container">
+      <div className="reactions-buttons">
+        <button title="Comments" className="reaction-button">
+          <MessageCircle className="reaction-icon" />
+          <span className="reaction-count">{activity.comment_count}</span>
         </button>
         {/* Like/Heart */}
         <button
@@ -197,36 +200,32 @@ export default function ReactionsPanel({ activity }: Props) {
           title={userReactions.has("like") ? "Unlike" : "Like"}
         >
           <Heart
-            className={`w-5 h-5 ${
-              userReactions.has("like") ? "fill-current" : ""
+            className={`reaction-icon ${
+              userReactions.has("like") ? "filled" : ""
             }`}
           />
-          <span className="text-sm">{reactionCount("like")}</span>
+          <span className="reaction-count">{reactionCount("like")}</span>
         </button>
 
         {/* Pin */}
         <button
           disabled={loading}
           onClick={handlePin}
-          className={`flex items-center space-x-2 transition-colors cursor-pointer ${
-            isPinned ? "text-blue-400" : "text-gray-400 hover:text-blue-400"
-          }`}
+          className={getReactionStyles("pin")}
           title={isPinned ? "Unpin" : "Pin"}
         >
-          <Pin className={`w-5 h-5 ${isPinned ? "fill-current" : ""}`} />
+          <Pin className={`reaction-icon ${isPinned ? "filled" : ""}`} />
         </button>
 
         {/* Bookmark */}
         <button
           disabled={loading}
           onClick={handleBookmark}
-          className={`flex items-center space-x-2 transition-colors cursor-pointer ${
-            isBookmarked ? "text-blue-400" : "text-gray-400 hover:text-blue-400"
-          }`}
+          className={getReactionStyles("bookmark")}
           title={isBookmarked ? "Remove bookmark" : "Bookmark"}
         >
           <Bookmark
-            className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`}
+            className={`reaction-icon ${isBookmarked ? "filled" : ""}`}
           />
         </button>
       </div>

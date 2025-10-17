@@ -62,7 +62,7 @@ const connectUser = async (user: User): Promise<FeedsClient> => {
 export function useUser() {
   // const queryClient = useQueryClient();
   const [showUserModal, setShowUserModal] = useState(false);
-  const { isAuthenticated, user: auth0User } = useAuth0();
+  const { isAuthenticated, user: auth0User } = useAuth0(); // esto siempre me va a dar a mi mismo
 
   const sanitizedUser: User = {
     ...auth0User,

@@ -7,6 +7,7 @@ import ReactionsPanel from "./Reaction";
 import { useFeedActions } from "../hooks/feeds/useFeedActions";
 import CommentsPanel from "./Comment";
 import { useNavigate } from "react-router-dom";
+import "./Activity.css";
 
 export default function Activity({ activity }: { activity: ActivityResponse }) {
   const { user } = useUser();
@@ -18,35 +19,35 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
   };
 
   return (
-    <article className="border-b-2 border-gray-800 shadow-sm my-4 p-4 transition-colors">
-      <div className="flex items-start space-x-3 mb-4">
+    <article className="activity-container">
+      <div className="activity-header">
         {activity.user?.id ? (
           <div 
             onClick={() => {handleUserClick(activity.user.id); console.log('activity.user.id', activity.user.id)}}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
+            className="activity-user-avatar"
           >
             <UserAvatar userId={activity.user?.name || "..."} />
           </div>
         ) : (
           <UserAvatar userId={activity.user?.name || "..."} />
         )}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
+        <div className="activity-content">
+          <div className="activity-user-info">
+            <div className="activity-user-details">
               {activity.user?.id ? (
                 <button
                   onClick={() => handleUserClick(activity.user.id)}
-                  className="font-semibold text-white truncate overflow-hidden whitespace-nowrap max-w-[50%] hover:text-blue-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-left focus:outline-none"
+                  className="activity-username-button"
                 >
                   {activity.user?.name || activity.user?.id || "..."}
                 </button>
               ) : (
-                <span className="font-semibold text-white truncate overflow-hidden whitespace-nowrap max-w-[50%]">
+                <span className="activity-username-text">
                   {activity.user?.name || activity.user?.id || "..."}
                 </span>
               )}
               {activity.created_at && (
-                <span className="text-sm text-gray-400">
+                <span className="activity-timestamp">
                   {new Date(activity.created_at).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -56,14 +57,15 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="activity-actions">
               {activity.user?.id && activity.user.id !== user?.id && (
+                // Follow button
                 <UserActions targetUserId={activity.user.id} />
               )}
               {activity.user?.id === user?.id && (
                 <button
                   onClick={() => handleDeleteActivity(activity.id)}
-                  className="remove-activity text-red-400 hover:bg-gray-700 rounded-full cursor-pointer transition-colors p-2"
+                  className="activity-delete-button"
                   title="Delete activity"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -71,7 +73,7 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
               )}
             </div>
           </div>
-          <p className="text-gray-200 text-lg leading-relaxed">
+          <p className="activity-text">
             {activity.text || activity.type}
           </p>
         </div>

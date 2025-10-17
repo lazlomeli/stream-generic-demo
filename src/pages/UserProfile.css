@@ -1,0 +1,169 @@
+/* UserProfile Component Styles */
+
+/* Main Container */
+.user-profile-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgb(229 231 235);
+}
+
+/* Header Section */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.back-button {
+  color: rgb(107 114 128);
+  transition: color 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.back-button:hover {
+  color: rgb(31 41 55);
+  background-color: rgb(243 244 246);
+}
+
+.header-content {
+  flex: 1;
+}
+
+.profile-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgb(31 41 55);
+  margin: 0;
+}
+
+.profile-handle {
+  color: rgb(107 114 128);
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Profile Info Section */
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+  width: 4rem;
+  height: 4rem;
+  background-color: rgb(37 99 235);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar-text {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.profile-details {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(31 41 55);
+  margin: 0;
+}
+
+.profile-username {
+  color: rgb(107 114 128);
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Follow Button */
+.follow-toggle-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  cursor: pointer;
+}
+
+.follow-toggle-button.following {
+  background-color: rgb(75 85 99);
+  color: white;
+}
+
+.follow-toggle-button.following:hover:not(:disabled) {
+  background-color: rgb(220 38 38);
+}
+
+.follow-toggle-button:not(.following) {
+  background-color: rgb(37 99 235);
+  color: white;
+}
+
+.follow-toggle-button:not(.following):hover:not(:disabled) {
+  background-color: rgb(29 78 216);
+}
+
+.follow-toggle-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.follow-loading-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.follow-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Stats Section */
+.profile-stats-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Bio Section */
+.profile-bio-section {
+  border-top: 1px solid rgb(229 231 235);
+  padding-top: 1.5rem;
+}
+
+.bio-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(31 41 55);
+  margin-bottom: 0.75rem;
+}
+
+.bio-text {
+  color: rgb(107 114 128);
+  line-height: 1.5;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

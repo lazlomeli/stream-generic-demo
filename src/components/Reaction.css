@@ -1,0 +1,81 @@
+/* Reaction Component Styles */
+.reactions-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.reactions-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.reaction-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(107 114 128);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.reaction-button:hover {
+  color: rgb(220 38 38);
+}
+
+.reaction-button.like {
+  color: rgb(107 114 128);
+}
+
+.reaction-button.like:hover {
+  color: rgb(220 38 38);
+}
+
+.reaction-button.like.active {
+  color: rgb(220 38 38);
+}
+
+.reaction-button.pin {
+  color: rgb(107 114 128);
+  transition: color 0.2s ease;
+}
+
+.reaction-button.pin:hover {
+  color: rgb(37 99 235);
+}
+
+.reaction-button.pin.active {
+  color: rgb(37 99 235);
+}
+
+.reaction-button.bookmark {
+  color: rgb(107 114 128);
+  transition: color 0.2s ease;
+}
+
+.reaction-button.bookmark:hover {
+  color: rgb(37 99 235);
+}
+
+.reaction-button.bookmark.active {
+  color: rgb(37 99 235);
+}
+
+.reaction-count {
+  font-size: 0.875rem;
+}
+
+.reaction-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.reaction-icon.filled {
+  fill: currentColor;
+}

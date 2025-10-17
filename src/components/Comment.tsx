@@ -8,6 +8,7 @@ import { Avatar } from "./Avatar";
 import { useUser } from "../hooks/feeds/useUser";
 import { useComments } from "../hooks/feeds/useComments";
 import toast from "react-hot-toast";
+import "./Comment.css";
 
 interface CommentsPanelProps {
   activity: ActivityResponse;
@@ -45,15 +46,15 @@ const ReplyForm = ({
   };
 
   return (
-    <div className="mt-3 ml-8">
-      <div className="flex items-start gap-3">
+    <div className="reply-form-container">
+      <div className="reply-form-wrapper">
         <Avatar userName={user?.name} size="sm" />
-        <div className="flex-1">
+        <div className="reply-form-content">
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder={`Reply to ${comment.user?.name || "unknown"}...`}
-            className="w-full rounded-lg bg-zinc-900 text-white p-3 text-sm border border-gray-600 !outline-none resize-none"
+            className="reply-textarea"
             style={{ direction: "ltr", textAlign: "left" }}
             rows={2}
             autoFocus
@@ -68,23 +69,23 @@ const ReplyForm = ({
               }
             }}
           />
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex gap-2">
+          <div className="reply-controls">
+            <div className="reply-buttons">
               <button
                 onClick={handleSubmit}
                 disabled={isLoading || !replyText.trim()}
-                className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="reply-submit-button"
               >
                 {isLoading ? "Posting..." : "Reply"}
               </button>
               <button
                 onClick={handleCancel}
-                className="bg-gray-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                className="reply-cancel-button"
               >
                 Cancel
               </button>
             </div>
-            <span className="text-xs text-gray-400">
+            <span className="reply-character-count">
               {replyText.length}/280
             </span>
           </div>
@@ -259,15 +260,12 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
 
   const getReactionStyles = (comment: CommentResponse, type: string) => {
     const hasReaction = getUserReactionForComment(comment, type);
-    const baseStyles = "hover:scale-110 transition-all cursor-pointer";
 
     switch (type) {
       case "like":
-        return `${baseStyles} ${
-          hasReaction ? "text-red-400" : "text-gray-400 hover:text-red-400"
-        }`;
+        return `comment-reaction-button like ${hasReaction ? "active" : ""}`;
       default:
-        return `${baseStyles} text-gray-400`;
+        return "comment-reaction-button";
     }
   };
 
@@ -315,22 +313,22 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
 
     return (
       <div className={`${indentClass}`}>
-        <div className="flex gap-3 p-3 pt-0 transition-colors relative z-30">
+        <div className="comment-item-wrapper">
           <Avatar userName={comment.user.name} size="sm" />
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-gray-100 text-sm">
+          <div className="comment-item-content">
+            <div className="comment-header">
+              <span className="comment-author">
                 {comment.user?.name || "unknown"}
               </span>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="text-gray-400 text-xs">
+              <span className="comment-separator">•</span>
+              <span className="comment-timestamp">
                 {comment.created_at &&
                   new Date(comment.created_at).toLocaleDateString()}
               </span>
             </div>
-            <p className="text-gray-200 text-sm mb-2">{comment.text}</p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
+            <p className="comment-text">{comment.text}</p>
+            <div className="comment-actions">
+              <div className="comment-reactions-group">
                 <button
                   title="Like"
                   data-cid={comment.id}
@@ -346,7 +344,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                   />
                 </button>
                 {(reactionCounts[comment.id]?.["like"] > 0 || (comment.latest_reactions && comment.latest_reactions.length > 0)) && (
-                  <span className="text-xs text-gray-400">
+                  <span className="comment-reaction-count">
                     {(reactionCounts[comment.id]?.["like"] || (comment.latest_reactions && comment.latest_reactions.length) || 0)} like
                     {(reactionCounts[comment.id]?.["like"] || (comment.latest_reactions && comment.latest_reactions.length) || 0) > 1 ? "s" : ""}
                   </span>
@@ -357,7 +355,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                   onClick={() =>
                     setReplyingTo(replyingTo === comment.id ? null : comment.id)
                   }
-                  className="cursor-pointer transition-colors text-sm hover:bg-gray-500 px-2 py-1 rounded-md flex items-center gap-1"
+                  className="comment-reply-button"
                 >
                   <TextQuote className="w-4 h-4" /> Reply
                 </button>
@@ -365,7 +363,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
               {comment.user?.id === user?.id && (
                 <button
                   onClick={() => handleDeleteComment(comment.id)}
-                  className="text-red-400 hover:text-white transition-colors text-sm cursor-pointer hover:bg-red-500 px-2 py-1 rounded-md flex items-center gap-1"
+                  className="comment-delete-button"
                 >
                   <Trash2 className="w-4 h-4" /> Delete
                 </button>
@@ -385,10 +383,10 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
         </div>
 
         {comment.replies && comment.replies.length > 0 && (
-          <div className="relative">
-            <div className="space-y-2">
+          <div className="replies-container">
+            <div className="replies-list">
               {comment.replies.map((reply) => (
-                <div key={reply.id} className="relative z-10">
+                <div key={reply.id} className="reply-item">
                   <CommentItem comment={reply} level={level + 1} />
                 </div>
               ))}
@@ -401,20 +399,20 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
 
   return (
     <div
-      className="mt-4 border-t border-gray-800 pt-4"
+      className="comments-container"
       data-activity-id={activity.id}
     >
       {/* Comment Input Section */}
       {showCommentInput ? (
-        <div className="mb-4">
-          <div className="flex items-start gap-3">
+        <div className="comment-input-section">
+          <div className="comment-input-wrapper">
             <Avatar userName={user?.name} size="sm" />
-            <div className="flex-1">
+            <div className="comment-input-content">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Write a comment..."
-                className="w-full rounded-lg bg-zinc-900 text-white p-3 text-sm border border-gray-600 !outline-none resize-none"
+                className="comment-textarea"
                 style={{ direction: "ltr", textAlign: "left" }}
                 rows={3}
                 autoFocus
@@ -434,12 +432,12 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                   }
                 }}
               />
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex gap-2">
+              <div className="comment-controls">
+                <div className="comment-buttons">
                   <button
                     onClick={handleAddComment}
                     disabled={loading || !newComment.trim()}
-                    className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="comment-submit-button"
                   >
                     {loading ? "Posting..." : "Post"}
                   </button>
@@ -448,12 +446,12 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                       setShowCommentInput(false);
                       setNewComment("");
                     }}
-                    className="bg-gray-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                    className="comment-cancel-button"
                   >
                     Cancel
                   </button>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="comment-character-count">
                   {newComment.length}/280
                 </span>
               </div>
@@ -461,10 +459,10 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
           </div>
         </div>
       ) : (
-        <div className="mb-4">
+        <div className="comment-placeholder">
           <button
             onClick={() => setShowCommentInput(true)}
-            className="w-full text-left p-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 transition-colors text-gray-300 cursor-pointer"
+            className="comment-placeholder-button"
           >
             Write a comment...
           </button>
@@ -473,8 +471,8 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
 
       {/* Comments List */}
       {activity.comments.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300 mb-3">
+        <div className="comments-list">
+          <h3 className="comments-title">
             Comments ({activity.comment_count})
           </h3>
           {organizeComments(activity.comments).map((comment) => (
@@ -484,7 +482,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
       )}
 
       {activity.comments.length === 0 && !showCommentInput && (
-        <div className="text-center py-6 text-gray-400 text-sm">
+        <div className="comments-empty">
           No comments yet. Be the first to comment!
         </div>
       )}

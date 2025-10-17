@@ -5,12 +5,9 @@ import { UserPlus, UserMinus, ArrowLeft } from "lucide-react";
 // import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FeedsClient } from "@stream-io/feeds-client";
-import { useNavigate } from "react-router-dom";
-import { useUserActions } from "../hooks/feeds/useUserActions";
+import { useParams } from "react-router-dom";
 
 interface UserProfileProps {
-  userId: string;
-  userName: string;
   onBack?: () => void;
 }
 
@@ -40,75 +37,84 @@ const getUserNameFromActivities = async (
   }
 };
 
-// export function UserProfile({ userId, userName, onBack }: UserProfileProps) {
-export function UserProfile() {
+export function UserProfile({ onBack }: UserProfileProps) {
   const { user: currentUser, client } = useUser();
-  const [realUserName, setRealUserName] = useState(currentUser?.name);
-  const navigate = useNavigate();
-  const { isOwnUser } = useUserActions(currentUser?.nickname!);
-
+  const { userId } = useParams<{ userId: string }>();
+//   const router = useRouter();
+  const [realUserName, setRealUserName] = useState('');
+  
+  // Handle case where userId might be undefined
+  if (!userId) {
+    return <div className="bg-zinc-900 rounded-lg p-6 text-white">User not found</div>;
+  }
+  
   const {
     isFollowing,
     followUser,
     unfollowUser,
     isFollowingLoading,
     isUnfollowingLoading,
-  } = useProfileStats(currentUser?.nickname);
+  } = useProfileStats(userId);
 
-  const isFollowingUser = isFollowing(currentUser?.nickname!);
+  const isOwnProfile = currentUser?.id === userId;
+  const isFollowingUser = isFollowing(userId);
 
+  // Get real user name from activities
   useEffect(() => {
     const fetchRealUserName = async () => {
-      if (client && currentUser?.nickname) {
-        const realName = await getUserNameFromActivities(client, currentUser?.nickname!);
+      if (client && userId) {
+        const realName = await getUserNameFromActivities(client, userId);
         setRealUserName(realName);
       }
     };
     fetchRealUserName();
-  }, [client, currentUser?.nickname]);
+  }, [client, userId]);
+  
+  // Set default user name while loading
+  const displayUserName = realUserName || `User ${userId.replace("user-", "")}`;
 
   const handleFollowToggle = () => {
     if (isFollowingUser) {
-      unfollowUser(currentUser?.nickname!);
+      console.log('111')
+      unfollowUser(userId);
     } else {
-      followUser(currentUser?.nickname!);
+      console.log('222')
+      followUser(userId);
     }
   };
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+    //   router.back();
+    }
+  };
 
   return (
     <div className="bg-zinc-900 rounded-lg p-6">
       {/* Header */}
-      <div className="flex items-center space-x-4 mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="text-gray-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">{realUserName}</h1>
-          <p className="text-gray-400 text-sm">@{currentUser?.nickname}</p>
-        </div>
-      </div>
 
       {/* Profile Info */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
           <span className="text-white text-2xl font-bold">
-            {currentUser?.name?.charAt(0).toUpperCase()}
+            {displayUserName.charAt(0).toUpperCase()}
           </span>
         </div>
         
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-white">{realUserName}</h2>
-          <p className="text-gray-400 text-sm">@{currentUser?.nickname}</p>
+          <h2 className="text-lg font-semibold text-white">{displayUserName}</h2>
+          <p className="text-gray-400 text-sm">@{userId}</p>
         </div>
 
         {/* Follow/Unfollow Button - Only show if not own profile */}
-        {!isOwnUser && currentUser && (
+        {!isOwnProfile && currentUser && (
           <button
-            onClick={handleFollowToggle}
+            onClick={() => {
+              console.log('click follow')
+              handleFollowToggle();
+            }}
             disabled={isFollowingLoading || isUnfollowingLoading}
             className={`px-4 py-2 rounded-full font-medium transition-colors flex items-center space-x-2 ${
               isFollowingUser
@@ -135,7 +141,7 @@ export function UserProfile() {
 
       {/* Stats */}
       <div className="mb-6">
-        <ProfileStats user={{ id: currentUser?.nickname!, name: realUserName }} isOwnProfile={isOwnUser} />
+        <ProfileStats user={{ id: userId, name: displayUserName }} isOwnProfile={isOwnProfile} />
       </div>
 
       {/* Bio Section */}

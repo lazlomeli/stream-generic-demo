@@ -1,3 +1,4 @@
+import { FeedsClient } from '@stream-io/feeds-client';
 import { StreamClient } from '@stream-io/node-sdk';
 import express from 'express';
 

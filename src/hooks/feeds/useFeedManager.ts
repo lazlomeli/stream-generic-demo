@@ -92,8 +92,6 @@ export function useFeedManager() {
   const [feedType, setFeedType] = useState<"timeline" | "user">("timeline");
   const feedTypeRef = useRef(feedType);
 
-    console.log('FEED MANAGER USER', user);
-
   // Update ref when feedType changes
   useEffect(() => {
     feedTypeRef.current = feedType;

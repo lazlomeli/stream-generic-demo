@@ -128,16 +128,42 @@ const followUser = async (
   targetUserId: string
 ): Promise<void> => {
   if (!client || !sourceUserId || !targetUserId) return;
+  
+  console.log('client', client);
+  console.log('sourceUserId', sourceUserId);
+  console.log('targetUserId', targetUserId);
+  console.log('source', `timeline:${sourceUserId}`);
+  console.log('target', `user:${targetUserId}`);
+  console.log('create_notification_activity', true);
 
   try {
+    // const existingFollows = await client.queryFollows({
+    //   filter: {
+    //     source_feed: `timeline:${sourceUserId}`,
+    //     target_feed: `user:${targetUserId}`,
+    //   },
+    // });
+  
+    // if (existingFollows.follows.length > 0) {
+    //   console.log('Follow already exists, skipping...');
+    //   toast.success("Already following this user");
+    //   return;
+    // }
+    
     await client.follow({
       source: `timeline:${sourceUserId}`,
       target: `user:${targetUserId}`,
       create_notification_activity: true,
     });
+    console.log('555');
     toast.success("Successfully followed user");
-  } catch (error) {
-    console.error("Error following user:", error);
+  } catch (error: any) {
+    if (error.code === 4 && error.message?.includes('already exists')) {
+      console.log('Follow already exists (caught error)');
+      toast.success("Already following this user");
+      return;
+    }
+    
     toast.error("Error following user");
     throw error;
   }
@@ -151,6 +177,8 @@ const unfollowUser = async (
 ): Promise<void> => {
   if (!client || !sourceUserId || !targetUserId) return;
 
+  console.log('[unfollowUser] sourceUserId', sourceUserId);
+  console.log('[unfollowUser] targetUserId', targetUserId);
   try {
     await client.unfollow({
       source: `timeline:${sourceUserId}`,
@@ -167,7 +195,10 @@ const unfollowUser = async (
 export function useProfileStats(userId?: string) {
   const { client, user } = useUser();
   const queryClient = useQueryClient();
-  const targetUserId = userId || user?.id;
+  const targetUserId = userId || user?.nickname;
+
+  // console.log('targetUserId', targetUserId); -> el usuario que quiero seguir (mismo que userId)
+  // console.log('user', user); -> soy yo
 
   // Query for followers
   const {
@@ -202,9 +233,9 @@ export function useProfileStats(userId?: string) {
     data: currentUserFollowing = [],
     isLoading: currentUserFollowingLoading,
   } = useQuery({
-    queryKey: [...FOLLOWING_QUERY_KEY, user?.id],
-    queryFn: () => fetchFollowing(client!, user!.id),
-    enabled: !!client && !!user?.id && !!targetUserId && user.id !== targetUserId,
+    queryKey: [...FOLLOWING_QUERY_KEY, user?.nickname],
+    queryFn: () => fetchFollowing(client!, user?.nickname!),
+    enabled: !!client && !!user?.nickname && !!targetUserId && user.nickname !== targetUserId,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -212,8 +243,10 @@ export function useProfileStats(userId?: string) {
   // Follow mutation
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      if (!user?.id) throw new Error("User not authenticated");
-      return followUser(client!, user.id, targetUserId);
+      console.log('entra aqui?', user); // esta pillando el mismo usuario en vez del otro
+      if (!user?.nickname) throw new Error("User not authenticated");
+      console.log('y aqui?');
+      return followUser(client!, user.nickname, targetUserId);
     },
     onSuccess: () => {
       // Invalidate and refetch followers/following data
@@ -224,10 +257,10 @@ export function useProfileStats(userId?: string) {
         queryKey: [...FOLLOWING_QUERY_KEY, targetUserId],
       });
       queryClient.invalidateQueries({
-        queryKey: [...FOLLOWERS_QUERY_KEY, user?.id],
+        queryKey: [...FOLLOWERS_QUERY_KEY, user?.nickname],
       });
       queryClient.invalidateQueries({
-        queryKey: [...FOLLOWING_QUERY_KEY, user?.id],
+        queryKey: [...FOLLOWING_QUERY_KEY, user?.nickname],
       });
     },
   });
@@ -235,8 +268,8 @@ export function useProfileStats(userId?: string) {
   // Unfollow mutation
   const unfollowMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      if (!user?.id) throw new Error("User not authenticated");
-      return unfollowUser(client!, user.id, targetUserId);
+      if (!user?.nickname) throw new Error("User not authenticated");
+      return unfollowUser(client!, user.nickname, targetUserId);
     },
     onSuccess: () => {
       // Invalidate and refetch followers/following data
@@ -247,24 +280,24 @@ export function useProfileStats(userId?: string) {
         queryKey: [...FOLLOWING_QUERY_KEY, targetUserId],
       });
       queryClient.invalidateQueries({
-        queryKey: [...FOLLOWERS_QUERY_KEY, user?.id],
+        queryKey: [...FOLLOWERS_QUERY_KEY, user?.nickname],
       });
       queryClient.invalidateQueries({
-        queryKey: [...FOLLOWING_QUERY_KEY, user?.id],
+        queryKey: [...FOLLOWING_QUERY_KEY, user?.nickname],
       });
     },
   });
 
   // Check if current user is following target user
   const isFollowing = (targetUserId: string): boolean => {
-    if (!user?.id) return false;
+    if (!user?.nickname) return false;
     // Check if the current user is following the target user
     return currentUserFollowing.some((followedUser) => followedUser.id === targetUserId);
   };
 
   // Check if target user is following current user
   const isFollowedBy = (targetUserId: string): boolean => {
-    if (!user?.id) return false;
+    if (!user?.nickname) return false;
     // Check if the target user is following the current user
     return followers.some((follower) => follower.id === targetUserId);
   };

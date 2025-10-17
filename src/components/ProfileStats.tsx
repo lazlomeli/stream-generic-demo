@@ -6,6 +6,7 @@ import { useUser } from "../hooks/feeds/useUser";
 import { X, UserPlus, UserMinus } from "lucide-react";
 import { User } from "@auth0/auth0-react";
 import { useUserActions } from "../hooks/feeds/useUserActions";
+import "./ProfileStats.css";
 
 interface ProfileStatsProps {
   user: User;
@@ -42,49 +43,49 @@ function FollowersModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 rounded-lg w-full max-w-md mx-4 max-h-[80vh] overflow-hidden">
+    <div className="modal-overlay">
+      <div className="modal-container">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <div className="modal-header">
+          <h3 className="modal-title">{title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="modal-close-button"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
+        <div className="modal-content">
           {isLoading ? (
-            <div className="text-center py-8">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-gray-400">Loading...</p>
+            <div className="modal-loading">
+              <div className="loading-spinner" />
+              <p className="loading-text">Loading...</p>
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400">No {title.toLowerCase()} found</p>
+            <div className="modal-empty">
+              <p className="empty-text">No {title.toLowerCase()} found</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="user-list">
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg"
+                  className="user-item"
                 >
                   <Link
                     to={`/profile/${user.id}`}
-                    className="flex items-center space-x-3 flex-1 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="user-info-link"
                   >
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-medium">
+                    <div className="user-avatar">
+                      <span className="user-avatar-text">
                         {user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-white font-medium">{user.name}</p>
-                      <p className="text-gray-400 text-sm">@{user.id}</p>
+                    <div className="user-details">
+                      <p className="user-name">{user.name}</p>
+                      <p className="user-handle">@{user.id}</p>
                     </div>
                   </Link>
                   {/* Only show follow buttons if not own profile */}
@@ -98,10 +99,10 @@ function FollowersModal({
                         }
                       }}
                       disabled={isFollowLoading || isUnfollowLoading}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`follow-button ${
                         isFollowing(user.id)
-                          ? "bg-gray-600 text-white hover:bg-red-600"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
+                          ? "following"
+                          : ""
                       }`}
                     >
                       {isFollowing(user.id) ? (
@@ -139,9 +140,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
     isUnfollowingLoading,
   } = profileStats;
 
-  console.log('isownprofile', isOwnProfile);
-  console.log('isownuser', isOwnUser);
-
   // Filter out current user from lists when viewing own profile
   const filteredFollowers = isOwnProfile 
     ? followers.filter(follower => follower.id !== user.id)
@@ -170,49 +168,49 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
 
   return (
     <>
-      <div className="flex items-center space-x-6">
+      <div className="profile-stats-container">
         {/* Followers */}
         <button
           onClick={() => handleOpenModal("followers")}
-          className="text-center hover:opacity-80 transition-opacity"
+          className="stat-button"
         >
-          <div className="text-2xl font-bold text-white">{filteredFollowers.length}</div>
-          <div className="text-gray-400 text-sm">Followers</div>
+          <div className="stat-number">{filteredFollowers.length}</div>
+          <div className="stat-label">Followers</div>
         </button>
 
         {/* Following */}
         <button
           onClick={() => handleOpenModal("following")}
-          className="text-center hover:opacity-80 transition-opacity"
+          className="stat-button"
         >
-          <div className="text-2xl font-bold text-white">{filteredFollowing.length}</div>
-          <div className="text-gray-400 text-sm">Following</div>
+          <div className="stat-number">{filteredFollowing.length}</div>
+          <div className="stat-label">Following</div>
         </button>
       </div>
 
       {/* Combined Modal with Tabs */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 rounded-lg w-full max-w-md mx-4 max-h-[80vh] overflow-hidden">
+        <div className="modal-overlay">
+          <div className="modal-container">
             {/* Header with Tabs */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
-              <div className="flex space-x-1">
+            <div className="modal-tabs-header">
+              <div className="modal-tabs">
                 <button
                   onClick={() => setActiveTab("followers")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`tab-button ${
                     activeTab === "followers"
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "active"
+                      : ""
                   }`}
                 >
                   Followers ({filteredFollowers.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("following")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`tab-button ${
                     activeTab === "following"
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "active"
+                      : ""
                   }`}
                 >
                   Following ({filteredFollowing.length})
@@ -220,42 +218,42 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
               </div>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="modal-close-button"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
+            <div className="modal-content">
               {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-gray-400">Loading...</p>
+                <div className="modal-loading">
+                  <div className="loading-spinner" />
+                  <p className="loading-text">Loading...</p>
                 </div>
               ) : getCurrentUsers().length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No {getCurrentTitle().toLowerCase()} found</p>
+                <div className="modal-empty">
+                  <p className="empty-text">No {getCurrentTitle().toLowerCase()} found</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="user-list">
                   {getCurrentUsers().map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg"
+                      className="user-item"
                     >
                       <Link
                         to={`/profile/${user.id}`}
-                        className="flex items-center space-x-3 flex-1 hover:opacity-80 transition-opacity cursor-pointer"
+                        className="user-info-link"
                       >
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-medium">
+                        <div className="user-avatar">
+                          <span className="user-avatar-text">
                             {user.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <p className="text-white font-medium">{user.name}</p>
-                          <p className="text-gray-400 text-sm">@{user.id}</p>
+                        <div className="user-details">
+                          <p className="user-name">{user.name}</p>
+                          <p className="user-handle">@{user.id}</p>
                         </div>
                       </Link>
                       {/* Only hide follow button for current user's own profile */}
@@ -269,10 +267,10 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                             }
                           }}
                           disabled={isFollowingLoading || isUnfollowingLoading}
-                          className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                          className={`follow-button ${
                             isFollowing(user.id)
-                              ? "bg-gray-600 text-white hover:bg-red-600"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
+                              ? "following"
+                              : ""
                           }`}
                         >
                           {isFollowing(user.id) ? (

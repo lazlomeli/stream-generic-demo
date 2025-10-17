@@ -17,12 +17,14 @@ export function useUserActions(targetUserId: string) {
   const isFollowing = followers.includes(targetUserId);
 
   const handleFollow = async () => {
+
     if (targetUserId === currentUserId || !client) return;
 
     try {
       setLoading(true);
 
       if (isFollowing) {
+        
         // Unfollow
         await client.unfollow({
           source: `timeline:${currentUserId}`,
@@ -30,13 +32,16 @@ export function useUserActions(targetUserId: string) {
         });
         removeFollower(targetUserId);
       } else {
+        
         // Follow with notification enabled
         await client.follow({
           source: `timeline:${currentUserId}`,
           target: `user:${targetUserId}`,
           create_notification_activity: true,
         });
+        
         addFollower(targetUserId);
+        
       }
       refetchTimelineGlobal();
     } catch {

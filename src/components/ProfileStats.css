@@ -1,0 +1,251 @@
+/* ProfileStats Component Styles */
+.profile-stats-container {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.stat-button {
+  text-align: center;
+  transition: opacity 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.stat-button:hover {
+  opacity: 0.8;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgb(31 41 55);
+}
+
+.stat-label {
+  color: rgb(107 114 128);
+  font-size: 0.875rem;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 1rem;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(31 41 55);
+}
+
+.modal-close-button {
+  color: rgb(107 114 128);
+  transition: color 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-close-button:hover {
+  color: rgb(31 41 55);
+}
+
+/* Modal Content */
+.modal-content {
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.modal-loading {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.loading-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid rgb(59 130 246);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 0.5rem;
+}
+
+.loading-text {
+  color: rgb(107 114 128);
+}
+
+.modal-empty {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.empty-text {
+  color: rgb(107 114 128);
+}
+
+/* User List */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: rgb(249 250 251);
+  border-radius: 0.5rem;
+}
+
+.user-info-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.user-info-link:hover {
+  opacity: 0.8;
+}
+
+.user-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: rgb(37 99 235);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar-text {
+  color: white;
+  font-weight: 500;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  color: rgb(31 41 55);
+  font-weight: 500;
+}
+
+.user-handle {
+  color: rgb(107 114 128);
+  font-size: 0.875rem;
+}
+
+/* Modal Tabs */
+.modal-tabs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.modal-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background-color: rgb(37 99 235);
+  color: white;
+}
+
+.tab-button:not(.active) {
+  color: rgb(107 114 128);
+}
+
+.tab-button:not(.active):hover {
+  color: rgb(31 41 55);
+}
+
+/* Follow Button */
+.follow-button {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.follow-button.following {
+  background-color: rgb(107 114 128);
+  color: white;
+}
+
+.follow-button.following:hover {
+  background-color: rgb(220 38 38);
+}
+
+.follow-button:not(.following) {
+  background-color: rgb(37 99 235);
+  color: white;
+}
+
+.follow-button:not(.following):hover {
+  background-color: rgb(29 78 216);
+}
+
+.follow-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

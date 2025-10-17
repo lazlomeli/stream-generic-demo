@@ -1,14 +1,27 @@
 import { UserPlus, UserMinus } from "lucide-react";
 import { Avatar } from "./Avatar";
-import { useUserActions } from "../hooks/feeds/useUserActions";
+import "./UserActions.css";
+import { useProfileStats } from "../hooks/feeds/useProfileStats";
+import { useUser } from "../hooks/feeds/useUser";
 
 interface UserActionsProps {
   targetUserId: string;
 }
 
 export function UserActions({ targetUserId }: UserActionsProps) {
-  const { isFollowing, isLoading, isOwnUser, handleFollow } =
-    useUserActions(targetUserId);
+  const { user } = useUser();
+  const { 
+    followUser, 
+    unfollowUser, 
+    isFollowing, 
+    isFollowingLoading, 
+    isUnfollowingLoading 
+  } = useProfileStats(targetUserId);
+
+  const currentUserId = user?.nickname || "";
+  const isOwnUser = targetUserId === currentUserId;
+  const isLoading = isFollowingLoading || isUnfollowingLoading;
+  const following = isFollowing(targetUserId);
 
   if (isOwnUser) {
     return null; // Don't show follow button for own posts
@@ -16,22 +29,20 @@ export function UserActions({ targetUserId }: UserActionsProps) {
 
   return (
     <button
-      onClick={handleFollow}
+      onClick={() => {
+        following ? unfollowUser(targetUserId) : followUser(targetUserId);
+      }}
       disabled={isLoading}
-      className={`cursor-pointer flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-        isFollowing
-          ? "bg-gray-600 text-white hover:bg-gray-700"
-          : "bg-blue-600 text-white hover:bg-blue-700"
-      }`}
+      className={`user-action-button ${following ? "following" : ""}`}
     >
       {isLoading ? (
-        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      ) : isFollowing ? (
-        <UserMinus className="w-4 h-4" />
+        <div className="loading-spinner" />
+      ) : following ? (
+        <UserMinus className="action-icon" />
       ) : (
-        <UserPlus className="w-4 h-4" />
+        <UserPlus className="action-icon" />
       )}
-      <span>{isFollowing ? "Unfollow" : "Follow"}</span>
+      <span>{following ? "Unfollow" : "Follow"}</span>
     </button>
   );
 }

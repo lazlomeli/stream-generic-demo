@@ -6,6 +6,7 @@ import { useUser } from "../hooks/feeds/useUser";
 import { Avatar } from "./Avatar";
 import { useFeedActions } from "../hooks/feeds/useFeedActions";
 import EmojiPicker, { Theme } from "emoji-picker-react";
+import "./Composer.css";
 
 export function Composer() {
   const [text, setText] = useState("");
@@ -54,13 +55,9 @@ export function Composer() {
   const isNearLimit = characterCount > maxLength * 0.9;
 
   return (
-    <div
-      className={`rounded-xl p-4 shadow-sm mb-4 border border-transparent bg-zinc-900 relative ${
-        isActive ? "border-zinc-600" : ""
-      }`}
-    >
+    <div className={`composer-container ${isActive ? "active" : ""}`}>
       <form onSubmit={handleSubmit}>
-        <div className="flex items-start space-x-3">
+        <div className="composer-form-container">
           <Avatar userName={user?.name} userId={user?.id} size="md" />
           <div className="flex-1">
             <textarea
@@ -78,17 +75,17 @@ export function Composer() {
               rows={3}
               onFocus={() => setIsActive(true)}
               onBlur={() => setIsActive(false)}
-              className="w-full p-3 border-0 bg-transparent text-white placeholder-gray-400 resize-none !outline-none text-lg"
+              className="composer-textarea"
               disabled={posting}
             />
 
-            <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-              <div className="flex items-center space-x-2 relative">
+            <div className="composer-controls">
+              <div className="composer-media-buttons">
                 <button
                   ref={emojiButtonRef}
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-400/10"
+                  className="composer-media-button"
                   title="Add emoji"
                 >
                   <Smile className="w-5 h-5" />
@@ -98,7 +95,7 @@ export function Composer() {
                   onClick={() => {
                     alert("comming soon!");
                   }}
-                  className="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-400/10"
+                  className="composer-media-button"
                   title="Add poll"
                 >
                   <ListTodo className="w-5 h-5" />
@@ -108,7 +105,7 @@ export function Composer() {
                   onClick={() => {
                     alert("comming soon!");
                   }}
-                  className="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-400/10"
+                  className="composer-media-button"
                   title="Add image"
                 >
                   <Image className="w-5 h-5" />
@@ -117,7 +114,7 @@ export function Composer() {
                 {showEmojiPicker && (
                   <div
                     ref={emojiPickerRef}
-                    className="absolute bottom-full left-0 top-0 mb-2 z-50"
+                    className="emoji-picker-container"
                   >
                     <EmojiPicker
                       theme={Theme.DARK}
@@ -127,24 +124,24 @@ export function Composer() {
                 )}
               </div>
 
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
+              <div className="composer-submission-area">
+                <div className="character-count-container">
                   <div
-                    className={`w-2 h-2 rounded-full ${
+                    className={`character-indicator ${
                       isOverLimit
-                        ? "bg-red-500"
+                        ? "danger"
                         : isNearLimit
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
+                        ? "warning"
+                        : "safe"
                     }`}
                   />
                   <span
-                    className={`text-sm ${
+                    className={`character-count ${
                       isOverLimit
-                        ? "text-red-400"
+                        ? "danger"
                         : isNearLimit
-                        ? "text-yellow-400"
-                        : "text-gray-400"
+                        ? "warning"
+                        : "safe"
                     }`}
                   >
                     {characterCount}/{maxLength}
@@ -153,11 +150,11 @@ export function Composer() {
                 <button
                   type="submit"
                   disabled={!text.trim() || posting || isOverLimit}
-                  className="cursor-pointer bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className="composer-submit-button"
                 >
                   {posting ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="submit-spinner" />
                       <span>Posting...</span>
                     </>
                   ) : (

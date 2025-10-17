@@ -1,0 +1,101 @@
+/* Activity Component Styles */
+.activity-container {
+  border-bottom: 2px solid rgb(229 231 235);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  margin: 1rem 0;
+  padding: 1rem;
+  transition: colors 0.2s ease;
+}
+
+.activity-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.activity-user-avatar {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.activity-user-avatar:hover {
+  opacity: 0.8;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-user-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.activity-user-details {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-username-button {
+  font-weight: 600;
+  color: rgb(31 41 55);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 50%;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  outline: none;
+  transition: color 0.2s ease;
+}
+
+.activity-username-button:hover {
+  color: rgb(37 99 235);
+}
+
+.activity-username-text {
+  font-weight: 600;
+  color: rgb(31 41 55);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 50%;
+}
+
+.activity-timestamp {
+  font-size: 0.875rem;
+  color: rgb(107 114 128);
+}
+
+.activity-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-delete-button {
+  color: rgb(220 38 38);
+  padding: 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: colors 0.2s ease;
+  background: transparent;
+  border: none;
+}
+
+.activity-delete-button:hover {
+  background-color: rgb(243 244 246);
+}
+
+.activity-text {
+  color: rgb(55 65 81);
+  font-size: 1.125rem;
+  line-height: 1.625;
+}

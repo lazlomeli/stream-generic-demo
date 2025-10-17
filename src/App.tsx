@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
@@ -112,7 +112,7 @@ function AppContent() {
                 } />
                 <Route path="/profile/:userId" element={
                   <ProtectedRoute>
-                    <UserProfile />
+                    <UserProfile />              
                   </ProtectedRoute>
                 } />
               </Routes>

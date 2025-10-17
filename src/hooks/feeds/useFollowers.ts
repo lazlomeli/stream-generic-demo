@@ -34,14 +34,14 @@ export function useFollowers() {
     error,
     refetch: refreshFollowers,
   } = useQuery({
-    queryKey: [...FOLLOWERS_QUERY_KEY, user?.id],
+    queryKey: [...FOLLOWERS_QUERY_KEY, user?.nickname],
     queryFn: () => {
       if (!client) {
         throw new Error("Client is not available");
       }
-      return fetchFollowers(client, user!.id);
+      return fetchFollowers(client, user?.nickname!);
     },
-    enabled: !!client && !!user?.id,
+    enabled: !!client && !!user?.nickname,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -51,12 +51,12 @@ export function useFollowers() {
     mutationFn: async (userId: string) => {
       // Optimistically update the cache
       queryClient.setQueryData(
-        [...FOLLOWERS_QUERY_KEY, user?.id],
+        [...FOLLOWERS_QUERY_KEY, user?.nickname],
         (old: string[] = []) => [...old, userId]
       );
       return userId;
     },
-    onError: () => {
+    onError: () => {      
       // Revert on error
       refreshFollowers();
     },
@@ -67,7 +67,7 @@ export function useFollowers() {
     mutationFn: async (userId: string) => {
       // Optimistically update the cache
       queryClient.setQueryData(
-        [...FOLLOWERS_QUERY_KEY, user?.id],
+        [...FOLLOWERS_QUERY_KEY, user?.nickname],
         (old: string[] = []) => old.filter((id) => id !== userId)
       );
       return userId;
