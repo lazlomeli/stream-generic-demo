@@ -12,13 +12,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowViewers 
   const { isAuthenticated, isLoading } = useAuth0()
   const location = useLocation()
 
-  console.log('ProtectedRoute Debug:')
-  console.log('  Path:', location.pathname)
-  console.log('  Search:', location.search)
-  console.log('  allowViewers prop:', allowViewers)
-  console.log('  isAuthenticated:', isAuthenticated)
-  console.log('  isLoading:', isLoading)
-
   if (isLoading) {
     console.log('  -> Showing loading spinner')
     return <LoadingSpinner />
@@ -32,8 +25,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowViewers 
 
   // For all other protected routes, require authentication
   if (!isAuthenticated) {
-    console.log('  -> User not authenticated, redirecting to login')
-    // Store the current URL to redirect back after login
     const returnUrl = `${location.pathname}${location.search}${location.hash}`
     localStorage.setItem('returnUrl', returnUrl)
     console.log('  -> Stored returnUrl:', returnUrl)

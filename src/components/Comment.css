@@ -87,6 +87,26 @@
   padding-top: 1rem;
 }
 
+/* Toggle Comments Button */
+.toggle-comments-button {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: rgb(37 99 235);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.toggle-comments-button:hover {
+  background-color: rgb(243 244 246);
+}
+
 /* Comment Input Section */
 .comment-input-section {
   margin-bottom: 1rem;

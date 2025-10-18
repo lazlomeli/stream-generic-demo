@@ -100,6 +100,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyLoading, setReplyLoading] = useState(false);
   const [commentReactions, setCommentReactions] = useState<Record<string, Set<string>>>({});
@@ -398,94 +399,132 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
     );
   };
 
+  const commentCount = activity.comment_count || activity.comments.length || 0;
+
   return (
     <div
       className="comments-container"
       data-activity-id={activity.id}
     >
-      {/* Comment Input Section */}
-      {showCommentInput ? (
-        <div className="comment-input-section">
-          <div className="comment-input-wrapper">
-            <Avatar userName={user?.name} size="sm" />
-            <div className="comment-input-content">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment..."
-                className="comment-textarea"
-                style={{ direction: "ltr", textAlign: "left" }}
-                rows={3}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (
-                      !loading &&
-                      newComment.trim() &&
-                      newComment.length <= 280
-                    ) {
-                      handleAddComment();
-                    }
-                  } else if (e.key === "Escape") {
-                    setShowCommentInput(false);
-                    setNewComment("");
-                  }
-                }}
-              />
-              <div className="comment-controls">
-                <div className="comment-buttons">
-                  <button
-                    onClick={handleAddComment}
-                    disabled={loading || !newComment.trim()}
-                    className="comment-submit-button"
-                  >
-                    {loading ? "Posting..." : "Post"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowCommentInput(false);
-                      setNewComment("");
+      {/* Toggle Comments Button */}
+      {commentCount > 0 && (
+        <button
+          onClick={() => setShowComments(!showComments)}
+          className="toggle-comments-button"
+        >
+          {showComments ? "Hide comments" : `View comments (${commentCount})`}
+        </button>
+      )}
+
+      {/* Show comments section when toggled on */}
+      {showComments && (
+        <>
+          {/* Comment Input Section */}
+          {showCommentInput ? (
+            <div className="comment-input-section">
+              <div className="comment-input-wrapper">
+                <Avatar userName={user?.name} size="sm" />
+                <div className="comment-input-content">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="comment-textarea"
+                    style={{ direction: "ltr", textAlign: "left" }}
+                    rows={3}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (
+                          !loading &&
+                          newComment.trim() &&
+                          newComment.length <= 280
+                        ) {
+                          handleAddComment();
+                        }
+                      } else if (e.key === "Escape") {
+                        setShowCommentInput(false);
+                        setNewComment("");
+                        // If there are no comments, hide the comments section
+                        if (commentCount === 0) {
+                          setShowComments(false);
+                        }
+                      }
                     }}
-                    className="comment-cancel-button"
-                  >
-                    Cancel
-                  </button>
+                  />
+                  <div className="comment-controls">
+                    <div className="comment-buttons">
+                      <button
+                        onClick={handleAddComment}
+                        disabled={loading || !newComment.trim()}
+                        className="comment-submit-button"
+                      >
+                        {loading ? "Posting..." : "Post"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowCommentInput(false);
+                          setNewComment("");
+                          // If there are no comments, hide the comments section
+                          if (commentCount === 0) {
+                            setShowComments(false);
+                          }
+                        }}
+                        className="comment-cancel-button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <span className="comment-character-count">
+                      {newComment.length}/280
+                    </span>
+                  </div>
                 </div>
-                <span className="comment-character-count">
-                  {newComment.length}/280
-                </span>
               </div>
             </div>
-          </div>
-        </div>
-      ) : (
-        <div className="comment-placeholder">
-          <button
-            onClick={() => setShowCommentInput(true)}
-            className="comment-placeholder-button"
-          >
-            Write a comment...
-          </button>
-        </div>
+          ) : (
+            <div className="comment-placeholder">
+              <button
+                onClick={() => setShowCommentInput(true)}
+                className="comment-placeholder-button"
+              >
+                Write a comment...
+              </button>
+            </div>
+          )}
+
+          {/* Comments List */}
+          {activity.comments.length > 0 && (
+            <div className="comments-list">
+              <h3 className="comments-title">
+                Comments ({commentCount})
+              </h3>
+              {organizeComments(activity.comments).map((comment) => (
+                <CommentItem key={comment.id} comment={comment} />
+              ))}
+            </div>
+          )}
+
+          {activity.comments.length === 0 && !showCommentInput && (
+            <div className="comments-empty">
+              No comments yet. Be the first to comment!
+            </div>
+          )}
+        </>
       )}
 
-      {/* Comments List */}
-      {activity.comments.length > 0 && (
-        <div className="comments-list">
-          <h3 className="comments-title">
-            Comments ({activity.comment_count})
-          </h3>
-          {organizeComments(activity.comments).map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))}
-        </div>
-      )}
-
-      {activity.comments.length === 0 && !showCommentInput && (
-        <div className="comments-empty">
-          No comments yet. Be the first to comment!
-        </div>
+      {/* When comments are hidden and there are no comments, show a button to add one */}
+      {!showComments && commentCount === 0 && (
+        <button
+          onClick={() => {
+            setShowComments(true);
+            setShowCommentInput(true);
+          }}
+          className="toggle-comments-button"
+        >
+          Add a comment
+        </button>
       )}
     </div>
   );
