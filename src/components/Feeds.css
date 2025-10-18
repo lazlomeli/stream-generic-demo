@@ -1839,7 +1839,8 @@
 }
 
 /* Highlighted Post */
-.highlighted-post {
+.highlighted-post,
+.post-highlighted {
   border: 2px solid #0ea5e9 !important;
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
   animation: highlightPulse 2s ease-in-out;
@@ -1851,7 +1852,8 @@
 }
 
 /* Mobile highlighted post - use background instead of border */
-.mobile-view .highlighted-post {
+.mobile-view .highlighted-post,
+.mobile-view .post-highlighted {
   border: none !important;
   box-shadow: none !important;
   background-color: rgba(59, 130, 246, 0.1) !important;

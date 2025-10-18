@@ -20,7 +20,7 @@ export function useFeedActivities() {
   const { client, user } = useUser();
   const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
-  const userId = user?.id || "";
+  const userId = user?.nickname || "";
   const [timelineFeed, setTimelineFeed] = useState<Feed | null>(null);
   const [userFeed, setUserFeed] = useState<Feed | null>(null);
   const [timelineActivities, setTimelineActivities] = useState<

@@ -55,7 +55,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
     isUnfollowingLoading,
   } = useProfileStats(userId);
 
-  const isOwnProfile = currentUser?.id === userId;
+  const isOwnProfile = currentUser?.nickname === userId;
   const isFollowingUser = isFollowing(userId);
 
   // Get real user name from activities

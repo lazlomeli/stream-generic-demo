@@ -1,0 +1,112 @@
+/* Notification Item Card */
+.notification-item-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(229, 231, 235);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.notification-item-card:hover {
+  background: rgb(249, 250, 251);
+  border-color: rgb(209, 213, 219);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.notification-item-card:active {
+  transform: translateY(0);
+}
+
+/* Avatar Section */
+.notification-item-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.notification-item-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  border: 2px solid white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Content Section */
+.notification-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.notification-item-text {
+  font-size: 0.9375rem;
+  color: rgb(31, 41, 55);
+  line-height: 1.5;
+}
+
+.notification-actor {
+  font-weight: 600;
+  color: rgb(17, 24, 39);
+}
+
+/* Comment Preview */
+.notification-item-preview {
+  font-size: 0.875rem;
+  color: rgb(107, 114, 128);
+  padding: 0.5rem 0.75rem;
+  background: rgb(249, 250, 251);
+  border-radius: 0.375rem;
+  border-left: 2px solid rgb(209, 213, 219);
+  margin-top: 0.25rem;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Timestamp */
+.notification-item-time {
+  font-size: 0.8125rem;
+  color: rgb(156, 163, 175);
+  margin-top: 0.125rem;
+}
+
+/* Focus Styles for Accessibility */
+.notification-item-card:focus {
+  outline: 2px solid rgb(59, 130, 246);
+  outline-offset: 2px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .notification-item-card {
+    padding: 0.875rem;
+  }
+
+  .notification-item-text {
+    font-size: 0.875rem;
+  }
+
+  .notification-item-preview {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.625rem;
+  }
+}
+

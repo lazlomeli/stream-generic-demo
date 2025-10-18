@@ -36,7 +36,7 @@ export default function ReactionsPanel({ activity }: Props) {
 
     if (activity.latest_reactions) {
       activity.latest_reactions.forEach((reaction) => {
-        if (reaction.user.id === user.id) {
+        if (reaction.user.id === user.nickname) {
           userReacts.add(reaction.type);
         }
       });
@@ -49,7 +49,7 @@ export default function ReactionsPanel({ activity }: Props) {
     const isPinnedByUser = Array.isArray(pinnedActivities)
       ? pinnedActivities.some(
           (pinned: Record<string, unknown>) =>
-            (pinned.user as Record<string, unknown>)?.id === user.id
+            (pinned.user as Record<string, unknown>)?.id === user.nickname
         )
       : false;
 
@@ -115,14 +115,14 @@ export default function ReactionsPanel({ activity }: Props) {
       if (isPinned) {
         await client.unpinActivity({
           feed_group_id: "user",
-          feed_id: user.id,
+          feed_id: user.nickname,
           activity_id: activity.id,
         });
         setIsPinned(false);
       } else {
         await client.pinActivity({
           feed_group_id: "user",
-          feed_id: user.id,
+          feed_id: user.nickname,
           activity_id: activity.id,
         });
         setIsPinned(true);

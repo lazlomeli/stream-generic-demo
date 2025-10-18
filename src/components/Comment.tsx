@@ -125,7 +125,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
       // Get user reactions
       if (comment.latest_reactions) {
         comment.latest_reactions.forEach((reaction) => {
-          if (reaction.user.id === user?.id) {
+          if (reaction.user.id === user?.nickname) {
             userReacts.add(reaction.type);
           }
         });
@@ -188,7 +188,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
   ) => {
     try {
       const hasReaction = !!getUserReactionForComment(comment, type);
-      const success = await toggleCommentReaction(comment.id, type, hasReaction, user?.id);
+      const success = await toggleCommentReaction(comment.id, type, hasReaction, user?.nickname);
       
       if (success) {
         // Update local state immediately like activity reactions
@@ -255,7 +255,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
     
     // Fallback to latest_reactions if own_reactions is not available
     return comment.latest_reactions?.find(
-      (reaction) => reaction.type === type && reaction.user.id === user?.id
+      (reaction) => reaction.type === type && reaction.user.id === user?.nickname
     );
   };
 
@@ -361,7 +361,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                   <TextQuote className="w-4 h-4" /> Reply
                 </button>
               ) : null}
-              {comment.user?.id === user?.id && (
+              {comment.user?.id === user?.nickname && (
                 <button
                   onClick={() => handleDeleteComment(comment.id)}
                   className="comment-delete-button"

@@ -58,11 +58,11 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
               )}
             </div>
             <div className="activity-actions">
-              {activity.user?.id && activity.user.id !== user?.id && (
+              {activity.user?.id && activity.user.id !== user?.nickname && (
                 // Follow button
                 <UserActions targetUserId={activity.user.id} />
               )}
-              {activity.user?.id === user?.id && (
+              {activity.user?.id === user?.nickname && (
                 <button
                   onClick={() => handleDeleteActivity(activity.id)}
                   className="activity-delete-button"

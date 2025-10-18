@@ -257,7 +257,7 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                         </div>
                       </Link>
                       {/* Only hide follow button for current user's own profile */}
-                      {user.id !== currentUser?.id && (
+                      {user.id !== currentUser?.nickname && (
                         <button
                           onClick={() => {
                             if (isFollowing(user.id)) {

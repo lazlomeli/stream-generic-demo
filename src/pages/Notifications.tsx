@@ -1,7 +1,9 @@
 import { useNotifications } from "../hooks/feeds/useNotifications";
 import { useUser } from "../hooks/feeds/useUser";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { NotificationItem } from "../components/NotificationItem";
 import "./Notifications.css";
+import { NotificationActivity } from "getstream";
 
 export default function NotificationsPage() {
   const { error, loading: clientLoading } = useUser();
@@ -14,9 +16,15 @@ export default function NotificationsPage() {
 
   const loading = clientLoading || notificationsLoading;
 
-  // Mark notifications as seen when the page is opened
+  const hasMarkedAsSeenRef = useRef(false);
+
   useEffect(() => {
-    if (notifications?.activities && notifications.activities.length > 0) {
+    if (
+      !hasMarkedAsSeenRef.current && 
+      notifications?.aggregated_activities && 
+      notifications.aggregated_activities.length > 0
+    ) {
+      hasMarkedAsSeenRef.current = true;
       markAsSeen();
     }
   }, [notifications, markAsSeen]);
@@ -39,7 +47,7 @@ export default function NotificationsPage() {
         </p>
       </div>
 
-      {!notifications?.activities || notifications.activities.length === 0 ? (
+      {!notifications?.aggregated_activities || notifications.aggregated_activities.length === 0 ? (
         <div className="notifications-empty">
           <div className="notifications-empty-title">No notifications yet</div>
           <p className="notifications-empty-description">
@@ -48,11 +56,14 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <div className="notifications-list">
-          {notifications.activities.map((notification) => (
-            <div key={`notification-${notification.id}`} className="notification-item">
-              {notification.text}
-            </div>
-          ))}
+          {notifications.aggregated_activities.flatMap((aggregated) => 
+            (aggregated.activities || []).map((notification: NotificationActivity) => (
+              <NotificationItem
+                key={`notification-${notification.id}`}
+                notification={notification as any}
+              />
+            ))
+          )}
         </div>
       )}
     </div>

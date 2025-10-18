@@ -29,8 +29,6 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
     }),
   });
 
-  console.log('📡 Token request response:', res);
-
   if (!res.ok) {
     showError("Failed to get authentication token");
     throw new Error("Failed to get authentication token");
@@ -39,13 +37,9 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
   const { token }: AuthTokenResponse = await res.json();
 
   // Create FeedsClient pointing to Stream's servers (not localhost!)
-  console.log('🍃 Creating FeedsClient with Stream base URL:', streamBaseUrl);
   const client = new FeedsClient(apiKey, { base_url: streamBaseUrl });
   
-  console.log('🔗 Connecting user to Stream Feeds...', { userId: user.nickname, hasToken: !!token });
-  
   try {
-    console.log('userID useuser', user);
     await client.connectUser({ id: user.nickname! }, token);
     console.log('✅ Successfully connected to Stream Feeds');
   } catch (error) {
@@ -53,124 +47,46 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
     // Don't throw here - let the client be returned even if WS fails initially
   }
 
-  console.log('🎯 Token:', token.substring(0, 50) + '...');
-  console.log('👤 User connected:', user.nickname);
-
   return client;
 };
 
 export function useUser() {
-  // const queryClient = useQueryClient();
   const [showUserModal, setShowUserModal] = useState(false);
-  const { isAuthenticated, user: auth0User } = useAuth0(); // esto siempre me va a dar a mi mismo
+  const { isAuthenticated, user: auth0User } = useAuth0();
   const { showError } = useToast();
 
-  const sanitizedUser: User = {
-    ...auth0User,
-    nickname: nameUtils.sanitizeUserId(auth0User?.nickname!),
-  }
-
-  // Query for user data
+  // Query for user data - now properly depends on auth0User
   const {
     data: user,
     isLoading: loading,
     error: userError,
   } = useQuery({
-    queryKey: USER_QUERY_KEY,
-    queryFn: () => sanitizedUser,
+    queryKey: ["user", auth0User?.nickname], // Key includes auth0User to trigger refetch
+    queryFn: () => {
+      if (!auth0User) return null;
+      
+      return {
+        ...auth0User,
+        nickname: nameUtils.sanitizeUserId(auth0User.nickname!),
+      };
+    },
+    enabled: !!auth0User, // Only run when auth0User exists
     staleTime: Infinity, 
     gcTime: Infinity, 
   });
-
-  if (loading) {
-    console.log('loading', loading);
-  }
   
-  
-  // Query for client connection
+  // Query for client connection - now depends on user from query
   const {
     data: client,
     isLoading: clientLoading,
     error: clientError,
   } = useQuery({
-    queryKey: ["client", sanitizedUser.nickname],
-    queryFn: () => connectUser(sanitizedUser, showError),
-    enabled: !!auth0User,
+    queryKey: ["client", user?.nickname], // Depends on user?.nickname from query
+    queryFn: () => connectUser(user!, showError),
+    enabled: !!user?.nickname, // Only run when user has nickname
     staleTime: Infinity,
     gcTime: Infinity,
   });
-
-//   // Mutation for creating user
-//   const createUserMutation = useMutation({
-//     mutationFn: async ({
-//       name,
-//       customSettings,
-//     }: {
-//       name: string;
-//       customSettings?: CustomSettings;
-//     }) => {
-//       const randomSuffix = Math.random().toString(36).substring(2, 8);
-//       const userId = `user-${randomSuffix}`;
-//       const userData: User = { id: userId, name };
-
-//       const client = await connectUser(userData, customSettings);
-//       saveUserToStorage(userData);
-
-//       return { user: userData, client };
-//     },
-//     onSuccess: ({ user }) => {
-//       queryClient.setQueryData(USER_QUERY_KEY, user);
-//       setShowUserModal(false);
-//     },
-//   });
-
-//   // Mutation for updating user
-//   const updateUserMutation = useMutation({
-//     mutationFn: async (userData: User) => {
-//       saveUserToStorage(userData);
-//       return userData;
-//     },
-//     onSuccess: (userData) => {
-//       queryClient.setQueryData(USER_QUERY_KEY, userData);
-//     },
-//   });
-
-//   // Mutation for clearing user
-//   const clearUserMutation = useMutation({
-//     mutationFn: async () => {
-//       saveUserToStorage(null);
-//       // Also clear custom settings when user logs out
-//       if (typeof window !== "undefined") {
-//         localStorage.removeItem("customSettings");
-//       }
-//       return null;
-//     },
-//     onSuccess: () => {
-//       queryClient.setQueryData(USER_QUERY_KEY, null);
-//       queryClient.removeQueries({ queryKey: ["client"] });
-//     },
-//   });
-
-//   // Show modal if no user exists
-//   useEffect(() => {
-//     if (!loading && !user) {
-//       setShowUserModal(true);
-//     } else {
-//       setShowUserModal(false);
-//     }
-//   }, [loading, user]);
-
-//   const updateUser = (userData: User) => {
-//     updateUserMutation.mutate(userData);
-//   };
-
-//   const clearUser = () => {
-//     clearUserMutation.mutate();
-//   };
-
-//   const createUser = async (name: string, customSettings?: CustomSettings) => {
-//     createUserMutation.mutate({ name, customSettings });
-//   };
 
   const retryConnection = () => {
     window.location.reload();
@@ -185,20 +101,16 @@ export function useUser() {
       .slice(0, 2);
   };
 
-  // const error = userError || clientError;
-//   const isAuthenticated = !!user;
+  const isReady = !!user && !!client;
 
   return {
-    user: sanitizedUser,
+    user,
     client,
-    loading: clientLoading,
+    loading: loading || clientLoading, // Combined loading state
+    isReady,
     error: userError || clientError,
     showUserModal,
-    // updateUser,
-    // clearUser,
     getUserInitials,
-    // createUser,
     retryConnection,
-    // isAuthenticated,
   };
 }
