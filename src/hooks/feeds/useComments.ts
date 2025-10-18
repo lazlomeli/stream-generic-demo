@@ -7,7 +7,7 @@ import {
 } from "@stream-io/feeds-client";
 import { useUser } from "./useUser";
 import { FeedsClient } from "@stream-io/feeds-client";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 // Add comment to Stream API
 const addCommentToAPI = async (
   client: FeedsClient,
@@ -79,6 +79,7 @@ const deleteCommentReactionFromAPI = async (
 
 export function useComments() {
   const { client } = useUser();
+  const { showError } = useToast();
 
   // Mutation for adding comment
   const addCommentMutation = useMutation({
@@ -189,7 +190,7 @@ export function useComments() {
       });
       return result;
     } catch {
-      toast.error("Failed to add comment");
+      showError("Failed to add comment");
       return null;
     }
   };
@@ -209,7 +210,7 @@ export function useComments() {
       });
       return result;
     } catch {
-      toast.error("Failed to add reply");
+      showError("Failed to add reply");
       return null;
     }
   };
@@ -219,7 +220,7 @@ export function useComments() {
       await deleteCommentMutation.mutateAsync(commentId);
       return true;
     } catch {
-      toast.error("Failed to delete comment");
+      showError("Failed to delete comment");
       return false;
     }
   };
@@ -232,7 +233,7 @@ export function useComments() {
       await addCommentReactionMutation.mutateAsync({ commentId, type });
       return true;
     } catch {
-      toast.error("Failed to add comment reaction");
+      showError("Failed to add comment reaction");
       return false;
     }
   };
@@ -250,7 +251,7 @@ export function useComments() {
       });
       return true;
     } catch {
-      toast.error("Failed to delete comment reaction");
+      showError("Failed to delete comment reaction");
       return false;
     }
   };
@@ -275,6 +276,9 @@ export function useComments() {
     type: string,
     userId: string
   ) => {
+    console.log('comment COMMENTS', comment);
+    console.log('userId COMMENTS', userId);
+    console.log('type COMMENTS', type);
     return comment.latest_reactions?.find(
       (reaction) => reaction.user.id === userId && reaction.type === type
     );

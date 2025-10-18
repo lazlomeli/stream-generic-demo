@@ -5,7 +5,7 @@ import {
   StreamResponse,
 } from "@stream-io/feeds-client";
 import { Feed } from "@stream-io/feeds-client";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 import { useEffect, useState, useRef, useCallback } from "react";
 
 interface NotificationsResponse
@@ -15,10 +15,14 @@ interface NotificationsResponse
 
 export function useNotifications() {
   const { client, user } = useUser();
+  const { showError } = useToast();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsData, setNotificationsData] = useState<NotificationsResponse | null>(null);
   const notificationsFeedRef = useRef<Feed | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const eventListenerRef = useRef<((event: any) => void) | null>(null);
+  const isFetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
   
   // Store client and user in refs to access in callbacks without dependencies
   const clientRef = useRef(client);
@@ -70,9 +74,14 @@ export function useNotifications() {
         // Get or create with watch enabled for real-time updates
         const initialData = await feed.getOrCreate({ watch: true });
         console.log("Initial notification data:", initialData);
+        console.log("Initial notification_status:", initialData.notification_status);
         
         setNotificationsData(initialData);
-        setUnreadCount(initialData.notification_status?.unread || 0);
+        const initialUnseen = initialData.notification_status?.unseen || 0;
+        const initialUnread = initialData.notification_status?.unread || 0;
+        const initialCount = initialUnseen || initialUnread;
+        console.log("Initial unseenCount:", initialUnseen, "unreadCount:", initialUnread, "using:", initialCount);
+        setUnreadCount(initialCount);
 
         // Clean up any existing subscription before creating a new one
         if (unsubscribeRef.current) {
@@ -82,9 +91,14 @@ export function useNotifications() {
         // Subscribe to state changes for real-time updates
         const unsubscribe = feed.state.subscribe((state) => {
           console.log("Notification feed state updated:", state);
+          console.log("notification_status details:", state.notification_status);
           
-          // Update unread count
-          const newUnreadCount = state.notification_status?.unread || 0;
+          // Update unread count - try both 'unseen' and 'unread'
+          const unseenCount = state.notification_status?.unseen || 0;
+          const unreadCountFromStatus = state.notification_status?.unread || 0;
+          const newUnreadCount = unseenCount || unreadCountFromStatus;
+          
+          console.log("unseenCount:", unseenCount, "unreadCount:", unreadCountFromStatus, "using:", newUnreadCount);
           setUnreadCount(newUnreadCount);
 
           // Update the full notifications data
@@ -99,20 +113,52 @@ export function useNotifications() {
 
         unsubscribeRef.current = unsubscribe;
 
-        // Listen to specific notification events and update state
-        feed.on('feeds.notification_feed.updated', (event) => {          
-          // Refetch to get the latest notification status
-          feed.getOrCreate({ watch: false }).then((updatedData) => {
-            setUnreadCount(updatedData.notification_status?.unread || 0);
+        // Clean up any existing event listener before creating a new one
+        if (eventListenerRef.current) {
+          feed.off('feeds.notification_feed.updated', eventListenerRef.current);
+        }
+
+        // Listen for new notifications and refetch to get updated notification_status
+        // This is needed because the state subscription doesn't update notification_status for real-time events
+        const handleNotificationUpdate = async (event: any) => {
+          console.log('🔔 Notification feed updated event:', event);
+          
+          // Prevent multiple simultaneous fetches and debounce (max once per second)
+          const now = Date.now();
+          if (isFetchingRef.current || (now - lastFetchTimeRef.current) < 1000) {
+            console.log('🔔 Skipping refetch (too soon or already fetching)');
+            return;
+          }
+          
+          isFetchingRef.current = true;
+          lastFetchTimeRef.current = now;
+          
+          try {
+            // Refetch without watch to just get the latest data including notification_status
+            const updatedData = await feed.getOrCreate({ watch: false });
+            console.log('🔔 Refetched notification data:', updatedData.notification_status);
+            
+            const refetchedUnseen = updatedData.notification_status?.unseen || 0;
+            const refetchedUnread = updatedData.notification_status?.unread || 0;
+            const refetchedCount = refetchedUnseen || refetchedUnread;
+            
+            console.log('🔔 Refetched counts - unseen:', refetchedUnseen, 'unread:', refetchedUnread, 'using:', refetchedCount);
+            
+            setUnreadCount(refetchedCount);
             setNotificationsData(updatedData);
-          }).catch((err) => {
+          } catch (err) {
             console.error('Error refetching notifications:', err);
-          });
-        });
+          } finally {
+            isFetchingRef.current = false;
+          }
+        };
+
+        eventListenerRef.current = handleNotificationUpdate;
+        feed.on('feeds.notification_feed.updated', handleNotificationUpdate);
 
       } catch (error) {
         console.error("Error setting up notifications:", error);
-        toast.error("Error setting up notifications");
+        showError("Error setting up notifications");
       }
     };
 
@@ -124,6 +170,10 @@ export function useNotifications() {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
+      }
+      if (eventListenerRef.current && notificationsFeedRef.current) {
+        notificationsFeedRef.current.off('feeds.notification_feed.updated', eventListenerRef.current);
+        eventListenerRef.current = null;
       }
     };
   }, [hasClient, userId]); // Only re-run if user ID changes or client availability changes
@@ -149,7 +199,7 @@ export function useNotifications() {
       setUnreadCount(0);
     } catch (error) {
       console.error("Error marking notifications as seen:", error);
-      toast.error("Error marking notifications as seen");
+      showError("Error marking notifications as seen");
     }
   }, []); // No dependencies - uses refs
 

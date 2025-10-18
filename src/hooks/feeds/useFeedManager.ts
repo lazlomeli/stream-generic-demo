@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Feed, ActivityResponse } from "@stream-io/feeds-client";
 import { useUser } from "./useUser";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 
 // Query keys for feeds
 const FEED_QUERY_KEYS = {
@@ -46,10 +46,10 @@ export const refetchTimelineGlobal = async () => {
   if (!globalTimelineFeed) return;
   try {
     await globalTimelineFeed.getOrCreate();
-    toast.success("Timeline refreshed successfully!");
+    // Toast removed - this is called programmatically
   } catch (error) {
     console.error("Error refetching timeline:", error);
-    toast.error("Failed to refresh timeline");
+    // Toast removed - errors logged to console
   }
 };
 
@@ -57,10 +57,10 @@ export const refetchUserGlobal = async () => {
   if (!globalUserFeed) return;
   try {
     await globalUserFeed.getOrCreate();
-    toast.success("User feed refreshed successfully!");
+    // Toast removed - this is called programmatically
   } catch (error) {
     console.error("Error refetching user feed:", error);
-    toast.error("Failed to refresh user feed");
+    // Toast removed - errors logged to console
   }
 };
 
@@ -73,15 +73,16 @@ export const refetchAllFeedsGlobal = async () => {
     if (globalUserFeed) {
       await globalUserFeed.getOrCreate();
     }
-    toast.success("All feeds refreshed successfully!");
+    // Toast removed - this is called programmatically
   } catch (error) {
     console.error("Error refetching feeds:", error);
-    toast.error("Failed to refresh feeds");
+    // Toast removed - errors logged to console
   }
 };
 
 export function useFeedManager() {
   const { client, user } = useUser();
+  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   const userId = user?.nickname || "";
   const [timelineActivities, setTimelineActivities] = useState<
@@ -210,7 +211,7 @@ export function useFeedManager() {
                 "Timeline already follows user feed - this is normal"
               );
             } else {
-              toast.error("Follow error: " + errorMessage);
+              showError("Follow error: " + errorMessage);
             }
           }
 
@@ -265,7 +266,7 @@ export function useFeedManager() {
           );
         } catch (err) {
           console.error("Error initializing feeds:", err);
-          toast.error("Error initializing feeds");
+          showError("Error initializing feeds");
         } finally {
           setLoading(false);
           globalInitializationPromise = null;
@@ -317,23 +318,23 @@ export function useFeedManager() {
     if (!globalTimelineFeed) return;
     try {
       await globalTimelineFeed.getOrCreate();
-      toast.success("Timeline refreshed successfully!");
+      showSuccess("Timeline refreshed successfully!");
     } catch (error) {
       console.error("Error refetching timeline:", error);
-      toast.error("Failed to refresh timeline");
+      showError("Failed to refresh timeline");
     }
-  }, []);
+  }, [showSuccess, showError]);
 
   const refetchUser = useCallback(async () => {
     if (!globalUserFeed) return;
     try {
       await globalUserFeed.getOrCreate();
-      toast.success("User feed refreshed successfully!");
+      showSuccess("User feed refreshed successfully!");
     } catch (error) {
       console.error("Error refetching user feed:", error);
-      toast.error("Failed to refresh user feed");
+      showError("Failed to refresh user feed");
     }
-  }, []);
+  }, [showSuccess, showError]);
 
   const refetchAllFeeds = useCallback(async () => {
     try {
@@ -344,12 +345,12 @@ export function useFeedManager() {
       if (globalUserFeed) {
         await globalUserFeed.getOrCreate();
       }
-      toast.success("All feeds refreshed successfully!");
+      showSuccess("All feeds refreshed successfully!");
     } catch (error) {
       console.error("Error refetching feeds:", error);
-      toast.error("Failed to refresh feeds");
+      showError("Failed to refresh feeds");
     }
-  }, []);
+  }, [showSuccess, showError]);
 
   return {
     timelineFeed: globalTimelineFeed,

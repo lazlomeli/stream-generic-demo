@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Feed, ActivityResponse } from "@stream-io/feeds-client";
 import { useUser } from "./useUser";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 
 // Query keys for feeds
 const FEED_QUERY_KEYS = {
@@ -18,6 +18,7 @@ const FEED_QUERY_KEYS = {
 
 export function useFeedActivities() {
   const { client, user } = useUser();
+  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   const userId = user?.id || "";
   const [timelineFeed, setTimelineFeed] = useState<Feed | null>(null);
@@ -80,7 +81,7 @@ export function useFeedActivities() {
           if (errorMessage?.includes("already exists in accepted state")) {
             console.log("Timeline already follows user feed - this is normal");
           } else {
-            toast.error("Follow error: " + errorMessage);
+            showError("Follow error: " + errorMessage);
           }
         }
 
@@ -114,7 +115,7 @@ export function useFeedActivities() {
         setUserFeed(user);
       } catch (err) {
         console.error("Error initializing feeds:", err);
-        toast.error("Error initializing feeds");
+        showError("Error initializing feeds");
       } finally {
         setLoading(false);
       }
@@ -140,7 +141,7 @@ export function useFeedActivities() {
         setFeedType(type);
       } catch (err) {
         console.error("Error switching feed type:", err);
-        toast.error("failed to switch feed type");
+        showError("failed to switch feed type");
       } finally {
         setLoading(false);
       }
@@ -153,23 +154,23 @@ export function useFeedActivities() {
     if (!timelineFeed) return;
     try {
       await timelineFeed.getOrCreate();
-      toast.success("Timeline refreshed successfully!");
+      showSuccess("Timeline refreshed successfully!");
     } catch (error) {
       console.error("Error refetching timeline:", error);
-      toast.error("Failed to refresh timeline");
+      showError("Failed to refresh timeline");
     }
-  }, [timelineFeed]);
+  }, [timelineFeed, showSuccess, showError]);
 
   const refetchUser = useCallback(async () => {
     if (!userFeed) return;
     try {
       await userFeed.getOrCreate();
-      toast.success("User feed refreshed successfully!");
+      showSuccess("User feed refreshed successfully!");
     } catch (error) {
       console.error("Error refetching user feed:", error);
-      toast.error("Failed to refresh user feed");
+      showError("Failed to refresh user feed");
     }
-  }, [userFeed]);
+  }, [userFeed, showSuccess, showError]);
 
   const refetchAllFeeds = useCallback(async () => {
     try {
@@ -180,12 +181,12 @@ export function useFeedActivities() {
       if (userFeed) {
         await userFeed.getOrCreate();
       }
-      toast.success("All feeds refreshed successfully!");
+      showSuccess("All feeds refreshed successfully!");
     } catch (error) {
       console.error("Error refetching feeds:", error);
-      toast.error("Failed to refresh feeds");
+      showError("Failed to refresh feeds");
     }
-  }, [timelineFeed, userFeed]);
+  }, [timelineFeed, userFeed, showSuccess, showError]);
 
   return {
     timelineFeed,

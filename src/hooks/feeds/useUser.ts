@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FeedsClient } from "@stream-io/feeds-client";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 import { useAuth0 } from "@auth0/auth0-react";
 import { User } from "@auth0/auth0-spa-js";
 import nameUtils from "../../utils/nameUtils";
@@ -14,7 +14,7 @@ interface AuthTokenResponse {
 
 const USER_QUERY_KEY = ["user"];
 
-const connectUser = async (user: User): Promise<FeedsClient> => {
+const connectUser = async (user: User, showError: (message: string) => void): Promise<FeedsClient> => {
   const apiKey = import.meta.env.VITE_STREAM_API_KEY!;
 
   console.log('🔑 Connecting user with API key:', apiKey ? '✅ Set' : '❌ Missing');
@@ -32,7 +32,7 @@ const connectUser = async (user: User): Promise<FeedsClient> => {
   console.log('📡 Token request response:', res);
 
   if (!res.ok) {
-    toast.error("Failed to get authentication token");
+    showError("Failed to get authentication token");
     throw new Error("Failed to get authentication token");
   }
 
@@ -63,6 +63,7 @@ export function useUser() {
   // const queryClient = useQueryClient();
   const [showUserModal, setShowUserModal] = useState(false);
   const { isAuthenticated, user: auth0User } = useAuth0(); // esto siempre me va a dar a mi mismo
+  const { showError } = useToast();
 
   const sanitizedUser: User = {
     ...auth0User,
@@ -93,7 +94,7 @@ export function useUser() {
     error: clientError,
   } = useQuery({
     queryKey: ["client", sanitizedUser.nickname],
-    queryFn: () => connectUser(sanitizedUser),
+    queryFn: () => connectUser(sanitizedUser, showError),
     enabled: !!auth0User,
     staleTime: Infinity,
     gcTime: Infinity,

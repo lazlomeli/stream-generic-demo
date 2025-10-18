@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "./useUser";
 import { FeedsClient } from "@stream-io/feeds-client";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 
 export interface FollowUser {
   id: string;
@@ -125,7 +125,9 @@ const fetchFollowing = async (
 const followUser = async (
   client: FeedsClient,
   sourceUserId: string,
-  targetUserId: string
+  targetUserId: string,
+  showSuccess: (message: string) => void,
+  showError: (message: string) => void
 ): Promise<void> => {
   if (!client || !sourceUserId || !targetUserId) return;
   
@@ -156,15 +158,15 @@ const followUser = async (
       create_notification_activity: true,
     });
     console.log('555');
-    toast.success("Successfully followed user");
+    showSuccess("Successfully followed user");
   } catch (error: any) {
     if (error.code === 4 && error.message?.includes('already exists')) {
       console.log('Follow already exists (caught error)');
-      toast.success("Already following this user");
+      showSuccess("Already following this user");
       return;
     }
     
-    toast.error("Error following user");
+    showError("Error following user");
     throw error;
   }
 };
@@ -173,7 +175,9 @@ const followUser = async (
 const unfollowUser = async (
   client: FeedsClient,
   sourceUserId: string,
-  targetUserId: string
+  targetUserId: string,
+  showSuccess: (message: string) => void,
+  showError: (message: string) => void
 ): Promise<void> => {
   if (!client || !sourceUserId || !targetUserId) return;
 
@@ -184,16 +188,17 @@ const unfollowUser = async (
       source: `timeline:${sourceUserId}`,
       target: `user:${targetUserId}`,
     });
-    toast.success("Successfully unfollowed user");
+    showSuccess("Successfully unfollowed user");
   } catch (error) {
     console.error("Error unfollowing user:", error);
-    toast.error("Error unfollowing user");
+    showError("Error unfollowing user");
     throw error;
   }
 };
 
 export function useProfileStats(userId?: string) {
   const { client, user } = useUser();
+  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   const targetUserId = userId || user?.nickname;
 
@@ -246,7 +251,7 @@ export function useProfileStats(userId?: string) {
       console.log('entra aqui?', user); // esta pillando el mismo usuario en vez del otro
       if (!user?.nickname) throw new Error("User not authenticated");
       console.log('y aqui?');
-      return followUser(client!, user.nickname, targetUserId);
+      return followUser(client!, user.nickname, targetUserId, showSuccess, showError);
     },
     onSuccess: () => {
       // Invalidate and refetch followers/following data
@@ -269,7 +274,7 @@ export function useProfileStats(userId?: string) {
   const unfollowMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
       if (!user?.nickname) throw new Error("User not authenticated");
-      return unfollowUser(client!, user.nickname, targetUserId);
+      return unfollowUser(client!, user.nickname, targetUserId, showSuccess, showError);
     },
     onSuccess: () => {
       // Invalidate and refetch followers/following data

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useUser } from "./useUser";
 import { useFollowers } from "./useFollowers"
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 import { refetchTimelineGlobal } from "./useFeedManager";
 
 export function useUserActions(targetUserId: string) {
   const { user, client } = useUser();
+  const { showError } = useToast();
   const {
     followers,
     loading: followersLoading,
@@ -45,7 +46,7 @@ export function useUserActions(targetUserId: string) {
       }
       refetchTimelineGlobal();
     } catch {
-      toast.error("failed to perform this action");
+      showError("failed to perform this action");
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,7 @@ import { Heart, TextQuote, Trash2 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { useUser } from "../hooks/feeds/useUser";
 import { useComments } from "../hooks/feeds/useComments";
-import toast from "react-hot-toast";
+import { useToast } from "../contexts/ToastContext";
 import "./Comment.css";
 
 interface CommentsPanelProps {
@@ -96,6 +96,7 @@ const ReplyForm = ({
 };
 
 export default function CommentsPanel({ activity }: CommentsPanelProps) {
+  const { showError } = useToast();
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -175,7 +176,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
         setReplyingTo(null);
       }
     } catch {
-      toast.error("Failed to add reply");
+      showError("Failed to add reply");
     } finally {
       setReplyLoading(false);
     }
@@ -223,7 +224,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
         });
       }
     } catch {
-      toast.error("Failed to handle comment reaction");
+      showError("Failed to handle comment reaction");
     }
   };
 
@@ -231,7 +232,7 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
     try {
       await deleteComment(commentId);
     } catch {
-      toast.error("Failed to delete comment");
+      showError("Failed to delete comment");
     }
   };
 

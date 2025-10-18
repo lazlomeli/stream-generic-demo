@@ -5,7 +5,7 @@ import { useUser } from "./useUser";
 import { User } from "@auth0/auth0-spa-js";
 import { ActivityResponse } from "@stream-io/feeds-client";
 import { FeedsClient } from "@stream-io/feeds-client";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 import { useState } from "react";
 
 // Define a unique query key factory
@@ -18,7 +18,8 @@ const fetchActivities = async (
   client: FeedsClient,
   user: User,
   searchQuery: string = "",
-  searchMode: "$q" | "$autocomplete" = "$q"
+  searchMode: "$q" | "$autocomplete" = "$q",
+  showError: (message: string) => void
 ): Promise<ActivityResponse[]> => {
   if (!client || !user) return [];
 
@@ -41,13 +42,14 @@ const fetchActivities = async (
     );
   } catch (error) {
     console.error("Error fetching activities:", error);
-    toast.error("Error fetching activities");
+    showError("Error fetching activities");
     throw error;
   }
 };
 
 export function useSearch() {
   const { client, user } = useUser();
+  const { showError } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<"$q" | "$autocomplete">("$q");
 
@@ -63,7 +65,8 @@ export function useSearch() {
         client as FeedsClient,
         user as User,
         searchQuery,
-        searchMode
+        searchMode,
+        showError
       ),
     enabled: !!client && !!user,
     refetchOnWindowFocus: false,

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FeedsClient } from "@stream-io/feeds-client";
-import toast from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 import { useUser } from "./useUser";
 
 const addActivityToFeed = async (
@@ -29,6 +29,7 @@ const addActivityToFeed = async (
 
   export function useFeedActions() {
     const { client, user } = useUser();
+    const { showSuccess, showError } = useToast();
     const queryClient = useQueryClient();
     const userId = user?.nickname || "";
   
@@ -47,11 +48,11 @@ const addActivityToFeed = async (
         queryClient.invalidateQueries({
           queryKey: ["feed"],
         });
-        toast.success("Activity created successfully!");
+        showSuccess("Activity created successfully!");
       },
       onError: (error) => {
         console.error("Error posting:", error);
-        toast.error("Failed to create activity");
+        showError("Failed to create activity");
       },
     });
   
@@ -68,11 +69,11 @@ const addActivityToFeed = async (
         queryClient.invalidateQueries({
           queryKey: ["feed"],
         });
-        toast.success("Activity deleted successfully");
+        showSuccess("Activity deleted successfully");
       },
       onError: (error) => {
         console.error("Error deleting activity:", error);
-        toast.error("Failed to delete activity");
+        showError("Failed to delete activity");
       },
     });
   
@@ -91,11 +92,11 @@ const addActivityToFeed = async (
         queryClient.invalidateQueries({
           queryKey: ["feed"],
         });
-        toast.success("Feeds refreshed successfully!");
+        showSuccess("Feeds refreshed successfully!");
       },
       onError: (error) => {
         console.error("Error refetching feeds:", error);
-        toast.error("Failed to refresh feeds");
+        showError("Failed to refresh feeds");
       },
     });
   
