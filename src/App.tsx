@@ -65,9 +65,8 @@ function AppContent() {
       <UILayoutContext.Provider value={{ hideHeader, setHideHeader }}>
         <div className={`app ${shouldHideHeader ? 'fullscreen-mode' : ''} ${isMobileView ? 'mobile-app' : ''}`}>
           {isAuthenticated && !shouldHideHeader && <Header showNavigation={!showSidebars && !isVideoPage && !isCallPage} />}
-          {showSidebars && <Sidebar />}
-          {showSidebars && <RightSidebar />}
           <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${shouldHideHeader ? 'fullscreen' : ''} ${isMobileView ? 'mobile-main' : ''}`}>
+          {showSidebars && <Sidebar />}
               <Routes>
                 <Route path="/" element={
                   isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />
@@ -131,6 +130,7 @@ function AppContent() {
                   </ProtectedRoute>
                 } />
               </Routes>
+            {showSidebars && <RightSidebar />}
             </main>
             <ToastContainer />
           </div>

@@ -5,6 +5,7 @@ import { useSearch } from '../hooks/feeds/useSearch';
 import { useSearchParams } from 'react-router-dom';
 import { usePopularActivities } from '../hooks/feeds/usePopularActivities';
 import { useFeedActivities } from '../hooks/feeds/useFeedActivities';
+import './Feeds.css';
 
 interface FeedsProps {
   feedType?: 'trending' | 'following' | 'for-you';
@@ -100,10 +101,8 @@ const Feeds = ({ feedType }: FeedsProps) => {
 
   const feedTitle = getFeedTitle();
 
-  console.log('feedType', feedType);
-
   return (
-    <div style={{ marginTop: '30px' }}>
+    <div className="feeds-container">
       {feedTitle && (
         <div style={{ 
           fontSize: '1.5rem', 

@@ -19,7 +19,7 @@ body {
 /* ===== APP COMPONENT STYLES ===== */
 .app {
   /* min-height: 100vh; */
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
+  background: white;
   padding-top: 4rem; /* Account for fixed header */
 }
 
@@ -61,17 +61,10 @@ body {
 }
 
 .app-main.with-sidebars {
-  margin-left: 368px; /* 240px sidebar + 8rem margin */
-  margin-right: 380px; /* 300px sidebar + 5rem margin */
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 0;
-}
-
-.app-main.with-sidebars > * {
-  width: 100%;
-  max-width: 600px; /* Center the content with a reasonable max width */
 }
 
 /* Responsive layout adjustments */

@@ -1,22 +1,26 @@
 import React from 'react';
 import './RightSidebar.css';
+import { useFollowSuggestions } from '../hooks/feeds/useFollowSuggestions';
+import { useNavigate } from 'react-router-dom';
+import { UserActions } from './UserActions';
+
 
 interface RightSidebarProps {}
 
 const RightSidebar: React.FC<RightSidebarProps> = () => {
 
-  const suggestedUsers = [
-    { name: 'Sarah Chen' },
-    { name: 'Mike Yip' },
-    { name: 'Alex Wang' },
-    { name: 'Emma Rodriguez' },
-    { name: 'James Kim' },
-    { name: 'Lisa Park' }
-  ];
-
+  const navigate = useNavigate();
+  const { whoToFollow, isLoading: isLoadingWhoToFollow } = useFollowSuggestions();
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
+
+  const handleGoToProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
+  };
+
+  console.log('whoToFollow', whoToFollow);
+  console.log('isLoadingWhoToFollow', isLoadingWhoToFollow);
 
   return (
     <aside className="right-sidebar">
@@ -26,20 +30,29 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
         <div className="sidebar-section">
           <h3 className="section-title">Suggested for you</h3>
           <div className="users-list">
-            {suggestedUsers.map((user, index) => (
-              <div key={index} className="user-item">
+            {isLoadingWhoToFollow && (
+              <div className="user-item">
                 <div className="user-avatar">
-                  <span className="avatar-initials">{getInitials(user.name)}</span>
+                  <span className="avatar-initials">Loading...</span>
+                </div>
+              </div>
+            )}
+            {whoToFollow.map((user, index) => (
+              <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
+                <div className="user-avatar">
+                  <span className="avatar-initials">{getInitials(user.name as string)}</span>
                 </div>
                 <div className="user-info">
                   <div className="user-name">{user.name}</div>
+                  {/* <span className="user-username">@{user.id}</span> */}
+                  {/* <button className="follow-suggestion-btn">Follow</button> */}
+                  <UserActions targetUserId={user.id} />
                 </div>
-                <button className="follow-suggestion-btn">Follow</button>
               </div>
             ))}
           </div>
         </div>
-        
+
       </div>
     </aside>
   );

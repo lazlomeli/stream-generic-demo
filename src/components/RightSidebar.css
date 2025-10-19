@@ -1,14 +1,10 @@
 /* Right Sidebar Component Styles */
 .right-sidebar {
-  width: 300px;
-  height: calc(100vh - 8rem); /* Static height: 100vh - (6rem top + 2rem bottom) */
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
+  width: 400px !important;
+  background: white;
   border: 1px solid #e5e7eb;
+  margin: 30px !important;
   border-radius: 1rem; /* Rounded edges */
-  margin: 0rem 5rem 0rem 0rem; /* Let CSS custom properties handle top/bottom spacing */
-  position: fixed;
-  right: 0;
-  top: 6rem; /* Static position: 4rem header + 2rem gap */
   z-index: 100; /* Below header (z-index: 200) and loading overlays (z-index: 99999) */
   overflow-y: auto;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
