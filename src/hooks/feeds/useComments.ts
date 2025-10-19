@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CommentResponse,
   AddCommentReactionResponse,
@@ -80,6 +80,7 @@ const deleteCommentReactionFromAPI = async (
 export function useComments() {
   const { client } = useUser();
   const { showError } = useToast();
+  const queryClient = useQueryClient();
 
   // Mutation for adding comment
   const addCommentMutation = useMutation({
@@ -99,6 +100,12 @@ export function useComments() {
         throw new Error("Client is not available");
       }
       return await addCommentToAPI(client, objectId, comment, objectType);
+    },
+    onSuccess: () => {
+      // Invalidate activities to refresh comments
+      queryClient.invalidateQueries({
+        queryKey: ["activities"],
+      });
     },
   });
 
@@ -129,6 +136,12 @@ export function useComments() {
         objectType
       );
     },
+    onSuccess: () => {
+      // Invalidate activities to refresh replies
+      queryClient.invalidateQueries({
+        queryKey: ["activities"],
+      });
+    },
   });
 
   // Mutation for deleting comment
@@ -139,6 +152,12 @@ export function useComments() {
       }
       await deleteCommentFromAPI(client, commentId);
       return commentId;
+    },
+    onSuccess: () => {
+      // Invalidate activities to refresh after comment deletion
+      queryClient.invalidateQueries({
+        queryKey: ["activities"],
+      });
     },
   });
 
@@ -155,6 +174,12 @@ export function useComments() {
         throw new Error("Client is not available");
       }
       return await addCommentReactionToAPI(client, commentId, type);
+    },
+    onSuccess: () => {
+      // Invalidate activities to refresh comment reactions
+      queryClient.invalidateQueries({
+        queryKey: ["activities"],
+      });
     },
   });
 
@@ -174,6 +199,12 @@ export function useComments() {
       }
       await deleteCommentReactionFromAPI(client, commentId, type);
       return { commentId, type, userId };
+    },
+    onSuccess: () => {
+      // Invalidate activities to refresh comment reactions
+      queryClient.invalidateQueries({
+        queryKey: ["activities"],
+      });
     },
   });
 

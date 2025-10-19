@@ -59,7 +59,7 @@ const Feeds = () => {
   }
 
   return (
-    <div>
+    <div style={{ marginTop: '30px' }}>
       <Composer />
       <div>
         {globalActivities.map((activity) => (

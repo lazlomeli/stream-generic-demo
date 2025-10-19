@@ -1838,40 +1838,7 @@
   }
 }
 
-/* Highlighted Post */
-.highlighted-post,
-.post-highlighted {
-  border: 2px solid #0ea5e9 !important;
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
-  animation: highlightPulse 2s ease-in-out;
-}
-
-/* Add transition only for background color fade effects */
-.feed-post {
-  transition: background-color 0.8s ease-out;
-}
-
-/* Mobile highlighted post - use background instead of border */
-.mobile-view .highlighted-post,
-.mobile-view .post-highlighted {
-  border: none !important;
-  box-shadow: none !important;
-  background-color: rgba(59, 130, 246, 0.1) !important;
-  animation: none !important;
-}
-
-
-@keyframes highlightPulse {
-  0% {
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(14, 165, 233, 0.1);
-  }
-  100% {
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
-  }
-}
+/* Highlighted Post styles moved to Activity.css */
 
 /* Back to Feeds Button */
 .back-to-feeds-button {

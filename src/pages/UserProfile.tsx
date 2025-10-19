@@ -3,44 +3,21 @@ import { useProfileStats } from "../hooks/feeds/useProfileStats";
 import { ProfileStats } from "../components/ProfileStats";
 import { UserPlus, UserMinus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FeedsClient } from "@stream-io/feeds-client";
+import { FeedsClient, ActivityResponse } from "@stream-io/feeds-client";
 import { useParams } from "react-router-dom";
+import Activity from "../components/Activity";
 import "./UserProfile.css";
 
 interface UserProfileProps {
   onBack?: () => void;
 }
 
-// TODO: This is a temporary solution to get the user name from activities.
-// We need to find a better way to get the user name from activities.
-// This makes a lot of requests to the API.
-// Get user name from activities
-const getUserNameFromActivities = async (
-  client: FeedsClient,
-  userId: string
-): Promise<string> => {
-  try {
-    const response = await client.queryActivities({
-      filter: {
-        user_id: userId,
-      },
-      limit: 1,
-    });
-
-    if (response.activities && response.activities.length > 0) {
-      return response.activities[0].user?.name || `User ${userId.replace("user-", "")}`;
-    }
-    return `User ${userId.replace("user-", "")}`;
-  } catch (error) {
-    console.error("Error fetching user name:", error);
-    return `User ${userId.replace("user-", "")}`;
-  }
-};
-
 export function UserProfile({ onBack }: UserProfileProps) {
   const { user: currentUser, client } = useUser();
   const { userId } = useParams<{ userId: string }>();
   const [realUserName, setRealUserName] = useState('');
+  const [userPosts, setUserPosts] = useState<ActivityResponse[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   
   // Handle case where userId might be undefined
   if (!userId) {
@@ -58,15 +35,38 @@ export function UserProfile({ onBack }: UserProfileProps) {
   const isOwnProfile = currentUser?.nickname === userId;
   const isFollowingUser = isFollowing(userId);
 
-  // Get real user name from activities
+  // Get real user name from activities and fetch user posts
   useEffect(() => {
-    const fetchRealUserName = async () => {
+    const fetchUserData = async () => {
       if (client && userId) {
-        const realName = await getUserNameFromActivities(client, userId);
-        setRealUserName(realName);
+        try {
+          setLoadingPosts(true);
+          const response = await client.queryActivities({
+            filter: {
+              user_id: userId,
+            },
+            limit: 50,
+            sort: [{ field: "created_at", direction: -1 }],
+          });
+
+          if (response.activities && response.activities.length > 0) {
+            const realName = response.activities[0].user?.name || `User ${userId.replace("user-", "")}`;
+            setRealUserName(realName);
+            setUserPosts(response.activities.filter(activity => activity.type === "post"));
+          } else {
+            setRealUserName(`User ${userId.replace("user-", "")}`);
+            setUserPosts([]);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setRealUserName(`User ${userId.replace("user-", "")}`);
+          setUserPosts([]);
+        } finally {
+          setLoadingPosts(false);
+        }
       }
     };
-    fetchRealUserName();
+    fetchUserData();
   }, [client, userId]);
   
   // Set default user name while loading
@@ -137,12 +137,23 @@ export function UserProfile({ onBack }: UserProfileProps) {
         <ProfileStats user={{ id: userId, name: displayUserName }} isOwnProfile={isOwnProfile} />
       </div>
 
-      {/* Bio Section */}
-      <div className="profile-bio-section">
-        <h3 className="bio-title">About</h3>
-        <p className="bio-text">
-          This is a demo profile. User information and bio would be stored in your database.
-        </p>
+      {/* User Posts Section */}
+      <div className="profile-posts-section">
+        <h3 className="posts-title">Posts</h3>
+        
+        {loadingPosts ? (
+          <div className="posts-loading">Loading posts...</div>
+        ) : userPosts.length === 0 ? (
+          <div className="posts-empty">
+            <p>{isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}</p>
+          </div>
+        ) : (
+          <div className="posts-list">
+            {userPosts.map((post) => (
+              <Activity key={`profile-post-${post.id}`} activity={post} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

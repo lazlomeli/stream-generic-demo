@@ -44,7 +44,10 @@ const addActivityToFeed = async (
         return await addActivityToFeed(client, userId, text);
       },
       onSuccess: () => {
-        // Invalidate all feed-related queries to trigger refetches
+        // Invalidate all activity queries to trigger refetches
+        queryClient.invalidateQueries({
+          queryKey: ["activities"],
+        });
         queryClient.invalidateQueries({
           queryKey: ["feed"],
         });
@@ -65,7 +68,10 @@ const addActivityToFeed = async (
         return await deleteActivityFromFeed(client, activityId);
       },
       onSuccess: () => {
-        // Invalidate all feed-related queries to trigger refetches
+        // Invalidate all activity queries to trigger refetches
+        queryClient.invalidateQueries({
+          queryKey: ["activities"],
+        });
         queryClient.invalidateQueries({
           queryKey: ["feed"],
         });
@@ -88,7 +94,10 @@ const addActivityToFeed = async (
         return true;
       },
       onSuccess: () => {
-        // Invalidate all feed-related queries
+        // Invalidate all activity queries
+        queryClient.invalidateQueries({
+          queryKey: ["activities"],
+        });
         queryClient.invalidateQueries({
           queryKey: ["feed"],
         });

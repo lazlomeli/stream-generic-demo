@@ -6,6 +6,7 @@
   border-radius: 0.5rem;
   padding: 1.5rem;
   border: 1px solid rgb(229, 231, 235);
+  margin-top: 30px;
 }
 
 /* Profile Info Section */
@@ -105,22 +106,40 @@
   margin-bottom: 1.5rem;
 }
 
-/* Bio Section */
-.profile-bio-section {
+/* Posts Section */
+.profile-posts-section {
   border-top: 1px solid rgb(229, 231, 235);
   padding-top: 1.5rem;
 }
 
-.bio-title {
+.posts-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: rgb(31, 41, 55);
   margin: 0 0 0.75rem 0;
 }
 
-.bio-text {
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.posts-loading {
   color: rgb(107, 114, 128);
-  line-height: 1.5;
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.posts-empty {
+  color: rgb(107, 114, 128);
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.posts-empty p {
   margin: 0;
 }
 
