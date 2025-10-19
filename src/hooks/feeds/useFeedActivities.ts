@@ -51,7 +51,9 @@ export function useFeedActivities() {
       try {
         setLoading(true);
 
-        // Initialize feeds - timeline as public feed, user as personal feed
+        // Initialize feeds
+        // - timeline: Aggregates activities from people you follow (NOT yourself)
+        // - user: Your own posts
         const timeline = client.feed("timeline", userId);
         const user = client.feed("user", userId);
 
@@ -59,34 +61,40 @@ export function useFeedActivities() {
         await timeline.getOrCreate({ watch: true });
         await user.getOrCreate({ watch: true });
 
-        // Set up timeline to follow user feed (so user posts appear in public timeline)
-        try {
-          const follows = await client.queryFollows({
-            filter: {
-              source_feed: timeline.feed,
-              target_feed: { $in: [user.feed] },
-            },
-          });
-          if (follows.follows.length === 0) {
-            await client.follow({
-              source: timeline.feed,
-              target: user.feed,
-            });
-            // Small delay to ensure follow relationship is established
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
-        } catch (err) {
-          // Ignore if already following - this is expected on refresh
-          const errorMessage = (err as Error).message;
-          if (errorMessage?.includes("already exists in accepted state")) {
-            console.log("Timeline already follows user feed - this is normal");
-          } else {
-            showError("Follow error: " + errorMessage);
-          }
-        }
+        // CLEANUP: Remove self-follow if it exists (from old code)
+        // console.log('🔍 Checking for self-follow relationship...');
+        // try {
+        //   const follows = await client.queryFollows({
+        //     filter: {
+        //       source_feed: timeline.feed,
+        //       target_feed: { $in: [user.feed] },
+        //     },
+        //   });
+          
+        //   if (follows.follows.length > 0) {
+        //     console.log('❌ Found self-follow! Removing it...', follows.follows);
+        //     await client.unfollow({
+        //       source: timeline.feed,
+        //       target: user.feed,
+        //     });
+        //     console.log('✅ Self-follow removed successfully!');
+            
+        //     await timeline.getOrCreate();
+        //   } else {
+        //     console.log('✅ No self-follow found - timeline is clean!');
+        //   }
+        // } catch (err) {
+        //   console.error('Error checking/removing self-follow:', err);
+        // }
+
+        // console.log('📊 Timeline feed info:', {
+        //   feed: timeline.feed,
+        //   userId,
+        // });
 
         // Set up subscriptions for both feeds
         timelineUnsubscribe = timeline.state.subscribe((state) => {
+          console.log('📥 Timeline activities update:', state.activities?.length);
           setTimelineActivities(state.activities || []);
           // Update React Query cache when real-time updates come in
           queryClient.setQueryData(
@@ -96,6 +104,7 @@ export function useFeedActivities() {
         });
 
         userUnsubscribe = user.state.subscribe((state) => {
+          console.log('📥 User activities update:', state.activities?.length);
           setUserActivities(state.activities || []);
           // Update React Query cache when real-time updates come in
           queryClient.setQueryData(
@@ -110,6 +119,12 @@ export function useFeedActivities() {
 
         const userState = user.state.getLatestValue();
         setUserActivities(userState.activities || []);
+
+        // Log activities with actors for debugging
+        console.log('👤 Your user ID:', userId);
+        console.log('📝 Timeline activities actors:', 
+          timelineState.activities?.map(a => a.user.id) || []
+        );
 
         setTimelineFeed(timeline);
         setUserFeed(user);
@@ -129,7 +144,7 @@ export function useFeedActivities() {
       timelineUnsubscribe?.();
       userUnsubscribe?.();
     };
-  }, [client, userId, queryClient]);
+  }, [client, userId, queryClient, showError]);
 
   // Handle feed type switching
   const switchFeedType = useCallback(
@@ -146,7 +161,7 @@ export function useFeedActivities() {
         setLoading(false);
       }
     },
-    [client, feedType]
+    [client, feedType, showError]
   );
 
   // Manual refetch functions that work with existing feeds

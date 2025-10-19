@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeIcon from '../icons/home.svg';
 import SendIcon from '../icons/send.svg';
 import CastIcon from '../icons/cast.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import NotificationIcon from '../icons/bell.svg';
+import TrendingIcon from '../icons/trending-up.svg';
+import ExploreIcon from '../icons/search.svg';
+import FollowingIcon from '../icons/user-heart.svg';
 import { useNotifications } from '../hooks/feeds/useNotifications';
 import './Sidebar.css';
 import '../pages/Notifications.css';
@@ -15,9 +18,29 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useNotifications();
+  const [isFeedExpanded, setIsFeedExpanded] = useState(false);
+
+  // Check if we're on a feed-related path
+  const isFeedPath = location.pathname.startsWith('/feeds');
+
+  // Expand/collapse feed submenu based on current path
+  useEffect(() => {
+    if (isFeedPath) {
+      setIsFeedExpanded(true);
+    } else {
+      setIsFeedExpanded(false);
+    }
+  }, [isFeedPath]);
 
   const handleFeedsClick = () => {
-    navigate('/feeds');
+    if (isFeedPath) {
+      // If already on feeds, toggle the submenu
+      setIsFeedExpanded(!isFeedExpanded);
+    } else {
+      // Navigate to feeds and expand
+      setIsFeedExpanded(true);
+      navigate('/feeds');
+    }
   };
 
   const handleChatClick = () => {
@@ -48,12 +71,39 @@ const Sidebar: React.FC<SidebarProps> = () => {
       <nav className="sidebar-nav">
         <button
           onClick={handleFeedsClick}
-          className={`sidebar-button ${isActive('/feeds') ? 'active' : ''}`}
+          className={`sidebar-button ${isFeedPath ? 'active' : ''}`}
           title="Activity Feeds"
         >
           <img src={HomeIcon} alt="Feed" className="sidebar-icon" />
           <span className="sidebar-label">Feed</span>
         </button>
+
+        <div className={`sidebar-submenu ${isFeedExpanded ? 'expanded' : 'collapsed'}`}>
+          <button
+            onClick={() => navigate('/feeds/trending')}
+            className={`sidebar-button sidebar-submenu-button ${isActive('/feeds/trending') ? 'active' : ''}`}
+            title="Trending"
+          >
+            <img src={TrendingIcon} alt="Trending" className="sidebar-icon" />
+            <span className="sidebar-label">Trending</span>
+          </button>
+          <button
+            onClick={() => navigate('/feeds/following')}
+            className={`sidebar-button sidebar-submenu-button ${isActive('/feeds/following') ? 'active' : ''}`}
+            title="Following"
+          >
+            <img src={FollowingIcon} alt="Following" className="sidebar-icon" />
+            <span className="sidebar-label">Following</span>
+          </button>
+          <button
+            onClick={() => navigate('/feeds/for-you')}
+            className={`sidebar-button sidebar-submenu-button ${isActive('/feeds/for-you') ? 'active' : ''}`}
+            title="For You"
+          >
+            <img src={ExploreIcon} alt="For You" className="sidebar-icon" />
+            <span className="sidebar-label">For You</span>
+          </button>
+        </div>
 
         <button
           onClick={handleChatClick}

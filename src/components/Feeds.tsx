@@ -1,33 +1,59 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { useUser } from '../hooks/feeds/useUser';
-import { useFeedManager } from '../hooks/feeds/useFeedManager';
-import { useFeedActions } from '../hooks/feeds/useFeedActions';
 import { Composer } from './Composer';
 import Activity from './Activity';
 import { useEffect, useRef } from 'react';
 import { useSearch } from '../hooks/feeds/useSearch';
 import { useSearchParams } from 'react-router-dom';
+import { usePopularActivities } from '../hooks/feeds/usePopularActivities';
+import { useFeedActivities } from '../hooks/feeds/useFeedActivities';
 
-const Feeds = () => {
-  // const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
-  const { user, client, loading, error, showUserModal, retryConnection } = useUser();
-  // const { activities, feedType, loading: loadingFeeds, switchFeedType } = useFeedManager();
+interface FeedsProps {
+  feedType?: 'trending' | 'following' | 'for-you';
+}
+
+const Feeds = ({ feedType }: FeedsProps) => {
   const { activities: globalActivities, clearSearch, isLoading } = useSearch();
-  const {
-    posting,
-    deleting,
-    refetching, 
-    handlePost, 
-    handleDeleteActivity, 
-    handleRefetchFeeds, 
-    createPostMutation, 
-    deletePostMutation, 
-    refetchFeedsMutation 
-  } = useFeedActions();
+  const { popularActivities, isLoading: isLoadingPopularActivities } = usePopularActivities();
+  const { activities: followingActivities, loading: isLoadingFollowingActivities } = useFeedActivities();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const highlightedPostId = searchParams.get('postId');
   const postRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Select activities based on feedType
+  const getActivities = () => {
+    switch (feedType) {
+      case 'trending':
+        console.log('popularActivities', popularActivities);
+        return popularActivities;
+      case 'following':
+        console.log('feedActivities', followingActivities);
+        return followingActivities;
+      case 'for-you':
+        console.log('globalActivities', globalActivities);
+        return globalActivities;
+      default:
+        console.log('default', globalActivities);
+        return globalActivities;
+    }
+  };
+
+  const activities = getActivities();
+
+  // Get the appropriate loading state
+  const getLoadingState = () => {
+    switch (feedType) {
+      case 'trending':
+        return isLoadingPopularActivities;
+      case 'following':
+        return isLoadingFollowingActivities;
+      case 'for-you':
+        return isLoading;
+      default:
+        return isLoading;
+    }
+  };
+
+  const isLoadingActivities = getLoadingState();
 
   // Scroll to and highlight the post when postId is in URL
   useEffect(() => {
@@ -52,17 +78,46 @@ const Feeds = () => {
         }, 2000);
       }, 300);
     }
-  }, [highlightedPostId, globalActivities, setSearchParams]);
+  }, [highlightedPostId, activities, setSearchParams]);
 
-  if (isLoading) {
+  if (isLoadingActivities) {
     return <div>Loading...</div>
   }
 
+  // Get the display title based on feed type
+  const getFeedTitle = () => {
+    switch (feedType) {
+      case 'trending':
+        return 'Trending Posts';
+      case 'following':
+        return 'Following';
+      case 'for-you':
+        return 'For You';
+      default:
+        return null;
+    }
+  };
+
+  const feedTitle = getFeedTitle();
+
+  console.log('feedType', feedType);
+
   return (
     <div style={{ marginTop: '30px' }}>
+      {feedTitle && (
+        <div style={{ 
+          fontSize: '1.5rem', 
+          fontWeight: 700, 
+          color: '#111827', 
+          marginBottom: '1.5rem',
+          padding: '0 1rem'
+        }}>
+          {feedTitle}
+        </div>
+      )}
       <Composer />
       <div>
-        {globalActivities.map((activity) => (
+        {activities.map((activity) => (
           <div 
             key={`feed-${activity.id}`}
             ref={(el) => { postRefs.current[activity.id] = el; }}

@@ -43,7 +43,7 @@ function AppContent() {
   const { isMobileView } = useResponsive()
 
   // Determine if we should show the sidebars (feeds, bookmarked, notifications, and profile pages)
-  const showSidebars = isAuthenticated && !isMobileView && (location.pathname === '/feeds' || location.pathname === '/bookmarked' || location.pathname === '/notifications' || location.pathname.startsWith('/profile/'))
+  const showSidebars = isAuthenticated && !isMobileView && (location.pathname.startsWith('/feeds') || location.pathname === '/bookmarked' || location.pathname === '/notifications' || location.pathname.startsWith('/profile/'))
   
   // Video and call pages should use full layout without sidebars, similar to chat
   const isVideoPage = location.pathname === '/video'
@@ -96,6 +96,21 @@ function AppContent() {
                 <Route path="/feeds" element={
                   <ProtectedRoute>
                     <Feeds />
+                  </ProtectedRoute>
+                } />
+                <Route path="/feeds/trending" element={
+                  <ProtectedRoute>
+                    <Feeds feedType="trending" />
+                  </ProtectedRoute>
+                } />
+                <Route path="/feeds/following" element={
+                  <ProtectedRoute>
+                    <Feeds feedType="following" />
+                  </ProtectedRoute>
+                } />
+                <Route path="/feeds/for-you" element={
+                  <ProtectedRoute>
+                    <Feeds feedType="for-you" />
                   </ProtectedRoute>
                 } />
                 <Route path="/bookmarked" element={
