@@ -241,12 +241,10 @@ router.post('/chat-operations', async (req, res) => {
 
     if (type === 'create-channel') {
   
-      // Validate required fields
       if (!selectedUsers) {
         return res.status(400).json({ error: 'selectedUsers is required for create-channel' });
       }
-      
-      // For group channels, channel name is required
+    
       if (!isDM && !channelName) {
         return res.status(400).json({ error: 'channelName is required for group channels' });
       }
@@ -255,13 +253,10 @@ router.post('/chat-operations', async (req, res) => {
         const parsedUsers = JSON.parse(selectedUsers);
         const members = [userId, ...parsedUsers].filter(Boolean);
         
-        // For DMs, check if a channel already exists between these exact members
         if (isDM && members.length === 2) {
           try {
-            // Sort members to ensure consistent ordering for comparison
             const sortedMembers = [...members].sort();
             
-            // Query for channels containing both users
             const filters = {
               type: 'messaging',
               members: { $in: sortedMembers }
@@ -269,22 +264,18 @@ router.post('/chat-operations', async (req, res) => {
             
             const existingChannels = await client.queryChannels(filters, {}, { limit: 20 });
             
-            // Filter to find DM channels with exactly these 2 members (no more, no less)
-            // IMPORTANT: Only match channels that are marked as DM, not group channels with 2 members
             const exactMatch = existingChannels.find(channel => {
               const channelMemberIds = Object.keys(channel.state.members).sort();
               const isExactMemberMatch = channelMemberIds.length === 2 && 
                      channelMemberIds[0] === sortedMembers[0] && 
                      channelMemberIds[1] === sortedMembers[1];
               
-              // Also check that the channel is marked as a DM
-              // @ts-ignore - isDM is a custom field we add to channel data
+              // @ts-ignore - isDM is a custom field added to channel data
               const isMarkedAsDM = channel.data?.isDM === true;
               
               return isExactMemberMatch && isMarkedAsDM;
             });
     
-            // If a DM already exists, return it instead of creating a new one
             if (exactMatch) {
               console.log('[chat-routes.ts]: Found existing DM channel:', exactMatch.id);
               
@@ -297,22 +288,18 @@ router.post('/chat-operations', async (req, res) => {
             }
           } catch (queryError) {
             console.warn('[chat-routes.ts]: Error querying for existing DM:', queryError);
-            // Continue to create new channel if query fails
           }
         }
         
-        // Create new channel if no existing DM found (or if it's a group channel)
         const shortId = Math.random().toString(36).substring(2, 8);
         const channelId = isDM ? `dm_${shortId}` : `group_${shortId}`;
         
         const channelData = {
-          // For DM channels, don't set a name - it will be determined dynamically per user
-          // For group channels, use the provided name
           name: isDM ? undefined : channelName,
           created_by_id: userId,
           members: members,
           isDM: isDM,
-          channelType: 'chat' // Mark as regular chat channel
+          channelType: 'chat'
         };
     
         const channel = client.channel('messaging', channelId, channelData);
@@ -359,7 +346,7 @@ router.post('/chat-operations', async (req, res) => {
               name: 'General',
               members: [userId],
               created_by_id: userId,
-              channelType: 'chat' // Mark as regular chat channel
+              channelType: 'chat'
             });
             await channel.create();
             channelJustCreated = true;

@@ -3,7 +3,6 @@ import { useChatContext, ChannelList as StreamChannelList } from 'stream-chat-re
 import CreateChannelModal from './CreateChannelModal';
 import CustomChannelPreview from './CustomChannelPreview';
 import usersGroupIcon from '../icons/users-group.svg';
-import userIcon from '../icons/user.svg';
 import sendIcon from '../icons/send.svg';
 import './CustomChannelList.css';
 
@@ -25,16 +24,12 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
     image?: string;
   }>>([]);
 
-  // Fetch users for both group and DM creation (cached to avoid repeated API calls)
   const fetchUsers = useCallback(async () => {
-    // If we already have users cached, don't fetch again
     if (availableUsers.length > 0) {
-      console.log('📋 Using cached user list');
       return availableUsers;
     }
     
     try {
-      console.log('👥 Fetching users from Stream API...');
       const users = await client.queryUsers(
         {},
         { id: 1 },
@@ -49,11 +44,10 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           image: user.image
         }));
 
-      console.log(`✅ Fetched ${userList.length} users`);
       setAvailableUsers(userList);
       return userList;
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('[CustomChannelList.tsx]: Error fetching users:', error);
     }
   }, [client, availableUsers]);
 
@@ -72,22 +66,17 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   }, [fetchUsers, availableUsers.length]);
 
   const handleChannelCreated = useCallback(async (channelId: string) => {
-    console.log('🎉 Channel created/opened, ID:', channelId);
-
     setShowCreateGroupModal(false);
     setShowCreateDMModal(false);
 
-    // Watch the channel and set it as active to open it immediately
     try {
       const newChannel = client.channel('messaging', channelId);
       await newChannel.watch();
       
-      // Set as active channel to open it immediately
       setActiveChannel(newChannel);
       
-      console.log('✅ Channel watched and opened successfully');
     } catch (error) {
-      console.error('❌ Error setting up channel:', error);
+      console.error('[CustomChannelList.tsx]: Error setting up channel:', error);
     }
   }, [client, setActiveChannel]);
 
@@ -101,7 +90,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
 
   return (
     <div className="custom-channel-list">
-      {/* Create Channel Buttons */}
       <div className="create-channel-section">
         <button
           className="create-channel-button group-button"
@@ -136,7 +124,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         </button>
       </div>
 
-      {/* Stream's Built-in Channel List with Custom Preview */}
       <div className="stream-channel-list">
         <StreamChannelList 
           filters={filters}
@@ -147,7 +134,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         />
       </div>
 
-      {/* Create Group Modal */}
       <CreateChannelModal
         isOpen={showCreateGroupModal}
         onClose={handleCloseGroupModal}
@@ -156,7 +142,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         currentUserId={client.userID}
       />
 
-      {/* Create DM Modal */}
       <CreateChannelModal
         isOpen={showCreateDMModal}
         onClose={handleCloseDMModal}

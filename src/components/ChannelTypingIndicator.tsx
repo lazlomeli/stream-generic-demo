@@ -22,10 +22,8 @@ const ChannelTypingIndicator: React.FC<ChannelTypingIndicatorProps> = ({
 
     const setupTypingListener = async () => {
       try {
-        // Get the channel instance (should already be watched from listMyChannels)
         channel = client.channel('messaging', channelId);
         
-        // Listen for typing events
         const handleTypingStart = (event: any) => {
           const userId = event.user?.id;
           const userName = event.user?.name || event.user?.id || 'Someone';
@@ -46,20 +44,16 @@ const ChannelTypingIndicator: React.FC<ChannelTypingIndicatorProps> = ({
           }
         };
 
-        // Add event listeners
         channel.on('typing.start', handleTypingStart);
         channel.on('typing.stop', handleTypingStop);
 
-        // Channels should already be watched from listMyChannels, so we don't need to watch again
-        // This reduces API calls and improves performance
       } catch (error) {
-        console.error('Error setting up typing listener for channel', channelId, error);
+        console.error('[ChannelTypingIndicator.tsx]: Error setting up typing listener for channel', channelId, error);
       }
     };
 
     setupTypingListener();
 
-    // Cleanup function
     return () => {
       if (channel) {
         channel.off('typing.start');
@@ -69,7 +63,6 @@ const ChannelTypingIndicator: React.FC<ChannelTypingIndicatorProps> = ({
     };
   }, [client, channelId]);
 
-  // If someone is typing, show the typing indicator
   if (typingUsers.length > 0) {
     const getTypingMessage = () => {
       if (typingUsers.length === 1) {
@@ -94,8 +87,7 @@ const ChannelTypingIndicator: React.FC<ChannelTypingIndicatorProps> = ({
       </div>
     );
   }
-
-  // Otherwise, show the last message
+  
   return (
     <span className="channel-last-message">
       {lastMessage || 'No messages yet'}

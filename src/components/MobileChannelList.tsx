@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useChatContext } from 'stream-chat-react'
-import { ChannelList, ChannelPreviewMessenger } from 'stream-chat-react'
 import { Channel as StreamChannel } from 'stream-chat'
 import { useAuth0 } from '@auth0/auth0-react'
 import CreateChannelModal from './CreateChannelModal'
@@ -32,9 +31,6 @@ interface MobileChannelListProps {
 }
 
 const MobileChannelList: React.FC<MobileChannelListProps> = ({
-  filters,
-  sort,
-  options,
   onChannelSelect,
   searchQuery,
   setSearchQuery,
@@ -48,7 +44,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
   const [filteredChannels, setFilteredChannels] = useState<ChannelItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
-  // Listen for real-time message updates to keep mobile channel list current
   useLastMessageListener(client, setChannels)
   const [showOptionsMenu, setShowOptionsMenu] = useState<string | null>(null)
   const { getAccessTokenSilently } = useAuth0()
@@ -71,34 +66,29 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
     setShowCreateDMModal(false)
   }
 
-  // Load channels using the same method as desktop
   const loadChannels = useCallback(async () => {
     if (!client.userID) return;
     
     try {
       setIsLoading(true)
-      console.log('📱 Loading mobile channels...')
       
       const channelData = await listMyChannels(client, client.userID)
-      console.log(`✅ Mobile loaded ${channelData.length} channels`)
       
       setChannels(channelData)
       setFilteredChannels(channelData)
     } catch (error) {
-      console.error('❌ Error loading mobile channels:', error)
+      console.error('[MobileChannelList.tsx]: Error loading mobile channels:', error)
     } finally {
       setIsLoading(false)
     }
   }, [client])
 
-  // Load channels on mount and when client changes
   useEffect(() => {
     if (client.userID) {
       loadChannels()
     }
   }, [client.userID, loadChannels])
 
-  // Filter channels based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredChannels(channels)
@@ -125,10 +115,8 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
     setShowCreateGroupModal(false)
     setShowCreateDMModal(false)
     
-    // Refresh channel list
     await loadChannels()
     
-    // Get the new channel and select it
     const newChannel = client.channel('messaging', channelId)
     await newChannel.watch()
     setActiveChannel(newChannel)
@@ -136,25 +124,18 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
     onChannelCreated(channelId)
   }
 
-  // Handle options menu toggle
   const handleOptionsClick = (e: React.MouseEvent, channelId: string) => {
     e.stopPropagation()
     setShowOptionsMenu(showOptionsMenu === channelId ? null : channelId)
   }
 
-  // Handle delete channel
   const handleDeleteChannel = async (channelId: string) => {
-    console.log('🔥 DELETE CLICKED:', { channelId, userID: client.userID })
-    
     if (!client.userID) {
-      console.log('🔥 No userID, aborting delete')
       return
     }
     
     try {
-      console.log('🔥 Getting access token...')
       const accessToken = await getAccessTokenSilently()
-      console.log('🔥 Access token obtained, making API call...')
       
       const response = await fetch('/api/chat-operations', {
         method: 'POST',
@@ -169,67 +150,52 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         }),
       })
 
-      console.log('🔥 API Response:', { status: response.status, ok: response.ok })
-
       if (!response.ok) {
         const errorText = await response.text()
-        console.log('🔥 API Error:', errorText)
         throw new Error(`Failed to delete channel: ${errorText}`)
       }
 
       const result = await response.json()
-      console.log('🔥 Delete successful:', result)
 
       showSuccess('Channel deleted successfully')
       setShowOptionsMenu(null)
-      await loadChannels() // Refresh the list
+      await loadChannels()
       
     } catch (error) {
-      console.error('🔥 Error deleting channel:', error)
+      console.error('[MobileChannelList.tsx]: Error deleting channel:', error)
       showError(`Failed to delete channel: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
-  // Handle mute/unmute channel
   const handleMuteChannel = async (channelId: string) => {
-    console.log('🔥 MUTE CLICKED:', { channelId })
-    
     try {
-      console.log('🔥 Getting channel...')
       const channel = client.channel('messaging', channelId)
       await channel.watch()
       
-      // Toggle mute status
       const isMuted = channel.muteStatus().muted
-      console.log('🔥 Current mute status:', { isMuted })
       
       if (isMuted) {
-        console.log('🔥 Unmuting channel...')
         await channel.unmute()
         showSuccess('Channel unmuted')
       } else {
-        console.log('🔥 Muting channel...')
         await channel.mute()
         showSuccess('Channel muted')
       }
       
-      console.log('🔥 Mute operation successful')
       setShowOptionsMenu(null)
-      await loadChannels() // Refresh to update mute status
+      await loadChannels()
       
     } catch (error) {
-      console.error('🔥 Error toggling mute:', error)
+      console.error('[MobileChannelList.tsx]: Error toggling mute:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       showError(`Failed to update mute settings: ${errorMessage}`)
     }
   }
 
-  // Close options menu when clicking outside
   const handleOverlayClick = () => {
     setShowOptionsMenu(null)
   }
 
-  // Close options menu when clicking outside - useEffect for document click
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       if (optionsButtonRef.current && !optionsButtonRef.current.contains(event.target as Node)) {
@@ -248,7 +214,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
 
   return (
     <div className="mobile-channel-list">
-      {/* Header with search and actions */}
       <div className="mobile-channel-header">
         <h2>Chats</h2>
         <div className="mobile-channel-actions">
@@ -261,7 +226,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         </div>
       </div>
 
-      {/* Search bar */}
       <div className="mobile-search-container">
         <input
           type="text"
@@ -272,7 +236,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         />
       </div>
 
-      {/* Channel list */}
       <div className="mobile-channel-list-container">
         {isLoading ? (
           <div className="mobile-channel-loading">
@@ -327,7 +290,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
                                 <button
                                   className="mobile-channel-option-item mute-option"
                                   onClick={(e) => {
-                                    console.log('🔥 Mute button clicked')
                                     e.stopPropagation()
                                     handleMuteChannel(channelItem.id)
                                   }}
@@ -338,7 +300,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
                                 <button
                                   className="mobile-channel-option-item delete-option"
                                   onClick={(e) => {
-                                    console.log('🔥 Delete button clicked')
                                     e.stopPropagation()
                                     handleDeleteChannel(channelItem.id)
                                   }}
@@ -368,7 +329,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         )}
       </div>
 
-      {/* Create Group Modal */}
       <CreateChannelModal
         isOpen={showCreateGroupModal}
         onClose={handleCloseGroupModal}
@@ -377,7 +337,6 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         currentUserId={client.userID}
       />
 
-      {/* Create DM Modal */}
       <CreateChannelModal
         isOpen={showCreateDMModal}
         onClose={handleCloseDMModal}
@@ -387,7 +346,7 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
         isDM={true}
       />
     </div>
-  )
+  );    
 }
 
-export default MobileChannelList
+export default MobileChannelList;

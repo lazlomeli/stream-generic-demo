@@ -3,6 +3,7 @@ import { ChannelPreviewUIComponentProps } from 'stream-chat-react';
 import FallbackAvatar from './FallbackAvatar';
 import ChannelTypingIndicator from './ChannelTypingIndicator';
 import VolumeOffIcon from '../icons/volume-off.svg';
+import { getMessagePreview, formatMessageWithSender } from '../utils/messageUtils';
 import './ChannelList.css';
 
 const CustomChannelPreview: React.FC<ChannelPreviewUIComponentProps> = (props) => {
@@ -10,22 +11,15 @@ const CustomChannelPreview: React.FC<ChannelPreviewUIComponentProps> = (props) =
 
   if (!channel) return null;
 
-  // Get channel data
   const channelId = channel.id || '';
-  const memberCount = Object.keys(channel.state?.members || {}).length;
-  
-  // Check if this is a DM channel (marked as isDM in channel data)
-  // @ts-ignore - isDM is a custom field we add to channel data
+
+  // @ts-ignore - isDM is a custom field added to ChannelData type
   const isDM = channel.data?.isDM === true;
 
-  // Determine channel name
   const channelName = displayTitle || 'Channel';
   
-  // For group channels, don't use any image (force fallback icon)
-  // For DM channels, use the displayImage (other user's avatar)
   const channelImage = isDM ? displayImage : undefined;
 
-  // Get last message time
   let lastMessageTime: string | undefined;
   if (latestMessage && typeof latestMessage === 'object' && 'created_at' in latestMessage) {
     const createdAt = latestMessage.created_at;
@@ -34,7 +28,6 @@ const CustomChannelPreview: React.FC<ChannelPreviewUIComponentProps> = (props) =
     }
   }
 
-  // Calculate online status for status indicator
   const members = channel.state?.members || {};
   const currentUserId = channel._client?.userID;
   const onlineUsers = Object.values(members).filter(member => member.user?.online === true);
@@ -58,47 +51,21 @@ const CustomChannelPreview: React.FC<ChannelPreviewUIComponentProps> = (props) =
 
   const status = getChannelStatus();
 
-  // Check if channel is muted
   const isMuted = channel.muteStatus()?.muted || false;
 
-  // Get last message for preview from channel state
   const lastMessage = channel.state.messages[channel.state.messages.length - 1];
   let lastMessageText = '';
   
   if (lastMessage) {
-    // Get message text or fallback to attachment preview
-    let messageText = lastMessage.text || '';
-    
-    // If no text but has attachments, show appropriate preview
-    if (!messageText && lastMessage.attachments && lastMessage.attachments.length > 0) {
-      const attachment = lastMessage.attachments[0];
-      switch (attachment.type) {
-        case 'voiceRecording':
-          messageText = '🎤 Voice Message';
-          break;
-        case 'image':
-          messageText = '📷 Photo';
-          break;
-        case 'video':
-          messageText = '🎥 Video';
-          break;
-        case 'file':
-          messageText = '📎 File';
-          break;
-        case 'giphy':
-          messageText = '🎬 GIF';
-          break;
-        default:
-          messageText = '📎 Attachment';
-          break;
-      }
-    }
+    let messageText = getMessagePreview(lastMessage);
 
-    // Add sender name prefix to the message preview
     if (messageText && lastMessage.user) {
-      const senderName = lastMessage.user.name || lastMessage.user.id;
-      const isOwnMessage = lastMessage.user.id === currentUserId;
-      lastMessageText = isOwnMessage ? `You: ${messageText}` : `${senderName}: ${messageText}`;
+      lastMessageText = formatMessageWithSender(
+        messageText,
+        lastMessage.user.id,
+        lastMessage.user.name,
+        currentUserId || ''
+      );
     } else if (messageText) {
       lastMessageText = messageText;
     }

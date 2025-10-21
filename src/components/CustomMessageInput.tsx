@@ -1,28 +1,17 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MessageInput, useMessageInputContext, AttachmentPreviewList, useChannelStateContext, useChatContext } from 'stream-chat-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { MessageInput, useMessageInputContext, useChannelStateContext } from 'stream-chat-react';
 import { useResponsive } from '../contexts/ResponsiveContext';
 import './VoiceRecording.css';
-
-// Import SVG icons
 import MicrophoneIcon from '../icons/microphone.svg';
 import StopIcon from '../icons/stop.svg';
 import SendIcon from '../icons/send.svg';
-import SendMsgIcon from '../icons/send-msg.svg';
 import CubePlusIcon from '../icons/cube-plus.svg';
-
-// Import custom attachment images
+import SendMsgIcon from '../icons/send-msg.svg';
 import CustomAttachment1 from '../assets/custom-attachment-1.png';
 import CustomAttachment2 from '../assets/custom-attachment-2.png';
 
-interface CustomMessageInputProps {
-  // Extend MessageInput props as needed
-}
 
-
-
-
-
-const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
+const CustomMessageInput: React.FC = (props) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -32,17 +21,12 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Get channel from channel state context and responsive context
   const { channel } = useChannelStateContext();
-  const { client } = useChatContext();
   const { isMobileView } = useResponsive();
   
-  // Get Stream Chat's message input context for proper state management
   const messageInputContext = useMessageInputContext();
 
-  // Helper function to get or upload image to Stream (with caching)
   const getOrUploadImageToStream = useCallback(async (attachmentNumber: 1 | 2) => {
-    // Check if we already have the URL cached
     if (uploadedImageUrls[attachmentNumber]) {
       return uploadedImageUrls[attachmentNumber]!;
     }
@@ -51,16 +35,13 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
       const imageUrl = attachmentNumber === 1 ? CustomAttachment1 : CustomAttachment2;
       const filename = `custom-attachment-${attachmentNumber}.png`;
       
-      // Fetch the image and convert to blob
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const file = new File([blob], filename, { type: 'image/png' });
       
-      // Upload the file to Stream
       const uploadResponse = await channel.sendImage(file);
       const streamUrl = uploadResponse.file;
       
-      // Cache the URL for future use
       setUploadedImageUrls(prev => ({ ...prev, [attachmentNumber]: streamUrl }));
       
       return streamUrl;
@@ -70,18 +51,14 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
     }
   }, [channel, uploadedImageUrls]);
 
-  // Custom attachment handler
   const handleCustomAttachment = useCallback(async () => {
     try {
-      // Determine which attachment to send (never the same as last one)
       const attachmentToSend = lastAttachmentSent === 1 ? 2 : 1;
       const filename = `custom-attachment-${attachmentToSend}.png`;
 
       if (channel) {
-        // Get the Stream URL (cached or upload if first time)
         const streamImageUrl = await getOrUploadImageToStream(attachmentToSend);
         
-        // Send the attachment through Stream Chat with proper image data
         await channel.sendMessage({
           attachments: [
             {
@@ -94,7 +71,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
           ],
         });
 
-        // Update the last sent attachment
         setLastAttachmentSent(attachmentToSend);
       } else {
         console.error('Channel not available for sending custom attachment');
@@ -129,7 +105,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
       setIsRecording(true);
       setRecordingTime(0);
 
-      // Start timer
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
@@ -156,8 +131,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
     if (!audioBlob) return;
 
     try {
-      // For now, we'll use a custom event to communicate with the parent
-      // This will be handled by the Chat component
       const event = new CustomEvent('voiceMessageReady', {
         detail: {
           audioBlob,
@@ -167,7 +140,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
       });
       window.dispatchEvent(event);
 
-      // Reset state
       setAudioBlob(null);
       setRecordingTime(0);
     } catch (error) {
@@ -191,7 +163,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
     }
   }, [isRecording]);
 
-  // Custom send handler
   const handleSendMessage = useCallback(() => {
     if (messageInputContext?.handleSubmit) {
       messageInputContext.handleSubmit();
@@ -210,11 +181,10 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
         <MessageInput 
           {...props} 
           additionalTextareaProps={{
-            placeholder: "Type a message... (try /giphy search_term)"
+            placeholder: "Type a message..."
           }}
         />
         
-        {/* Custom Attachment Button - positioned next to the "+" icon */}
         <button
           className="custom-attachment-button-external"
           onClick={handleCustomAttachment}
@@ -230,7 +200,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
           />
         </button>
 
-        {/* Voice Recording Button - Integrated into message input structure */}
         {!isRecording && !audioBlob && (
           <button
             className="voice-record-button-integrated"
@@ -247,7 +216,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
           </button>
         )}
 
-        {/* Custom Send Button */}
         <button
           className="custom-send-button"
           onClick={handleSendMessage}
@@ -263,7 +231,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = (props) => {
         </button>
       </div>
       
-      {/* Voice Recording Controls - For recording states */}
       {(isRecording || audioBlob) && (
         <div className="voice-recording-controls-integrated">
           {isRecording && (

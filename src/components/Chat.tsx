@@ -8,8 +8,6 @@ import {
   MessageList,
   Thread,
   Window,
-  useChatContext,
-  useChannelStateContext,
 } from 'stream-chat-react'
 import CustomMessageInput from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
@@ -21,7 +19,6 @@ import PinnedMessages from './PinnedMessages'
 import MobileBottomNav from './MobileBottomNav'
 import MobileChannelList from './MobileChannelList'
 import MobileChatView from './MobileChatView'
-import { getSanitizedUserId } from '../utils/userUtils'
 import { useResponsive } from '../contexts/ResponsiveContext'
 import { useLocation } from 'react-router-dom'
 import 'stream-chat-react/dist/css/v2/index.css'
@@ -45,19 +42,16 @@ const Chat: React.FC<ChatProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   
-  // Mobile-specific state for WhatsApp-style navigation
   const [mobileViewState, setMobileViewState] = useState<'channelList' | 'chat'>('channelList');
   const [selectedMobileChannel, setSelectedMobileChannel] = useState<StreamChannel | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Shared state for users (used by both desktop and mobile)
   const [availableUsers, setAvailableUsers] = useState<Array<{
     id: string;
     name: string;
     image?: string;
   }>>([]);
 
-  // Keep a single client instance per tab
   const clientRef = useRef<StreamChat | null>(null);
 
   console.log('👤 Chat: user', user);
@@ -66,7 +60,6 @@ const Chat: React.FC<ChatProps> = () => {
     return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
   }
 
-  // Mobile navigation functions
   const handleMobileChannelSelect = (channel: StreamChannel) => {
     setSelectedMobileChannel(channel);
     setMobileViewState('chat');
@@ -77,7 +70,6 @@ const Chat: React.FC<ChatProps> = () => {
     setSelectedMobileChannel(null);
   };
 
-  // Reset mobile state when switching views or channels change
   useEffect(() => {
     if (!isMobileView) {
       setMobileViewState('channelList');
@@ -85,7 +77,6 @@ const Chat: React.FC<ChatProps> = () => {
     }
   }, [isMobileView]);
 
-  // Handle URL channel selection in mobile
   useEffect(() => {
     if (isMobileView && channelId && clientRef.current) {
       const channel = clientRef.current.channel('messaging', channelId);
@@ -94,7 +85,6 @@ const Chat: React.FC<ChatProps> = () => {
     }
   }, [channelId, isMobileView, clientReady]);
 
-  // Fetch available users for channel creation (exact same as desktop implementation)
   const fetchUsers = useCallback(async () => {
     if (!clientRef.current) return;
     
@@ -119,7 +109,6 @@ const Chat: React.FC<ChatProps> = () => {
       setAvailableUsers(userList);
     } catch (error) {
       console.error('❌ Mobile: Error fetching users:', error);
-      // Fallback to demo users if we can't fetch from Stream (same as desktop)
       const fallbackUsers = [
         {
           id: 'alice_smith',
@@ -151,20 +140,16 @@ const Chat: React.FC<ChatProps> = () => {
     }
   }, []);
 
-  // Fetch users when client is ready
   useEffect(() => {
     if (clientReady && clientRef.current) {
       fetchUsers();
     }
   }, [clientReady, fetchUsers]);
 
-  // Handle channel created callback for mobile
   const handleMobileChannelCreated = useCallback(async (channelId: string) => {
     console.log('Mobile channel created:', channelId);
-    // Refresh might be needed depending on how the desktop handles this
   }, []);
 
-  // --- helpers ---
   const getStreamToken = useCallback(
     async (userId: string): Promise<string> => {
       console.log('111 dentro', userId);
@@ -197,26 +182,6 @@ const Chat: React.FC<ChatProps> = () => {
     [getAccessTokenSilently, user]
   );
 
-  // Removed seedIfNeeded - seeding should only happen via explicit reset button
-
-
-
-
-
-  // Reset state when drawer closes
-  useEffect(() => {
-    // This effect is no longer needed as Chat is rendered directly
-    // if (!isOpen) {
-    //   setClientReady(false);
-    //   setChannel(null);
-    //   setError(null);
-    //   setIsConnecting(false);
-    //   setSelectedChannelId("general");
-    //   // do NOT disconnect here; cleanup runs in main effect's return
-    // }
-  }, []);
-
-  // Main connect effect
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
@@ -238,7 +203,6 @@ const Chat: React.FC<ChatProps> = () => {
         setError(null);
 
         console.log('111');
-        // Get token only - NO automatic seeding
         const token = await getStreamToken(sanitizeUserId(user.nickname as string));
         console.log('222');
         if (cancelled) return;
@@ -260,7 +224,6 @@ const Chat: React.FC<ChatProps> = () => {
         console.log('444');
         if (cancelled) return;
 
-        // Ensure user is added to general channel before trying to watch
         try {
           console.log('555');
           const accessToken = await getAccessTokenSilently();
@@ -283,7 +246,6 @@ const Chat: React.FC<ChatProps> = () => {
             if (response.status === 404) {
               console.error('❌ General channel does not exist:', errorData.message);
 
-              // You might want to show this error to the user or trigger seeding
             } else {
               console.error('❌ Failed to add user to general channel:', errorData);
             }
@@ -292,7 +254,6 @@ const Chat: React.FC<ChatProps> = () => {
           }
         } catch (error) {
           console.error('❌ Network error adding user to general channel:', error);
-          // Continue anyway - the user can still use chat without the general channel
         }
 
         setClientReady(true);
@@ -306,12 +267,10 @@ const Chat: React.FC<ChatProps> = () => {
 
     run();
 
-    // Cleanup on unmount / auth change / apiKey change
     return () => {
       cancelled = true;
       const c = clientRef.current;
-      if (c?.userID) {
-        // Disconnect only if connected
+      if (c?.userID) {  
         c.disconnectUser().catch((e) =>
           console.warn("Chat disconnect warning:", e)
         );
@@ -328,7 +287,6 @@ const Chat: React.FC<ChatProps> = () => {
 
 
 
-  // --- render states ---
   if (error) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -351,7 +309,6 @@ const Chat: React.FC<ChatProps> = () => {
 
   const client = clientRef.current;
 
-  // ChannelList configuration
   const filters = { 
     type: 'messaging', 
     members: { $in: [user?.nickname as string] } 
@@ -363,7 +320,6 @@ const Chat: React.FC<ChatProps> = () => {
     state: true
   };
 
-  // Render mobile view
   if (isMobileView) {
     return (
       <div className={`chat-container mobile-view`}>
@@ -407,7 +363,6 @@ const Chat: React.FC<ChatProps> = () => {
     );
   }
 
-  // Render desktop view
   return (
     <div className={`chat-container desktop-view`}>
       <div className={`chat-content desktop-content`}>

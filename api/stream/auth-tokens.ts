@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-// import { FeedsClient } from '@stream-io/feeds-client'; // Disabled - V3 alpha causing issues
 import { StreamChat } from 'stream-chat';
 import { StreamClient } from '@stream-io/node-sdk';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -34,7 +33,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'type must be "feed", "chat", or "video"' });
     }
 
-    // Get Stream API credentials
     const apiKey = process.env.STREAM_API_KEY;
     const apiSecret = process.env.STREAM_API_SECRET;
 
@@ -49,18 +47,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    // Handle feed token generation
     if (type === 'feed') {
       console.log('🍃 AUTH-TOKENS: Generating feed token for:', userId);
       
-      // Skip V3 FeedsClient connection for now - it's in alpha and causing 500 errors
-      // Just generate the JWT token directly for frontend use
       if (userProfile) {
         console.log('👤 AUTH-TOKENS: User profile provided, skipping V3 connection (alpha)');
-        // Note: V3 Feeds connection disabled due to alpha limitations
       }
 
-      // Generate a Feeds V3-compatible JWT token
       console.log('🔑 AUTH-TOKENS: Generating JWT token...');
       const token = jwt.sign(
         {
@@ -81,15 +74,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Handle chat token generation
     if (type === 'chat') {
       console.log('💬 AUTH-TOKENS: Generating chat token for:', userId);
       
-      // Initialize Stream Chat client
       const streamClient = new StreamChat(apiKey, apiSecret);
 
       console.log('STREAMCLIENTTTTT', streamClient);
-      // Create/update user profile in Stream Chat if profile information is provided
       if (userProfile) {
         try {
           console.log('👤 AUTH-TOKENS: Updating chat user profile...');
@@ -102,11 +92,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.log(`✅ AUTH-TOKENS: User profile updated for chat: ${userId}`);
         } catch (profileError) {
           console.warn(`❌ AUTH-TOKENS: Failed to update user profile for chat ${userId}:`, profileError);
-          // Continue with token generation even if profile update fails
         }
       }
 
-      // Generate Stream user token
       console.log('🔑 AUTH-TOKENS: Generating chat token...');
       const streamToken = streamClient.createToken(userId);
 
@@ -118,25 +106,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Handle video token generation
     if (type === 'video') {
       console.log('📹 AUTH-TOKENS: Generating video token for:', userId);
       
-      // Initialize Stream client for video operations
       const streamClient = new StreamClient(apiKey, apiSecret);
 
-      // SIMPLIFIED APPROACH: Use original user ID but force admin role more aggressively
       let finalUserId = userId;
       
-      // Special handling for demo users - create only if needed
       if (userId === 'demo_user_2025') {
         console.log('👥 AUTH-TOKENS: Handling demo user demo_user_2025');
         try {
-          // First check if user exists by trying to query it
+          // @ts-ignore
           const existingUser = await streamClient.queryUsers({ id: 'demo_user_2025' });
           if (existingUser.users.length === 0) {
             console.log('🔧 AUTH-TOKENS: Demo user does not exist, creating...');
             await streamClient.upsertUsers({ 
+              // @ts-ignore
               id: 'demo_user_2025',
               name: 'Demo User',
               image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
@@ -150,27 +135,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
       
-      // Skip user profile updating entirely - rely on token capabilities only
       console.log('⚡ AUTH-TOKENS: SKIPPING user profile updates - using token-only approach');
 
-      // Generate Stream video user token
-      // For demo purposes, give all users admin capabilities to test livestreaming
-      const userRole = 'admin'; // Demo app - all users get admin for video features
+      const userRole = 'admin';
       console.log('🔑 AUTH-TOKENS: Generating video token for demo role:', userRole);
       
-      // Create JWT token directly like chat tokens, but with video-specific payload
       const now = Math.floor(Date.now() / 1000);
       console.log(`🔑 AUTH-TOKENS: Generating token for user ID: ${finalUserId}`);
       
       const tokenPayload: any = {
-        user_id: finalUserId, // Use the admin user ID for the token
+        user_id: finalUserId,
         iss: 'stream-video',
-        exp: now + (24 * 60 * 60), // 24 hours from now
+        exp: now + (24 * 60 * 60),
         iat: now,
-        nbf: now, // Not before - ensure token is valid immediately
-        // Add unique identifier to force token refresh
+        nbf: now,
         jti: `video_${finalUserId}_${now}_${Math.random().toString(36).substr(2, 9)}`,
-        // Add video publishing capabilities
         capabilities: [
           'join-call',
           'send-audio', 
@@ -179,9 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ]
       };
       
-      // Complete set of video and livestream capabilities
       tokenPayload.capabilities = [
-        // Basic video call capabilities
         'join-call',
         'send-audio', 
         'send-video',
@@ -197,7 +174,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'end-livestream',
         'update-livestream-settings',
         'livestream-admin',
-        // Additional admin capabilities
         'pin-for-everyone',
         'screenshare',
         'send-reaction',
@@ -206,19 +182,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'super-admin'
       ];
       
-      tokenPayload.call_cids = ['*']; // Allow access to all calls
-      tokenPayload.role = 'admin'; // FORCE admin role in token
-      tokenPayload.call_role = 'admin'; // Alternative role field
-      tokenPayload.livestream_role = 'admin'; // Livestream specific role
+      tokenPayload.call_cids = ['*'];
+      tokenPayload.role = 'admin';
+      tokenPayload.call_role = 'admin';
+      tokenPayload.livestream_role = 'admin';
       
-      // Add bypass flags
       tokenPayload.bypass_permissions = true;
       tokenPayload.is_admin = true;
       tokenPayload.grant_all_permissions = true;
       
       console.log('🔧 AUTH-TOKENS: Video token payload:', JSON.stringify(tokenPayload, null, 2));
       
-      // Generate JWT token directly using the same method as chat
       const videoToken = jwt.sign(tokenPayload, apiSecret, {
         algorithm: 'HS256'
       });
@@ -228,9 +202,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         token: videoToken,
         apiKey: apiKey,
-        userId: finalUserId, // Return the admin user ID for frontend to use
-        originalUserId: userId, // Keep original for reference
-        isAdminUser: finalUserId !== userId // Flag to indicate if we created a new admin user
+        userId: finalUserId,
+        originalUserId: userId,
+        isAdminUser: finalUserId !== userId
       });
     }
 

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { StreamChat, type ChannelFilters } from "stream-chat";
-import { get } from 'lodash'
+import { get } from 'lodash';
+import { getMessagePreview, formatMessageWithSender } from '../utils/messageUtils';
 
 export type ChannelItem = {
   id: string;
@@ -15,12 +16,10 @@ export type ChannelItem = {
 };
 
 export async function listMyChannels(client: StreamChat, me: string): Promise<ChannelItem[]> {
-  // Only query for regular chat channels by filtering on channelType
   const filters: ChannelFilters = { 
     type: "messaging", 
     members: { $in: [me] },
-    // @ts-ignore - channelType is a custom field we add to channel data
-    channelType: 'chat' // Only get regular chat channels, excludes livestream channels
+    channelType: 'chat'
   };
 
   const channels = await client.queryChannels(filters, { last_message_at: -1 }, { watch: true, state: true });
@@ -30,70 +29,15 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
     const memberCount = Object.keys(c.state?.members || {}).length;
     const isDM = c.data?.isDM === true;
     
-    let lastMessage = last?.text;
-    
-    if (!lastMessage && last?.attachments?.length > 0) {
-      const attachment = last.attachments[0];
-      
-      switch (attachment.type) {
-        case 'voiceRecording':
-          lastMessage = last.custom?.previewText || '🎤 Voice Message';
-          break;
-        case 'poll':
-          lastMessage = '📊 Poll';
-          break;
-        case 'image':
-          lastMessage = '📷 Photo';
-          break;
-        case 'video':
-          lastMessage = '🎥 Video';
-          break;
-        case 'file':
-          lastMessage = '📎 File';
-          break;
-        case 'giphy':
-          lastMessage = '🎬 GIF';
-          break;
-        default:
-          lastMessage = '📎 Attachment';
-          break;
-      }
-    }
-    
-    if (last?.text && last?.attachments?.length > 0) {
-      const attachment = last.attachments[0];
-      let attachmentIndicator = '';
-      
-      switch (attachment.type) {
-        case 'voiceRecording':
-          break;
-        case 'poll':
-          attachmentIndicator = ' 📊';
-          break;
-        case 'image':
-          attachmentIndicator = ' 📷';
-          break;
-        case 'video':
-          attachmentIndicator = ' 🎥';
-          break;
-        case 'file':
-          attachmentIndicator = ' 📎';
-          break;
-        case 'giphy':
-          attachmentIndicator = ' 🎬';
-          break;
-      }
-      
-      if (attachmentIndicator) {
-        lastMessage = last.text + attachmentIndicator;
-      }
-    }
+    let lastMessage = getMessagePreview(last);
 
     if (lastMessage && last?.user) {
-      const senderName = last.user.name || last.user.id;
-      const isOwnMessage = last.user.id === me;
-
-      lastMessage = isOwnMessage ? `You: ${lastMessage}` : `${senderName}: ${lastMessage}`;
+      lastMessage = formatMessageWithSender(
+        lastMessage,
+        last.user.id,
+        last.user.name,
+        me
+      );
     }
 
     const members = c.state?.members || {};
@@ -121,11 +65,8 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       }
     };
 
-    // For DM channels only, get the other user's image
-    // For group channels, don't set an image (force fallback icon)
     let channelImage: string | undefined = undefined;
     if (isDM) {
-      // Find the other user (not the current user)
       const otherUser = Object.values(members).find(member => 
         member.user?.id !== me
       );
