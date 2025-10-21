@@ -33,18 +33,21 @@ const CustomChannelHeader: React.FC = () => {
     );
   }
 
-  // Determine if it's a group channel based on member count
-  // Use Object.keys to count members (same logic as in listMyChannels)
+  // Determine if it's a DM channel based on isDM flag in channel data
+  // @ts-ignore - isDM is a custom field we add to channel data
+  const isDM = channel.data?.isDM === true;
+  const channelType = isDM ? 'dm' : 'group';
+  
+  // Use Object.keys to count members
   const memberCount = Object.keys(channel.state?.members || {}).length;
-  const isGroupChannel = memberCount > 2;
-  const channelType = isGroupChannel ? 'group' : 'dm';
 
   // Get channel name - use type assertion for custom properties
   const channelName = (channel.data as any)?.name || 'Channel';
   
-  // Get channel image - for DM channels, use the other user's image
-  let channelImage = (channel.data as any)?.image;
-  if (channelType === 'dm') {
+  // Get channel image - for DM channels only, use the other user's image
+  // For group channels, don't set an image (force fallback icon)
+  let channelImage: string | undefined = undefined;
+  if (isDM) {
     // Find the other user (not the current user)
     const members = channel.state?.members || {};
     const otherUser = Object.values(members).find(member => 
@@ -67,9 +70,9 @@ const CustomChannelHeader: React.FC = () => {
   // Generate subtitle based on online presence
   const getSubtitle = () => {
     if (onlineCount === 0) {
-      return isGroupChannel 
-        ? `${memberCount} members` 
-        : memberCount === 2 ? 'Direct Message' : `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
+      return isDM 
+        ? 'Direct Message' 
+        : `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
     } else if (onlineCount === 1) {
       // Check if the only online user is the current user
       const isOnlyUserOnline = onlineUsers.some(member => member.user?.id === currentUserId) && onlineCount === 1;

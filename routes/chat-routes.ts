@@ -262,12 +262,19 @@ router.post('/chat-operations', async (req, res) => {
             
             const existingChannels = await client.queryChannels(filters, {}, { limit: 20 });
             
-            // Filter to find channels with exactly these 2 members (no more, no less)
+            // Filter to find DM channels with exactly these 2 members (no more, no less)
+            // IMPORTANT: Only match channels that are marked as DM, not group channels with 2 members
             const exactMatch = existingChannels.find(channel => {
               const channelMemberIds = Object.keys(channel.state.members).sort();
-              return channelMemberIds.length === 2 && 
+              const isExactMemberMatch = channelMemberIds.length === 2 && 
                      channelMemberIds[0] === sortedMembers[0] && 
                      channelMemberIds[1] === sortedMembers[1];
+              
+              // Also check that the channel is marked as a DM
+              // @ts-ignore - isDM is a custom field we add to channel data
+              const isMarkedAsDM = channel.data?.isDM === true;
+              
+              return isExactMemberMatch && isMarkedAsDM;
             });
     
             // If a DM already exists, return it instead of creating a new one

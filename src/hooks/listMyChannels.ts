@@ -17,7 +17,7 @@ export type ChannelItem = {
 export async function listMyChannels(client: StreamChat, me: string): Promise<ChannelItem[]> {
   const filters: ChannelFilters = { type: "messaging", members: { $in: [me] } };
 
-  const channels = await client.queryChannels(filters, { last_message_at: -1 }, { watch: false, state: true });
+  const channels = await client.queryChannels(filters, { last_message_at: -1 }, { watch: true, state: true });
 
   // Filter out livestream channels to prevent them from appearing in regular chat
   const regularChannels = channels.filter(channel => {
@@ -112,6 +112,13 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       if (attachmentIndicator) {
         lastMessage = last.text + attachmentIndicator;
       }
+    }
+
+    // Add sender name prefix to the message preview
+    if (lastMessage && last?.user) {
+      const senderName = last.user.name || last.user.id;
+      const isOwnMessage = last.user.id === me;
+      lastMessage = isOwnMessage ? `You: ${lastMessage}` : `${senderName}: ${lastMessage}`;
     }
 
     // Calculate online users for status indicator

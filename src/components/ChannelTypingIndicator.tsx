@@ -22,7 +22,7 @@ const ChannelTypingIndicator: React.FC<ChannelTypingIndicatorProps> = ({
 
     const setupTypingListener = async () => {
       try {
-        // Get the channel instance
+        // Get the channel instance (should already be watched from listMyChannels)
         channel = client.channel('messaging', channelId);
         
         // Listen for typing events
@@ -50,10 +50,8 @@ const ChannelTypingIndicator: React.FC<ChannelTypingIndicatorProps> = ({
         channel.on('typing.start', handleTypingStart);
         channel.on('typing.stop', handleTypingStop);
 
-        // Watch the channel to ensure we receive events
-        if (channel.initialized === false) {
-          await channel.watch();
-        }
+        // Channels should already be watched from listMyChannels, so we don't need to watch again
+        // This reduces API calls and improves performance
       } catch (error) {
         console.error('Error setting up typing listener for channel', channelId, error);
       }
