@@ -15,53 +15,28 @@ export type ChannelItem = {
 };
 
 export async function listMyChannels(client: StreamChat, me: string): Promise<ChannelItem[]> {
-  const filters: ChannelFilters = { type: "messaging", members: { $in: [me] } };
+  // Only query for regular chat channels by filtering on channelType
+  const filters: ChannelFilters = { 
+    type: "messaging", 
+    members: { $in: [me] },
+    // @ts-ignore - channelType is a custom field we add to channel data
+    channelType: 'chat' // Only get regular chat channels, excludes livestream channels
+  };
 
   const channels = await client.queryChannels(filters, { last_message_at: -1 }, { watch: true, state: true });
 
-  // Filter out livestream channels to prevent them from appearing in regular chat
-  const regularChannels = channels.filter(channel => {
-    const channelId = channel.id || '';
-    
-    // Exclude livestream channels based on their ID patterns:
-    // 1. Channels starting with 'live-' (generated livestream channels)
-    // 2. URL-based livestream IDs (usually contain specific patterns)
-    const isLivestreamChannel = 
-      channelId.startsWith('live-') || 
-      channelId.includes('livestream') ||
-      channelId.includes('stream-') ||
-      // Additional pattern: check if channel has specific livestream metadata
-      (channel.data?.isLivestreamChannel === true);
-    
-    if (isLivestreamChannel) {
-      console.log(`🚫 Excluding livestream channel from chat list: ${channelId}`);
-      return false;
-    }
-    
-    return true;
-  });
-
-  return regularChannels.map((c) => {
+  return channels.map((c) => {
     const last = c.state.messages.at(-1);
-    // Fix: Use Object.keys to count members instead of relying on size property
     const memberCount = Object.keys(c.state?.members || {}).length;
-    
-    // Check if this is a DM channel based on isDM flag in channel data
-    // @ts-ignore - isDM is a custom field we add to channel data
     const isDM = c.data?.isDM === true;
     
-
-
-    // Handle different message types for channel list preview
     let lastMessage = last?.text;
     
-    // If no text but has attachments, show appropriate preview based on attachment type
     if (!lastMessage && last?.attachments?.length > 0) {
-      const attachment = last.attachments[0]; // Use the first attachment for preview
+      const attachment = last.attachments[0];
       
       switch (attachment.type) {
         case 'voiceRecording':
-          // Use custom preview text if available, otherwise show default
           lastMessage = last.custom?.previewText || '🎤 Voice Message';
           break;
         case 'poll':
@@ -80,20 +55,17 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
           lastMessage = '🎬 GIF';
           break;
         default:
-          // For any other attachment types
           lastMessage = '📎 Attachment';
           break;
       }
     }
     
-    // Handle case where there's text AND attachments - show text but indicate attachments
     if (last?.text && last?.attachments?.length > 0) {
       const attachment = last.attachments[0];
       let attachmentIndicator = '';
       
       switch (attachment.type) {
         case 'voiceRecording':
-          // Don't add extra emoji for voice recordings since they already have 🎤 in the text
           break;
         case 'poll':
           attachmentIndicator = ' 📊';
@@ -117,39 +89,34 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       }
     }
 
-    // Add sender name prefix to the message preview
     if (lastMessage && last?.user) {
       const senderName = last.user.name || last.user.id;
       const isOwnMessage = last.user.id === me;
+
       lastMessage = isOwnMessage ? `You: ${lastMessage}` : `${senderName}: ${lastMessage}`;
     }
 
-    // Calculate online users for status indicator
     const members = c.state?.members || {};
     const onlineUsers = Object.values(members).filter(member => 
       member.user?.online === true
     );
     const onlineCount = onlineUsers.length;
     
-    // Check if other users (not the current user) are online
     const otherUsersOnline = onlineUsers.filter(member => 
       member.user?.id !== me
     );
     const otherUsersOnlineCount = otherUsersOnline.length;
     
-    // Determine status based on channel type and online users
     const getChannelStatus = () => {
       if (isDM) {
-        // For DM channels (2 users): green if other user is online, gray if not
         return otherUsersOnlineCount > 0 ? 'online' : 'offline';
       } else {
-        // For group channels (>2 users)
         if (otherUsersOnlineCount > 0) {
-          return 'online'; // Green: at least one other user is online
+          return 'online'; 
         } else if (onlineCount === 1) {
-          return 'away'; // Yellow: only the logged user is online
+          return 'away';
         } else {
-          return 'offline'; // Gray: no one is online
+          return 'offline'; 
         }
       }
     };

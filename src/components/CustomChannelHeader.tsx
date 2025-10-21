@@ -41,21 +41,23 @@ const CustomChannelHeader: React.FC = () => {
   // Use Object.keys to count members
   const memberCount = Object.keys(channel.state?.members || {}).length;
 
-  // Get channel name - use type assertion for custom properties
-  const channelName = (channel.data as any)?.name || 'Channel';
-  
-  // Get channel image - for DM channels only, use the other user's image
-  // For group channels, don't set an image (force fallback icon)
+  // Get channel name and image
+  let channelName: string;
   let channelImage: string | undefined = undefined;
+  
   if (isDM) {
-    // Find the other user (not the current user)
+    // For DM channels, show the OTHER user's name and image
     const members = channel.state?.members || {};
     const otherUser = Object.values(members).find(member => 
       member.user?.id !== client.userID
     );
-    if (otherUser?.user?.image) {
-      channelImage = otherUser.user.image;
-    }
+    
+    channelName = otherUser?.user?.name || otherUser?.user?.id || 'Direct Message';
+    channelImage = otherUser?.user?.image;
+  } else {
+    // For group channels, use the stored channel name
+    channelName = (channel.data as any)?.name || 'Channel';
+    // Group channels don't use an image (force fallback icon)
   }
 
   // Calculate online users

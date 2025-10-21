@@ -79,17 +79,15 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     try {
       const accessToken = await getAccessTokenSilently();
       
-      // For DM, get the selected user's details
-      let finalChannelName = channelName.trim();
+      // For DM channels, don't set a name - it will be determined dynamically per user
+      // For group channels, use the provided name
+      let finalChannelName = isDM ? '' : channelName.trim();
       let channelImageData = null;
       
-      if (isDM) {
-        const selectedUserId = Array.from(selectedUsers)[0];
-        const selectedUser = availableUsers.find(user => user.id === selectedUserId);
-        if (selectedUser) {
-          finalChannelName = selectedUser.name;
-          channelImageData = selectedUser.image;
-        }
+      // Don't set image for DM either - it will be determined dynamically per user
+      if (!isDM && channelImage) {
+        // Only set image for group channels if provided
+        channelImageData = channelImage;
       }
       
       // Create request body

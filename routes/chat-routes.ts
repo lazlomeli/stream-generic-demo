@@ -219,8 +219,9 @@ router.post('/chat-operations', async (req, res) => {
         const channel = client.channel('livestream', channelId, {
           // name: `Live Stream ${channelId}`,
           created_by_id: userId,
-          members: [userId]
-        });
+          members: [userId],
+          channelType: 'livestream' // Mark as livestream channel
+        } as any);
 
         await channel.create();
 
@@ -240,8 +241,14 @@ router.post('/chat-operations', async (req, res) => {
 
     if (type === 'create-channel') {
   
-      if (!channelName || !selectedUsers) {
-        return res.status(400).json({ error: 'channelName and selectedUsers are required for create-channel' });
+      // Validate required fields
+      if (!selectedUsers) {
+        return res.status(400).json({ error: 'selectedUsers is required for create-channel' });
+      }
+      
+      // For group channels, channel name is required
+      if (!isDM && !channelName) {
+        return res.status(400).json({ error: 'channelName is required for group channels' });
       }
     
       try {
@@ -299,10 +306,13 @@ router.post('/chat-operations', async (req, res) => {
         const channelId = isDM ? `dm_${shortId}` : `group_${shortId}`;
         
         const channelData = {
-          name: channelName,
+          // For DM channels, don't set a name - it will be determined dynamically per user
+          // For group channels, use the provided name
+          name: isDM ? undefined : channelName,
           created_by_id: userId,
           members: members,
-          isDM: isDM
+          isDM: isDM,
+          channelType: 'chat' // Mark as regular chat channel
         };
     
         const channel = client.channel('messaging', channelId, channelData);
@@ -348,7 +358,8 @@ router.post('/chat-operations', async (req, res) => {
               // @ts-ignore
               name: 'General',
               members: [userId],
-              created_by_id: userId
+              created_by_id: userId,
+              channelType: 'chat' // Mark as regular chat channel
             });
             await channel.create();
             channelJustCreated = true;

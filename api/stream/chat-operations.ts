@@ -56,11 +56,21 @@ export default async function handler(
       console.log('🏗️ Creating new channel:', channelName);
       console.log('👥 Selected users:', selectedUsers);
       console.log('👤 Current user ID:', currentUserId);
+      console.log('📝 Is DM:', isDM);
       
-      if (!channelName || !selectedUsers || !currentUserId) {
+      // Validate required fields
+      if (!selectedUsers || !currentUserId) {
         return res.status(400).json({ 
-          error: 'Channel name, selected users, and current user ID are required',
+          error: 'Selected users and current user ID are required',
           received: { channelName, selectedUsers, currentUserId }
+        });
+      }
+      
+      // For group channels, channel name is required
+      if (!isDM && !channelName) {
+        return res.status(400).json({ 
+          error: 'Channel name is required for group channels',
+          received: { channelName, isDM }
         });
       }
 
@@ -81,10 +91,13 @@ export default async function handler(
 
       // Prepare channel data
       const channelData = {
-        name: channelName,
+        // For DM channels, don't set a name - it will be determined dynamically per user
+        // For group channels, use the provided name
+        name: isDM ? undefined : channelName,
         members: allMembers,
         created_by_id: currentUserId,
-        image: channelImage || undefined
+        image: channelImage || undefined,
+        channelType: 'chat' // Mark as regular chat channel
       };
 
       // Create the channel using Stream Chat
@@ -140,10 +153,11 @@ export default async function handler(
           // Channel does not exist, so create it
           try {
             general = streamClient.channel("messaging", "general", {
-              // name: "General",
+              name: "General",
               members: [userId],
-              created_by_id: userId              
-            });
+              created_by_id: userId,
+              channelType: 'chat' // Mark as regular chat channel
+            } as any);
             await general.create();
             console.log('🌱 General channel created');
             // The user is already a member (since we set members above)
@@ -230,7 +244,8 @@ export default async function handler(
           members: [userId], // Add user as member
           created_by_id: userId,
           created_by: { id: userId }, // Ensure both created_by and created_by_id are set for server-side auth
-        });
+          channelType: 'livestream' // Mark as livestream channel
+        } as any);
 
         await channel.create();
         console.log(`✅ Successfully created livestream channel: ${channelId}`);
