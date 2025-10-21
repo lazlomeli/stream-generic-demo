@@ -45,7 +45,10 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
     const last = c.state.messages.at(-1);
     // Fix: Use Object.keys to count members instead of relying on size property
     const memberCount = Object.keys(c.state?.members || {}).length;
-    const isDM = memberCount === 2;
+    
+    // Check if this is a DM channel based on isDM flag in channel data
+    // @ts-ignore - isDM is a custom field we add to channel data
+    const isDM = c.data?.isDM === true;
     
 
 
@@ -151,8 +154,9 @@ export async function listMyChannels(client: StreamChat, me: string): Promise<Ch
       }
     };
 
-    // For DM channels, get the other user's image; for groups, use channel image
-    let channelImage = c.data?.image;
+    // For DM channels only, get the other user's image
+    // For group channels, don't set an image (force fallback icon)
+    let channelImage: string | undefined = undefined;
     if (isDM) {
       // Find the other user (not the current user)
       const otherUser = Object.values(members).find(member => 
