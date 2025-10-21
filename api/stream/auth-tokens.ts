@@ -4,6 +4,10 @@ import { StreamChat } from 'stream-chat';
 import { StreamClient } from '@stream-io/node-sdk';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+const sanitizeUserId = (userId: string) => {
+  return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -84,12 +88,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Initialize Stream Chat client
       const streamClient = new StreamChat(apiKey, apiSecret);
 
+      console.log('STREAMCLIENTTTTT', streamClient);
       // Create/update user profile in Stream Chat if profile information is provided
       if (userProfile) {
         try {
           console.log('👤 AUTH-TOKENS: Updating chat user profile...');
           await streamClient.upsertUser({
-            id: userId,
+            id: sanitizeUserId(userId),
             name: userProfile.name,
             image: userProfile.image,
             role: userProfile.role
@@ -131,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const existingUser = await streamClient.queryUsers({ id: 'demo_user_2025' });
           if (existingUser.users.length === 0) {
             console.log('🔧 AUTH-TOKENS: Demo user does not exist, creating...');
-            await streamClient.upsertUser({ 
+            await streamClient.upsertUsers({ 
               id: 'demo_user_2025',
               name: 'Demo User',
               image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'

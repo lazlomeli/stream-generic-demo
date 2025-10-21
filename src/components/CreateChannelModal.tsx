@@ -94,14 +94,14 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       
       // Create request body
       const requestBody = {
+        userId: currentUserId || '',
         channelName: finalChannelName,
         selectedUsers: JSON.stringify(Array.from(selectedUsers)),
-        currentUserId: currentUserId || '',
         isDM: isDM,
         channelImage: channelImageData
       };
 
-      const response = await fetch('/api/stream/chat-operations', {
+      const response = await fetch('/api/chat-operations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,8 +120,12 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
       const result = await response.json();
       
-      // Show success message
-      setSuccess('Channel created successfully!');
+      // Show success message based on whether channel already existed
+      if (result.existing) {
+        setSuccess(isDM ? 'Opening existing conversation...' : 'Channel already exists, opening it...');
+      } else {
+        setSuccess(isDM ? 'Direct message created successfully!' : 'Channel created successfully!');
+      }
       
       // Reset form
       setChannelName('');

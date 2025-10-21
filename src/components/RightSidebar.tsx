@@ -30,26 +30,30 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
         <div className="sidebar-section">
           <h3 className="section-title">Suggested for you</h3>
           <div className="users-list">
-            {isLoadingWhoToFollow && (
+            {isLoadingWhoToFollow ? (
               <div className="user-item">
                 <div className="user-avatar">
                   <span className="avatar-initials">Loading...</span>
                 </div>
               </div>
+            ) : whoToFollow.length === 0 ? (
+              
+                <span className="no-suggestions-text">No new suggestions!</span>
+              
+            ) : (
+              whoToFollow.map((user, index) => (
+                <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
+                  <div className="user-avatar">
+                    <span className="avatar-initials">{getInitials(user.name as string)}</span>
+                  </div>
+                  <div className="user-info">
+                    <div className="user-name">{user.name}</div>
+                    {/* Follow button */}
+                    <UserActions targetUserId={user.id} />
+                  </div>
+                </div>
+              ))
             )}
-            {whoToFollow.map((user, index) => (
-              <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
-                <div className="user-avatar">
-                  <span className="avatar-initials">{getInitials(user.name as string)}</span>
-                </div>
-                <div className="user-info">
-                  <div className="user-name">{user.name}</div>
-                  {/* <span className="user-username">@{user.id}</span> */}
-                  {/* <button className="follow-suggestion-btn">Follow</button> */}
-                  <UserActions targetUserId={user.id} />
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 

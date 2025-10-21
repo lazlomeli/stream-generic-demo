@@ -20,7 +20,6 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 500px;
-  height: 85vh; /* Fixed height instead of max-height */
   display: flex;
   flex-direction: column;
   animation: modalSlideIn 0.3s ease-out;
@@ -406,13 +405,11 @@
   .create-channel-modal {
     margin: 0.5rem;
     max-width: none;
-    height: 90vh; /* Reduced from 95vh */
     max-height: 650px; /* Enforced 600px max height */
   }
 
   /* Make DM modal smaller since it has less content */
   .create-channel-modal.dm-modal {
-    height: auto; /* Auto height for DM modal */
     max-height: 500px; /* Smaller max height for DM */
     min-height: 400px; /* Ensure minimum usable height */
   }

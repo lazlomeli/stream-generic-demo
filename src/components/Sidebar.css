@@ -6,6 +6,9 @@
   border-radius: 1rem; /* Rounded edges */
   margin: 30px !important;
   padding: 1.5rem 0 2rem 0; /* Simplified padding */
+  position: sticky;
+  top: 30px;
+  height: calc(100vh - 60px); /* Full viewport height minus top/bottom margins */
   z-index: 100; /* Below header (z-index: 200) and loading overlays (z-index: 99999) */
   overflow-y: auto;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
@@ -139,6 +142,7 @@
     width: 60px;
     margin: 0.5rem; /* Keep consistent margin */
     padding: 1rem 0 1rem 0;
+    top: 50px;
   }
   
   .sidebar-header {

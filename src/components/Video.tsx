@@ -692,9 +692,9 @@ const Video: React.FC<VideoProps> = () => {
   }
   
   // Early guard: if we're loading or user should be available but isn't, show loading
-  if (isLoading) {
-    return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
-  }
+  // if (isLoading) {
+  //   return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
+  // }
 
   const [videoClientReady, setVideoClientReady] = useState(false)
   const [chatClientReady, setChatClientReady] = useState(false)
@@ -882,7 +882,7 @@ const Video: React.FC<VideoProps> = () => {
         const cacheBuster = Date.now();
         console.log('🔄 VIDEO: Requesting fresh anonymous video token with cache-buster:', cacheBuster);
         
-        const res = await fetch('/api/stream/auth-tokens', {
+        const res = await fetch('/api/auth-tokens', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -930,7 +930,7 @@ const Video: React.FC<VideoProps> = () => {
 
       console.log('🔧 VIDEO: Token request payload:', JSON.stringify(requestPayload, null, 2));
 
-      const res = await fetch('/api/stream/auth-tokens', {
+      const res = await fetch('/api/auth-tokens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1039,7 +1039,7 @@ const Video: React.FC<VideoProps> = () => {
       // FIRST: Configure call type permissions to fix the UpdateCallSettings error
       try {
         console.log('🔧 Configuring call type permissions before creating video client...');
-        const permissionsResponse = await fetch('/api/stream/configure-call-permissions', {
+        const permissionsResponse = await fetch('/api/configure-call-permissions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1239,7 +1239,7 @@ const Video: React.FC<VideoProps> = () => {
         
         const accessToken = await getAccessTokenSilently()
         
-        const createChannelResponse = await fetch('/api/stream/chat-operations', {
+        const createChannelResponse = await fetch('/api/chat-operations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1266,7 +1266,7 @@ const Video: React.FC<VideoProps> = () => {
         
         const accessToken = await getAccessTokenSilently()
         
-        const joinChannelResponse = await fetch('/api/stream/chat-operations', {
+        const joinChannelResponse = await fetch('/api/chat-operations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1291,7 +1291,7 @@ const Video: React.FC<VideoProps> = () => {
         // Anonymous viewers: Add themselves to existing channel for read access
         console.log('👁️ Anonymous viewer joining existing livestream channel for read access...')
         
-        const joinChannelResponse = await fetch('/api/stream/chat-operations', {
+        const joinChannelResponse = await fetch('/api/chat-operations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1470,7 +1470,7 @@ const Video: React.FC<VideoProps> = () => {
       
       const accessToken = await getAccessTokenSilently();
       
-      const response = await fetch('/api/stream/chat-operations', {
+      const response = await fetch('/api/chat-operations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

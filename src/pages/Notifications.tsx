@@ -38,7 +38,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="notifications-container">
+    <div className="feeds-container">
       <div className="notifications-header">
         <h1 className="notifications-title">Notifications</h1>
         <p className="notifications-subtitle">

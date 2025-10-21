@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
-import { initializeChatRoutes } from './routes/chat-routes.js';
+import { initializeChatRoutes } from './routes/chat-routes.ts';
 import { initializeFeedRoutes } from './routes/feed-routes.ts';
 
 dotenv.config();
@@ -54,202 +54,12 @@ app.get('/health', (req, res) => {
   });
 });
 
-
-// app.post("/api/stream/seed", async (req, res) => {
-//   try {
-//     const { userId } = req.body;
-//     if (!userId) {
-//       return res.status(400).json({ error: "userId is required" });
-//     }
-
-//     const me = userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
-
-//     console.log('🌱 Using unified seeding for user:', me);
-
-//     // Create seeding context
-//     const context = {
-//       streamClient: streamClient,
-//       serverFeedsClient: serverFeedsClient,
-//       currentUserId: me
-//     };
-
-//     // Use unified seeding logic with dynamic import
-//     const { seedStreamDemo } = await loadSeedingModule();
-//     const results = await seedStreamDemo(context);
-
-//     console.log('🎉 Unified seeding completed successfully!');
-
-//     res.json({ 
-//       ok: true, 
-//       message: "Chat and Feeds data seeded successfully using unified logic",
-//       chat: { users: results.users, channels: results.channels },
-//       feeds: { 
-//         users: results.users,
-//         activities: results.activities, 
-//         followRelationships: results.followRelationships 
-//       }
-//     });
-
-//   } catch (err) {
-//     console.error("❌ Error in unified seeding:", err);
-//     res.status(500).json({ error: "Failed to seed Stream data using unified logic" });
-//   }
-// });
+const sanitizeUserId = (userId) => {
+  return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
+}
 
 
-
-// app.post("/api/stream/reset", async (req, res) => {
-//   try {
-//     const { userId } = req.body;
-//     if (!userId) {
-//       return res.status(400).json({ error: "userId is required" });
-//     }
-
-//     const me = userId.replace(/[^a-zA-Z0-9@_-]/g, "_").slice(0, 64);
-//     console.log('🔄 Starting unified reset for user:', me);
-
-//     // Create reset context
-//     const context = {
-//       streamClient: streamClient,
-//       serverFeedsClient: serverFeedsClient,
-//       currentUserId: me
-//     };
-
-//     // Use unified reset logic (cleanup + fresh seeding) with dynamic import
-//     const { resetStreamDemo } = await loadSeedingModule();
-//     const results = await resetStreamDemo(context);
-
-//     console.log('🎉 Unified reset completed successfully!');
-
-//     res.json({ 
-//       ok: true, 
-//       message: "App reset and seeded successfully with fresh sample data",
-//       chat: { users: results.users, channels: results.channels },
-//       feeds: { 
-//         users: results.users,
-//         activities: results.activities, 
-//         followRelationships: results.followRelationships 
-//       }
-//     });
-
-//   } catch (err) {
-//     console.error("❌ Error in unified reset:", err);
-//     res.status(500).json({ 
-//       error: "Failed to reset app using unified logic",
-//       details: err instanceof Error ? err.message : String(err)
-//     });
-//   }
-// });
-
-
-// app.post("/api/stream/configure-call-permissions", async (req, res) => {
-//   try {
-//     console.log('🔧 CONFIGURE-PERMISSIONS: Configuring call type permissions for livestream...');
-
-//     const apiKey = process.env.STREAM_API_KEY;
-//     const apiSecret = process.env.STREAM_API_SECRET;
-
-//     if (!apiKey || !apiSecret) {
-//       return res.status(500).json({ error: 'Missing Stream API credentials' });
-//     }
-
-//     // Initialize Stream Video client
-//     const { StreamClient } = await import('@stream-io/node-sdk');
-//     const streamClient = new StreamClient(apiKey, apiSecret);
-
-//     try {
-//       // First, let's see what call types exist and their current permissions
-//       console.log('🔍 CONFIGURE-PERMISSIONS: Checking existing call types...');
-      
-//       const callTypes = await streamClient.video.listCallTypes();
-//       console.log('📋 CONFIGURE-PERMISSIONS: Existing call types:', callTypes.call_types ? Object.keys(callTypes.call_types) : 'none');
-      
-//       // Configure the 'livestream' call type to give 'user' role the necessary permissions
-//       const callTypeName = 'livestream';
-      
-//       // Get current call type configuration
-//       let currentCallType;
-//       try {
-//         currentCallType = callTypes.call_types && callTypes.call_types[callTypeName];
-//         console.log('🔍 CONFIGURE-PERMISSIONS: Current livestream call type config:', currentCallType ? 'exists' : 'not found');
-//       } catch (e) {
-//         console.log('⚠️ CONFIGURE-PERMISSIONS: Livestream call type may not exist, will create/update...');
-//       }
-
-//       // Define the permissions we need for 'user' role
-//       const requiredUserPermissions = [
-//         'create-call',
-//         'join-call',
-//         'send-audio',
-//         'send-video',
-//         'update-call-settings',
-//         'update-call-permissions',
-//         'mute-users',
-//         'remove-call-member',
-//         'end-call'
-//       ];
-
-//       // Get existing user grants or start with empty array
-//       const currentUserGrants = currentCallType?.grants?.user || [];
-//       console.log('📋 CONFIGURE-PERMISSIONS: Current user grants:', currentUserGrants);
-      
-//       // Merge required permissions with existing ones (avoiding duplicates)
-//       const updatedUserGrants = [...new Set([...currentUserGrants, ...requiredUserPermissions])];
-//       console.log('📋 CONFIGURE-PERMISSIONS: Updated user grants:', updatedUserGrants);
-
-//       // Update the call type with enhanced permissions
-//       await streamClient.video.updateCallType({
-//         name: callTypeName,
-//         grants: {
-//           user: updatedUserGrants,
-//           // Keep existing grants for other roles if they exist
-//           ...(currentCallType?.grants && Object.fromEntries(
-//             Object.entries(currentCallType.grants).filter(([role]) => role !== 'user')
-//           ))
-//         },
-//       });
-
-//       console.log('✅ CONFIGURE-PERMISSIONS: Successfully updated livestream call type permissions');
-      
-//       // Also configure 'default' call type for good measure
-//       try {
-//         await streamClient.video.updateCallType({
-//           name: 'default',
-//           grants: {
-//             user: updatedUserGrants,
-//           },
-//         });
-//         console.log('✅ CONFIGURE-PERMISSIONS: Successfully updated default call type permissions');
-//       } catch (defaultError) {
-//         console.warn('⚠️ CONFIGURE-PERMISSIONS: Could not update default call type:', defaultError.message);
-//       }
-
-//       return res.status(200).json({
-//         success: true,
-//         message: 'Call type permissions configured successfully',
-//         callType: callTypeName,
-//         userPermissions: updatedUserGrants
-//       });
-
-//     } catch (configError) {
-//       console.error('❌ CONFIGURE-PERMISSIONS: Error configuring call type:', configError);
-//       return res.status(500).json({
-//         error: 'Failed to configure call type permissions',
-//         details: configError.message
-//       });
-//     }
-
-//   } catch (error) {
-//     console.error('❌ CONFIGURE-PERMISSIONS: Critical error:', error);
-//     return res.status(500).json({
-//       error: 'Internal server error configuring permissions',
-//       details: error.message
-//     });
-//   }
-// });
-
-
-app.post("/api/stream/auth-tokens", async (req, res) => {
+app.post("/api/auth-tokens", async (req, res) => {
   try {
     console.log('🔧 AUTH-TOKENS: Request received:', { type: req.body?.type, userId: req.body?.userId });
     
@@ -306,8 +116,8 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
       if (userProfile) {
         try {
           console.log('👤 AUTH-TOKENS: Updating chat user profile...');
-          await streamClient.upsertUser({
-            id: userId,
+          await StreamChat.getInstance(apiKey, apiSecret).upsertUser({
+            id: sanitizeUserId(userId),
             name: userProfile.name,
             image: userProfile.image
             // Remove role to avoid Stream Chat validation errors
@@ -321,7 +131,7 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
 
       // Generate Stream user token
       console.log('🔑 AUTH-TOKENS: Generating chat token...');
-      const streamToken = streamClient.createToken(userId);
+      const streamToken = StreamChat.getInstance(apiKey, apiSecret).createToken(userId);
 
       console.log('✅ AUTH-TOKENS: Chat token generated successfully');
       return res.status(200).json({
@@ -346,10 +156,10 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
         console.log('👥 AUTH-TOKENS: Handling demo user demo_user_2025');
         try {
           // First check if user exists by trying to query it
-          const existingUser = await streamClient.queryUsers({ id: 'demo_user_2025' });
+          const existingUser = await StreamClient.queryUsers({ id: 'demo_user_2025' });
           if (existingUser.users.length === 0) {
             console.log('🔧 AUTH-TOKENS: Demo user does not exist, creating...');
-            await streamClient.upsertUser({ 
+            await StreamClient.upsertUser({ 
               id: 'demo_user_2025',
               name: 'Demo User',
               image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
@@ -459,7 +269,7 @@ app.post("/api/stream/auth-tokens", async (req, res) => {
 
 
 
-app.post("/api/stream/user-data", async (req, res) => {
+app.post("/api/user-data", async (req, res) => {
   try {
     console.log('🔧 USER-DATA: Request received:', {
       method: req.method,

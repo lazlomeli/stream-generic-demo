@@ -60,13 +60,12 @@ const Chat: React.FC<ChatProps> = () => {
   // Keep a single client instance per tab
   const clientRef = useRef<StreamChat | null>(null);
 
-  // Memoize current user id once using shared utility
-  const sanitizedUserId = useMemo(() => getSanitizedUserId(user), [user]);
-
-
-
   console.log('👤 Chat: user', user);
   
+  const sanitizeUserId = (userId: string) => {
+    return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
+  }
+
   // Mobile navigation functions
   const handleMobileChannelSelect = (channel: StreamChannel) => {
     setSelectedMobileChannel(channel);
@@ -168,8 +167,11 @@ const Chat: React.FC<ChatProps> = () => {
   // --- helpers ---
   const getStreamToken = useCallback(
     async (userId: string): Promise<string> => {
+      console.log('111 dentro', userId);
       const accessToken = await getAccessTokenSilently();
-      const res = await fetch("/api/stream/auth-tokens", {
+      
+      console.log('accessToken', accessToken);
+      const res = await fetch("/api/auth-tokens", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -235,24 +237,34 @@ const Chat: React.FC<ChatProps> = () => {
         setIsConnecting(true);
         setError(null);
 
+        console.log('111');
         // Get token only - NO automatic seeding
-        const token = await getStreamToken(sanitizedUserId);
+        const token = await getStreamToken(sanitizeUserId(user.nickname as string));
+        console.log('222');
         if (cancelled) return;
 
+        console.log('333');
+        console.log('connectUser data', {
+          id: sanitizeUserId(user.nickname as string),
+          name: user.name || user.email || "Anonymous User",
+          image: user.picture || undefined,
+        });
         await client.connectUser(
           {
-            id: sanitizedUserId,
+            id: sanitizeUserId(user.nickname as string),
             name: user.name || user.email || "Anonymous User",
             image: user.picture || undefined,
           },
           token
         );
+        console.log('444');
         if (cancelled) return;
 
         // Ensure user is added to general channel before trying to watch
         try {
+          console.log('555');
           const accessToken = await getAccessTokenSilently();
-          const response = await fetch("/api/stream/chat-operations", {
+          const response = await fetch("/api/chat-operations", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -260,11 +272,13 @@ const Chat: React.FC<ChatProps> = () => {
             },
             body: JSON.stringify({ 
               type: 'add-to-general',
-              userId: sanitizedUserId 
+              userId: sanitizeUserId(user.nickname as string),
             }),
           });
-          
+          console.log('666');
+          console.log('response', response);
           if (!response.ok) {
+            console.log('777');
             const errorData = await response.json();
             if (response.status === 404) {
               console.error('❌ General channel does not exist:', errorData.message);
@@ -309,7 +323,7 @@ const Chat: React.FC<ChatProps> = () => {
     user,
     apiKey,
     getStreamToken,
-    sanitizedUserId,
+    user?.nickname as string,
   ]);
 
 
@@ -340,7 +354,7 @@ const Chat: React.FC<ChatProps> = () => {
   // ChannelList configuration
   const filters = { 
     type: 'messaging', 
-    members: { $in: [sanitizedUserId] } 
+    members: { $in: [user?.nickname as string] } 
   };
   const sort = { last_message_at: -1 } as const;
   const options = { 

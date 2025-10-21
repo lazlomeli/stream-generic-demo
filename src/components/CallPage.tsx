@@ -102,7 +102,7 @@ const CallPage: React.FC<CallPageProps> = () => {
         role: 'admin' // Give admin role for call permissions
       };
 
-      const response = await fetch('/api/stream/auth-tokens', {
+      const response = await fetch('/api/auth-tokens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -340,7 +340,7 @@ const CallPage: React.FC<CallPageProps> = () => {
       const accessToken = await getAccessTokenSilently();
       console.log('🔑 Getting auth token for demo user:', demoUserId);
       
-      const response = await fetch('/api/stream/auth-tokens', {
+      const response = await fetch('/api/auth-tokens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

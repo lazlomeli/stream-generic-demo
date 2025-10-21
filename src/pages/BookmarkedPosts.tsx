@@ -41,7 +41,7 @@ export default function BookmarksPage() {
   }
 
   return (
-    <div className="bookmarks-page">
+    <div className="feeds-container">
       <div className="bookmarks-header">
         <h1>Bookmarks</h1>
         <p>Saved posts you want to read later.</p>

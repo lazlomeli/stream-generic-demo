@@ -176,7 +176,11 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           channel
         })),
         ...userSearchResults.users
-          .filter(user => user.id !== client.userID)
+          // .filter(user => user.id !== client.userID)
+          .filter(user => {
+            console.log('🔍 User:', user);
+            return user.id !== client.userID;
+          })
           .map(user => ({
             type: 'user',
             id: user.id,
@@ -397,41 +401,10 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       return userList;
     } catch (error) {
       console.error('Error fetching users:', error);
-      // Fallback to demo users if we can't fetch from Stream
-      const fallbackUsers = [
-        {
-          id: 'alice_smith',
-          name: 'Alice Smith',
-          image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'bob_johnson',
-          name: 'Bob Johnson',
-          image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'carol_williams',
-          name: 'Carol Williams',
-          image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'david_brown',
-          name: 'David Brown',
-          image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'emma_davis',
-          name: 'Emma Davis',
-          image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
-        }
-      ];
-      setAvailableUsers(fallbackUsers);
-      return fallbackUsers;
     }
   }, [client, availableUsers]);
 
   const handleCreateGroupClick = useCallback(async () => {
-    // Only fetch users if we don't have them cached
     if (availableUsers.length === 0) {
       await fetchUsers();
     }
@@ -439,7 +412,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   }, [fetchUsers, availableUsers.length]);
 
   const handleCreateDMClick = useCallback(async () => {
-    // Only fetch users if we don't have them cached
     if (availableUsers.length === 0) {
       await fetchUsers();
     }
@@ -447,53 +419,58 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   }, [fetchUsers, availableUsers.length]);
 
     const handleChannelCreated = useCallback(async (channelId: string) => {
-    console.log('🎉 Channel created, ID:', channelId);
+    console.log('🎉 Channel created/opened, ID:', channelId);
 
     setShowCreateGroupModal(false);
     setShowCreateDMModal(false);
 
     try {
-      // Watch the new channel to ensure the client is aware of it
       const newChannel = client.channel('messaging', channelId);
       await newChannel.watch();
-      console.log('✅ New channel watched successfully');
+      console.log('✅ Channel watched successfully');
 
-      // Optimistic update: Add the new channel to our local state immediately
-      const newChannelItem: ChannelItem = {
-        id: channelId,
-        name: (newChannel.data as any)?.name || 'New Channel',
-        type: (newChannel.data as any)?.isDM ? 'dm' : 'group',
-        image: (newChannel.data as any)?.image,
-        lastMessage: undefined,
-        lastMessageTime: undefined,
-        status: 'offline',
-        onlineCount: 0,
-      };
+      // Check if channel already exists in the list
+      const channelExists = channels.some(ch => ch.id === channelId);
+      
+      if (!channelExists) {
+        // Only add to list if it's truly a new channel
+        const newChannelItem: ChannelItem = {
+          id: channelId,
+          name: (newChannel.data as any)?.name || 'New Channel',
+          type: (newChannel.data as any)?.isDM ? 'dm' : 'group',
+          image: (newChannel.data as any)?.image,
+          lastMessage: undefined,
+          lastMessageTime: undefined,
+          status: 'offline',
+          onlineCount: 0,
+        };
 
-      setChannels(prev => [newChannelItem, ...prev]);
-      setFilteredChannels(prev => [newChannelItem, ...prev]);
-      console.log('⚡ Optimistically added new channel to list');
+        setChannels(prev => [newChannelItem, ...prev]);
+        setFilteredChannels(prev => [newChannelItem, ...prev]);
+        console.log('⚡ Optimistically added new channel to list');
+      } else {
+        console.log('✅ Channel already exists in list, just selecting it');
+      }
 
-      // Set the new channel as selected and active
+      // Always select and activate the channel (whether new or existing)
       setSelectedChannelId(channelId);
       setActiveChannel(newChannel);
 
-        // Add a small delay to ensure Stream has fully processed the channel
-        // then refresh the channel list to get the accurate data (forced refresh)
-        setTimeout(() => {
-          console.log('🔄 Refreshing channel list for accurate data');
-          refreshChannelList(true); // Force refresh for new channels
-        }, 500);
+      // Refresh to get accurate channel data
+      setTimeout(() => {
+        console.log('🔄 Refreshing channel list for accurate data');
+        refreshChannelList(true); // Force refresh to ensure correct ordering and data
+      }, 500);
 
     } catch (error) {
-      console.error('❌ Error setting up new channel:', error);
-        // Fallback to refreshing with delay if watching fails
-        setTimeout(() => {
-          console.log('🔄 Fallback: Refreshing channel list after error');
-          refreshChannelList(true); // Force refresh for error recovery
-        }, 500);
+      console.error('❌ Error setting up channel:', error);
+      // Fallback to refreshing with delay if watching fails
+      setTimeout(() => {
+        console.log('🔄 Fallback: Refreshing channel list after error');
+        refreshChannelList(true); // Force refresh for error recovery
+      }, 500);
     }
-  }, [refreshChannelList, client, setActiveChannel]);
+  }, [refreshChannelList, client, setActiveChannel, channels]);
 
   const handleCloseGroupModal = useCallback(() => {
     setShowCreateGroupModal(false);

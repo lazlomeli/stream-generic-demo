@@ -157,7 +157,7 @@ const CustomChannelHeader: React.FC = () => {
       const accessToken = await getAccessTokenSilently();
       
       // Call the server-side leave channel API
-      const response = await fetch('/api/stream/chat-operations', {
+      const response = await fetch('/api/chat-operations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

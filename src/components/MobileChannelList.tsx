@@ -156,7 +156,7 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
       const accessToken = await getAccessTokenSilently()
       console.log('🔥 Access token obtained, making API call...')
       
-      const response = await fetch('/api/stream/chat-operations', {
+      const response = await fetch('/api/chat-operations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

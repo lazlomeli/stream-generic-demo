@@ -5,6 +5,9 @@
   border: 1px solid #e5e7eb;
   margin: 30px !important;
   border-radius: 1rem; /* Rounded edges */
+  position: sticky;
+  top: 30px;
+  height: calc(100vh - 60px); /* Full viewport height minus top/bottom margins */
   z-index: 100; /* Below header (z-index: 200) and loading overlays (z-index: 99999) */
   overflow-y: auto;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
@@ -209,6 +212,7 @@
 @media (max-width: 1200px) {
   .right-sidebar {
     display: none; /* Hide right sidebar on smaller screens */
+    top: 50px;
   }
 }
 

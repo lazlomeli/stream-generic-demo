@@ -112,12 +112,57 @@ export default async function handler(
 
     // Handle adding user to general channel
     if (type === 'add-to-general') {
-      const { userId } = req.body;
+      const { user } = req.body;
+
+      const userId = user.nickname;
 
       if (!userId) {
         return res.status(400).json({ error: 'userId is required' });
       }
 
+      // First, try to check if the general channel exists by attempting to query/watch it.
+      let general;
+      try {
+        general = streamClient.channel("messaging", "general");
+        await general.watch();
+      } catch (error: any) {
+        // If channel doesn't exist, create it
+        if (
+          error.code === 16 ||
+          error.code === 4 ||
+          error.code === 17 ||
+          (error.message && (
+            error.message.includes("does not exist") ||
+            error.message.includes("not found") ||
+            error.message.includes("Can't find channel")
+          ))
+        ) {
+          // Channel does not exist, so create it
+          try {
+            general = streamClient.channel("messaging", "general", {
+              // name: "General",
+              members: [userId],
+              created_by_id: userId              
+            });
+            await general.create();
+            console.log('🌱 General channel created');
+            // The user is already a member (since we set members above)
+            return res.status(200).json({
+              success: true,
+              message: 'General channel created and user added as member'
+            });
+          } catch (createError: any) {
+            console.error('❌ Failed to create general channel:', createError);
+            return res.status(404).json({
+              error: 'General channel does not exist and could not be created',
+              message: createError.message || String(createError)
+            });
+          }
+        } else {
+          // Unexpected error trying to access the channel
+          throw error;
+        }
+      }
       try {
         // Get the general channel and watch it to get current state
         const general = streamClient.channel("messaging", "general");
@@ -149,14 +194,14 @@ export default async function handler(
         console.error('❌ Error with general channel operation:', error);
         
         // Check if the channel doesn't exist (common Stream error codes)
-        if (error.code === 4 || error.code === 17 || error.message?.includes('does not exist') || error.message?.includes('not found')) {
-          console.error(`❌ General channel does not exist. Run /api/stream/seed to create it.`);
-          return res.status(404).json({
-            error: 'General channel does not exist',
-            message: 'The general channel needs to be created. Please run the seed endpoint first.',
-            suggestion: 'POST to /api/stream/seed to initialize channels and users'
-          });
-        }
+        // if (error.code === 4 || error.code === 17 || error.message?.includes('does not exist') || error.message?.includes('not found')) {
+        //   console.error(`❌ General channel does not exist. Run /api/stream/seed to create it.`);
+        //   return res.status(404).json({
+        //     error: 'General channel does not exist',
+        //     message: 'The general channel needs to be created. Please run the seed endpoint first.',
+        //     suggestion: 'POST to /api/stream/seed to initialize channels and users'
+        //   });
+        // }
         
         // For any other error (including add member failures), return the actual error
         console.error(`❌ Unexpected error with general channel:`, error);
