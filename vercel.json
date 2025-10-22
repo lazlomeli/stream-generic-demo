@@ -12,9 +12,6 @@
     "api/stream/get-user-counts-batch.ts": {
       "maxDuration": 30
     },
-    "api/stream/seed.ts": {
-      "maxDuration": 30
-    },
     "api/stream/auth-tokens.ts": {
       "maxDuration": 30
     },
