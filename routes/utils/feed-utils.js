@@ -17,29 +17,39 @@ export async function resetFeeds(client) {
     // Step 1: Query and delete all activities (with pagination)
     console.log('📋 Querying and deleting activities...');
     let totalActivitiesDeleted = 0;
-    let hasMoreActivities = true;
-    let activitiesNextCursor = undefined;
+    
+    try {
+      let hasMoreActivities = true;
+      let activitiesNextCursor = undefined;
 
-    while (hasMoreActivities) {
-      const activitiesResponse = await client.feeds.queryActivities({
-        limit: 100, // Max limit allowed by API
-        next: activitiesNextCursor,
-      });
-
-      const activityIds = activitiesResponse.activities.map(a => a.id);
-      
-      if (activityIds.length > 0) {
-        await client.feeds.deleteActivities({
-          ids: activityIds,
-          hard_delete: true,
+      while (hasMoreActivities) {
+        const activitiesResponse = await client.feeds.queryActivities({
+          limit: 100, // Max limit allowed by API
+          next: activitiesNextCursor,
         });
-        totalActivitiesDeleted += activityIds.length;
-        console.log(`✅ Deleted ${activityIds.length} activities (total: ${totalActivitiesDeleted})`);
-      }
 
-      // Check if there are more activities to fetch
-      activitiesNextCursor = activitiesResponse.next;
-      hasMoreActivities = !!activitiesNextCursor && activityIds.length > 0;
+        const activityIds = activitiesResponse.activities.map(a => a.id);
+        
+        if (activityIds.length > 0) {
+          await client.feeds.deleteActivities({
+            ids: activityIds,
+            hard_delete: true,
+          });
+          totalActivitiesDeleted += activityIds.length;
+          console.log(`✅ Deleted ${activityIds.length} activities (total: ${totalActivitiesDeleted})`);
+        }
+
+        // Check if there are more activities to fetch
+        activitiesNextCursor = activitiesResponse.next;
+        hasMoreActivities = !!activitiesNextCursor && activityIds.length > 0;
+      }
+    } catch (activitiesError) {
+      // Handle 404 gracefully - no activities exist yet
+      if (activitiesError.code === 404 || activitiesError.metadata?.responseCode === 404) {
+        console.log('ℹ️ No activities found (this is normal for a new app)');
+      } else {
+        console.error('⚠️ Error querying activities:', activitiesError.message);
+      }
     }
 
     console.log(`📋 Total activities deleted: ${totalActivitiesDeleted}`);
@@ -47,31 +57,41 @@ export async function resetFeeds(client) {
     // Step 2: Query and delete all follows (with pagination)
     console.log('📋 Querying and deleting follows...');
     let totalFollowsDeleted = 0;
-    let hasMoreFollows = true;
-    let followsNextCursor = undefined;
+    
+    try {
+      let hasMoreFollows = true;
+      let followsNextCursor = undefined;
 
-    while (hasMoreFollows) {
-      const followsResponse = await client.feeds.queryFollows({
-        limit: 100, // Max limit allowed by API
-        next: followsNextCursor,
-      });
+      while (hasMoreFollows) {
+        const followsResponse = await client.feeds.queryFollows({
+          limit: 100, // Max limit allowed by API
+          next: followsNextCursor,
+        });
 
-      for (const follow of followsResponse.follows) {
-        try {
-          await client.feeds.unfollow({
-            source: follow.source_feed.feed,
-            target: follow.target_feed.feed,
-          });
-          totalFollowsDeleted++;
-          console.log(`✅ Deleted follow: ${follow.source_feed.feed} -> ${follow.target_feed.feed}`);
-        } catch (error) {
-          console.error(`❌ Error deleting follow:`, error.message);
+        for (const follow of followsResponse.follows) {
+          try {
+            await client.feeds.unfollow({
+              source: follow.source_feed.feed,
+              target: follow.target_feed.feed,
+            });
+            totalFollowsDeleted++;
+            console.log(`✅ Deleted follow: ${follow.source_feed.feed} -> ${follow.target_feed.feed}`);
+          } catch (error) {
+            console.error(`❌ Error deleting follow:`, error.message);
+          }
         }
-      }
 
-      // Check if there are more follows to fetch
-      followsNextCursor = followsResponse.next;
-      hasMoreFollows = !!followsNextCursor && followsResponse.follows.length > 0;
+        // Check if there are more follows to fetch
+        followsNextCursor = followsResponse.next;
+        hasMoreFollows = !!followsNextCursor && followsResponse.follows.length > 0;
+      }
+    } catch (followsError) {
+      // Handle 404 gracefully - no follows exist yet
+      if (followsError.code === 404 || followsError.metadata?.responseCode === 404) {
+        console.log('ℹ️ No follows found (this is normal for a new app)');
+      } else {
+        console.error('⚠️ Error querying follows:', followsError.message);
+      }
     }
 
     console.log(`📋 Total follows deleted: ${totalFollowsDeleted}`)
