@@ -631,16 +631,38 @@ router.post('/stream/reset', async (req, res) => {
 
     console.log(`🔄 [chat-routes.ts]: Reset and seed requested by user: ${userId}`);
 
-    // Step 1: Reset (delete all channels, keep users)
+    // Step 1: Reset Chat (delete all channels, keep users)
     await resetChat(streamClient);
 
-    // Step 2: Seed (create sample data)
-    const seedResult = await seedChat(streamClient, userId);
+    // Step 2: Seed Chat (create sample data)
+    const chatSeedResult = await seedChat(streamClient, userId);
+
+    // Step 3: Reset & Seed Feeds (call the feeds endpoint)
+    let feedsResult: any = null;
+    try {
+      const feedsResponse = await fetch('http://localhost:5100/api/feeds/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      
+      if (feedsResponse.ok) {
+        feedsResult = await feedsResponse.json();
+        console.log('✅ Feeds reset and seed completed');
+      } else {
+        console.warn('⚠️ Feeds reset failed:', await feedsResponse.text());
+      }
+    } catch (feedsError: any) {
+      console.warn('⚠️ Feeds reset error:', feedsError.message);
+    }
 
     res.json({
       success: true,
-      message: 'Chat reset and seeded successfully',
-      data: seedResult.data,
+      message: 'App reset and seeded successfully',
+      data: {
+        chat: chatSeedResult.data,
+        feeds: feedsResult?.data || null,
+      },
     });
   } catch (error) {
     console.error('[chat-routes.ts]: Error in reset-and-seed:', error);

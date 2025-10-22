@@ -188,10 +188,6 @@ export default function ReactionsPanel({ activity }: Props) {
   return (
     <div className="reactions-container">
       <div className="reactions-buttons">
-        <button title="Comments" className="reaction-button">
-          <MessageCircle className="reaction-icon" />
-          <span className="reaction-count">{activity.comment_count}</span>
-        </button>
         {/* Like/Heart */}
         <button
           disabled={loading}
@@ -205,6 +201,11 @@ export default function ReactionsPanel({ activity }: Props) {
             }`}
           />
           <span className="reaction-count">{reactionCount("like")}</span>
+        </button>
+
+        <button title="Comments" className="reaction-button">
+          <MessageCircle className="reaction-icon" />
+          <span className="reaction-count">{activity.comment_count}</span>
         </button>
 
         {/* Pin */}
