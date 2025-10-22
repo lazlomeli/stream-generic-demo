@@ -57,7 +57,7 @@ export default function NotificationsPage() {
       ) : (
         <div className="notifications-list">
           {notifications.aggregated_activities.flatMap((aggregated) => 
-            (aggregated.activities || []).map((notification: NotificationActivity) => (
+            (aggregated.activities || []).map((notification) => (
               <NotificationItem
                 key={`notification-${notification.id}`}
                 notification={notification as any}

@@ -68,9 +68,9 @@ export function useNotifications() {
       });
   }, [isReady, client, user?.nickname, feed, showError]);
 
-  // Use SDK's built-in hooks
-  const notificationStatus = useNotificationStatus(feed);
-  const aggregatedData = useAggregatedActivities(feed);
+  // Use SDK's built-in hooks (convert null to undefined for proper typing)
+  const notificationStatus = useNotificationStatus(feed || undefined);
+  const aggregatedData = useAggregatedActivities(feed || undefined);
 
   const unreadCount = notificationStatus?.unseen || notificationStatus?.unread || 0;
 
