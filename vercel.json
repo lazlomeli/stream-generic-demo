@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/stream/auth-tokens.ts": {
+    "api/auth-tokens.ts": {
       "maxDuration": 30
     },
     "api/stream/chat-operations.ts": {

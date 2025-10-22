@@ -335,7 +335,7 @@ export default async function handler(
           
           if (timestampedActivities.length > 0) {
             // Get the most recent timestamped user ID
-            const timestampedUserIds = Array.from(new Set(timestampedActivities.map(a => a.actor)));
+            const timestampedUserIds = Array.from(new Set(timestampedActivities.map((a: any) => a.actor)));
             console.log(`🔍 Found timestamped user IDs:`, timestampedUserIds);
             
             // Use the first one (they should all be the same user anyway)
@@ -360,7 +360,7 @@ export default async function handler(
 
       // Debug: Log what verbs we have before filtering
       console.log(`🔍 DEBUG: Raw activities in user:${actualUserId} feed:`, 
-        (result.results || []).map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+        (result.results || []).map((a: any) => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
       );
 
       // Filter out notification activities to prevent them from showing as posts
@@ -372,7 +372,7 @@ export default async function handler(
       console.log(`✅ Found ${limitedPosts.length} posts in user:${actualUserId} feed`);
       console.log(`🔗 This feed has ${result.results?.length || 0} total activities`);
       console.log(`🔍 DEBUG: Filtered posts:`, 
-        filteredPosts.map(a => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
+        filteredPosts.map((a: any) => ({ id: a.id, verb: a.verb, actor: a.actor, text: a.text?.substring(0, 50) }))
       );
       
       // If no posts in user feed, fallback to global feed filtering (for backward compatibility)
