@@ -45,11 +45,19 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
 
       const userList = users.users
         .filter(user => {
-          const shouldInclude = user.id !== client.userID;
-          if (!shouldInclude) {
+          // Exclude current user
+          if (user.id === client.userID) {
             console.log('[CustomChannelList.tsx]: Filtering out current user:', user.id);
+            return false;
           }
-          return shouldInclude;
+          
+          // Exclude feed sample users (they're only for Activity Feeds, not Chat)
+          if (user.id.startsWith('feeds_')) {
+            console.log('[CustomChannelList.tsx]: Filtering out feed user:', user.id);
+            return false;
+          }
+          
+          return true;
         })
         .map(user => ({
           id: user.id,

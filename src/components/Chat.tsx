@@ -106,11 +106,19 @@ const Chat: React.FC<ChatProps> = () => {
       const currentUserId = clientRef.current.userID;
       const userList = users.users
         .filter(user => {
-          const shouldInclude = user.id !== currentUserId;
-          if (!shouldInclude) {
+          // Exclude current user
+          if (user.id === currentUserId) {
             console.log('📱 Mobile: Filtering out current user:', user.id);
+            return false;
           }
-          return shouldInclude;
+          
+          // Exclude feed sample users (they're only for Activity Feeds, not Chat)
+          if (user.id.startsWith('feeds_')) {
+            console.log('📱 Mobile: Filtering out feed user:', user.id);
+            return false;
+          }
+          
+          return true;
         })
         .map(user => ({
           id: user.id,
