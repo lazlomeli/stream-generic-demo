@@ -3,9 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/stream/feed-actions.ts": {
-      "maxDuration": 30
-    },
     "api/stream/auth-tokens.ts": {
       "maxDuration": 30
     },
@@ -13,6 +10,9 @@
       "maxDuration": 30
     },
     "api/stream/reset.ts": {
+      "maxDuration": 60
+    },
+    "api/feeds/reset.ts": {
       "maxDuration": 60
     }
   },

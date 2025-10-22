@@ -101,33 +101,43 @@ app.post("/api/auth-tokens", async (req, res) => {
           ]);
           console.log(`✅ AUTH-TOKENS: Feed user profile updated: ${userId}`);
         } catch (profileError) {
-          // Handle the case where user was deleted
-          if (profileError.message?.includes('was deleted') || profileError.code === 16) {
-            console.log('⚠️ AUTH-TOKENS: Feed user was deleted, attempting to restore...');
-            
-            try {
-              // Try to restore the deleted user
-              await streamFeedsClient.restoreUsers({ user_ids: [sanitizeUserId(userId)] });
-              console.log('✅ AUTH-TOKENS: Feed user restored successfully');
-              
-              // Now try to update the user again
-              await streamFeedsClient.upsertUsers([
-                {
-                  id: sanitizeUserId(userId),
-                  name: userProfile.name,
-                  image: userProfile.image,
-                },
-              ]);
-              console.log('✅ AUTH-TOKENS: Feed user updated after restoration');
-            } catch (restoreError) {
-              console.error('❌ AUTH-TOKENS: Failed to restore feed user:', restoreError.message);
-              console.log('ℹ️ AUTH-TOKENS: Continuing with token generation (user may need manual restoration)');
-            }
-          } else {
-            console.warn(`⚠️ AUTH-TOKENS: Failed to update feed user profile ${userId}:`, profileError.message);
-            console.log('ℹ️ AUTH-TOKENS: Continuing with token generation');
-          }
+          console.warn(`⚠️ AUTH-TOKENS: Failed to update feed user profile ${userId}:`, profileError.message || profileError);
+          console.log('ℹ️ AUTH-TOKENS: Continuing with token generation');
         }
+      }
+
+      // Setup feed groups and views (idempotent - safe to call multiple times)
+      try {
+        console.log('🔧 AUTH-TOKENS: Setting up feed group with custom ranking...');
+        await streamFeedsClient.feeds.createFeedGroup({
+          id: "popular-feed-group",
+          activity_selectors: [{ type: "popular" }],
+          ranking: {
+            type: "expression",
+            score: "popularity * external.weight + comment_count * external.comment_weight + external.base_score",
+            defaults: {
+              external: {
+                weight: 1.5,          
+                comment_weight: 2.0,  
+                base_score: 10,       
+              },
+            },
+          },
+        });
+        console.log('✅ AUTH-TOKENS: Feed group created/verified');
+      } catch (feedGroupError) {
+        console.log('ℹ️ AUTH-TOKENS: Feed group already exists or creation skipped');
+      }
+
+      try {
+        console.log('🔧 AUTH-TOKENS: Setting up feed view...');
+        await streamFeedsClient.feeds.createFeedView({
+          id: "popular-view",
+          activity_selectors: [{ type: "popular" }],
+        });
+        console.log('✅ AUTH-TOKENS: Feed view created/verified');
+      } catch (feedViewError) {
+        console.log('ℹ️ AUTH-TOKENS: Feed view already exists or creation skipped');
       }
       
       // Generate a Feeds V3-compatible JWT token

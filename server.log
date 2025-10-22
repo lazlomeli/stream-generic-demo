@@ -1,13 +1,6 @@
-file:///Users/lazlomeli/Desktop/stream-generic-demo/routes/feed-routes.ts:59
-async function resetFeeds(
-^
+[dotenv@17.2.1] injecting env (6) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+🔧 Environment Variables Debug:
+   PORT: 5000 (default)
+   STREAM_API_KEY: ✅ Set
+   STREAM_API_SECRET: ✅ Set
 
-SyntaxError: Identifier 'resetFeeds' has already been declared
-    at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
-    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:107:18)
-    at ModuleLoader.<anonymous> (node:internal/modules/esm/translators:526:10)
-    at #translate (node:internal/modules/esm/loader:536:12)
-    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:583:27)
-    at async ModuleJob._link (node:internal/modules/esm/module_job:162:19)
-
-Node.js v22.18.0
