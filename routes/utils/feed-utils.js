@@ -120,21 +120,8 @@ export async function seedFeeds(client, currentUserId) {
     await client.upsertUsers(sampleUsers);
     console.log(`✅ Created/updated ${sampleUsers.length} sample users`);
 
-    // Step 2: Create user feeds for each sample user
-    const createdFeeds = [];
-    for (const user of sampleUsers) {
-      const userFeed = client.feeds.feed('user', user.id);
-      await userFeed.getOrCreate({ user_id: user.id });
-      createdFeeds.push(`user:${user.id}`);
-      console.log(`✅ Created feed: user:${user.id}`);
-    }
-
-    // Step 3: Create current user's timeline feed
-    const currentUserTimeline = client.feeds.feed('timeline', currentUserId);
-    await currentUserTimeline.getOrCreate({ user_id: currentUserId });
-    console.log(`✅ Created timeline feed for current user: timeline:${currentUserId}`);
-
-    // Step 4: Create sample activities for each user
+    // Step 2: Create sample activities for each user
+    // Note: Creating activities automatically creates the feeds if they don't exist
     const createdActivities = [];
     const activityTexts = [
       '🌟 Just joined the platform! Excited to share my journey.',
@@ -148,18 +135,28 @@ export async function seedFeeds(client, currentUserId) {
       const user = sampleUsers[i];
       const userFeed = `user:${user.id}`;
       
-      const activityResponse = await client.feeds.addActivity({
-        user_id: user.id,
-        type: 'post',
-        feeds: [userFeed],
-        text: activityTexts[i] || `Post from ${user.name}`,
-      });
-      
-      createdActivities.push(activityResponse.activity);
-      console.log(`✅ Created activity for ${user.name}`);
+      try {
+        const activityResponse = await client.feeds.addActivity({
+          user_id: user.id,
+          type: 'post',
+          feeds: [userFeed],
+          text: activityTexts[i] || `Post from ${user.name}`,
+        });
+        
+        createdActivities.push(activityResponse.activity);
+        console.log(`✅ Created activity for ${user.name}`);
+      } catch (activityError) {
+        // If feed group doesn't exist, log and continue
+        if (activityError.code === 404 || activityError.metadata?.responseCode === 404) {
+          console.log(`⚠️ Cannot create activity for ${user.name} - feed group 'user' doesn't exist yet`);
+          console.log('ℹ️ Feed groups need to be created in the Stream Dashboard first');
+        } else {
+          throw activityError;
+        }
+      }
     }
 
-    // Step 5: Add some sample reactions (likes) to activities
+    // Step 3: Add some sample reactions (likes) to activities
     for (let i = 0; i < Math.min(3, createdActivities.length); i++) {
       const activity = createdActivities[i];
       await client.feeds.addReaction({
@@ -182,12 +179,15 @@ export async function seedFeeds(client, currentUserId) {
       console.log(`✅ Added comment to activity: ${activity.id}`);
     }
 
-    console.log('✅ Feeds seeding completed successfully');
+    const successMessage = createdActivities.length > 0 
+      ? 'Feeds seeded successfully'
+      : 'Feeds users created, but activities require feed groups to be set up in Stream Dashboard';
+    
+    console.log(`✅ Feeds seeding completed: ${successMessage}`);
     return {
       success: true,
-      message: 'Feeds seeded successfully',
+      message: successMessage,
       data: {
-        feeds: createdFeeds,
         activities: createdActivities.map(a => a.id),
         sampleUsers: sampleUsers.map(u => u.id),
       },

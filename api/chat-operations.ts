@@ -134,9 +134,7 @@ export default async function handler(
 
     // Handle adding user to general channel
     if (type === 'add-to-general') {
-      const { user } = req.body;
-
-      const userId = user.nickname;
+      const { userId } = req.body;
 
       if (!userId) {
         return res.status(400).json({ error: 'userId is required' });
