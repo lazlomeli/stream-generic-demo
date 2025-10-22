@@ -6,7 +6,7 @@
     "api/auth-tokens.ts": {
       "maxDuration": 30
     },
-    "api/stream/chat-operations.ts": {
+    "api/chat-operations.ts": {
       "maxDuration": 30
     },
     "api/stream/reset.ts": {

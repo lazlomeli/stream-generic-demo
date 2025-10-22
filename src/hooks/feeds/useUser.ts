@@ -6,8 +6,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { User } from "@auth0/auth0-spa-js";
 import nameUtils from "../../utils/nameUtils";
 
-const streamBaseUrl = "https://chat.stream-io-api.com";
-
 interface AuthTokenResponse {
   token: string;
 }
@@ -40,8 +38,8 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
 
   const { token }: AuthTokenResponse = await res.json();
 
-  // Create FeedsClient pointing to Stream's servers (not localhost!)
-  const client = new FeedsClient(apiKey, { base_url: streamBaseUrl });
+  // Create FeedsClient using default Feeds V3 API endpoint
+  const client = new FeedsClient(apiKey);
   
   try {
     await client.connectUser({ id: user.nickname! }, token);
