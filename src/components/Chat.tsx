@@ -112,12 +112,6 @@ const Chat: React.FC<ChatProps> = () => {
             return false;
           }
           
-          // Exclude feed sample users (they're only for Activity Feeds, not Chat)
-          if (user.id.startsWith('feeds_')) {
-            console.log('📱 Mobile: Filtering out feed user:', user.id);
-            return false;
-          }
-          
           return true;
         })
         .map(user => ({

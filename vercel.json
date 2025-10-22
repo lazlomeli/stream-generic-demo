@@ -6,23 +6,14 @@
     "api/stream/feed-actions.ts": {
       "maxDuration": 30
     },
-    "api/stream/get-posts.ts": {
-      "maxDuration": 30
-    },
-    "api/stream/get-user-counts-batch.ts": {
-      "maxDuration": 30
-    },
     "api/stream/auth-tokens.ts": {
-      "maxDuration": 30
-    },
-    "api/stream/user-data.ts": {
       "maxDuration": 30
     },
     "api/stream/chat-operations.ts": {
       "maxDuration": 30
     },
-    "api/stream/notifications.ts": {
-      "maxDuration": 30
+    "api/stream/reset.ts": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
