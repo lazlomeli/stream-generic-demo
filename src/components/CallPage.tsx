@@ -29,7 +29,6 @@ import VideoIcon from '../icons/video.svg';
 import VideoOffIcon from '../icons/video-off.svg';
 import MicrophoneIcon from '../icons/microphone.svg';
 import MicrophoneOffIcon from '../icons/microphone-off.svg';
-import iPhoneOverlay from '../assets/iphone-overlay.png';
 
 // Import Stream Video CSS
 import '@stream-io/video-react-sdk/dist/css/styles.css';
@@ -449,13 +448,11 @@ const CallPage: React.FC<CallPageProps> = () => {
         });
       }
     };
-  }, [isAuthenticated, user, isLoading]); // Removed initializeCall from dependency array
+  }, [isAuthenticated, user, isLoading]);
 
-  // Handle call end
   const handleEndCall = useCallback(() => {
     console.log('📞 User ended call manually');
     
-    // Leave both calls with safety checks
     if (callRef.current && callRef.current.state.callingState !== 'left') {
       console.log('📞 Leaving main call...');
       callRef.current.leave().catch((err: any) => {
@@ -470,13 +467,9 @@ const CallPage: React.FC<CallPageProps> = () => {
       });
     }
     
-    // Navigate back to the channel or chat
-    if (channelId) {
-      navigate(`/chat/${channelId}`);
-    } else {
-      navigate('/chat');
-    }
-  }, [navigate, channelId]);
+    navigate('/chat');
+    
+  }, [navigate]);
 
   if (isLoading) {
     return <LoadingSpinner />;

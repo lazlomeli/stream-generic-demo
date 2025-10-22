@@ -33,20 +33,16 @@ const CustomChannelHeader: React.FC = () => {
     );
   }
 
-  // Determine if it's a DM channel based on isDM flag in channel data
-  // @ts-ignore - isDM is a custom field we add to channel data
+  // @ts-ignore - isDM is a custom field added to ChannelData type
   const isDM = channel.data?.isDM === true;
   const channelType = isDM ? 'dm' : 'group';
   
-  // Use Object.keys to count members
   const memberCount = Object.keys(channel.state?.members || {}).length;
 
-  // Get channel name and image
   let channelName: string;
   let channelImage: string | undefined = undefined;
   
   if (isDM) {
-    // For DM channels, show the OTHER user's name and image
     const members = channel.state?.members || {};
     const otherUser = Object.values(members).find(member => 
       member.user?.id !== client.userID
@@ -55,12 +51,9 @@ const CustomChannelHeader: React.FC = () => {
     channelName = otherUser?.user?.name || otherUser?.user?.id || 'Direct Message';
     channelImage = otherUser?.user?.image;
   } else {
-    // For group channels, use the stored channel name
     channelName = (channel.data as any)?.name || 'Channel';
-    // Group channels don't use an image (force fallback icon)
   }
 
-  // Calculate online users
   const currentUserId = client.userID;
   const members = channel.state?.members || {};
   
@@ -69,14 +62,12 @@ const CustomChannelHeader: React.FC = () => {
   );
   const onlineCount = onlineUsers.length;
   
-  // Generate subtitle based on online presence
   const getSubtitle = () => {
     if (onlineCount === 0) {
       return isDM 
         ? 'Direct Message' 
         : `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
     } else if (onlineCount === 1) {
-      // Check if the only online user is the current user
       const isOnlyUserOnline = onlineUsers.some(member => member.user?.id === currentUserId) && onlineCount === 1;
       if (isOnlyUserOnline) {
         return '1 online (You)';
@@ -88,22 +79,18 @@ const CustomChannelHeader: React.FC = () => {
     }
   };
 
-  // Close options menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       
-      // Don't close if clicking on the options button or dropdown
       if (optionsButtonRef.current && optionsButtonRef.current.contains(target)) {
         return;
       }
       
-      // Don't close if clicking on dropdown menu
       if (target.closest('.options-dropdown')) {
         return;
       }
       
-      // Don't close if clicking on modal
       if (target.closest('.leave-channel-modal')) {
         return;
       }
@@ -117,7 +104,6 @@ const CustomChannelHeader: React.FC = () => {
     }
   }, [showOptionsMenu]);
 
-  // Handle muting/unmuting the channel
   const handleMuteToggle = async () => {
     if (!channel || !client.userID) return;
 
@@ -132,12 +118,9 @@ const CustomChannelHeader: React.FC = () => {
         showSuccess('Channel muted');
       }
       
-      // Force a re-render to update the mute button text/icon
       const newMutedState = !isCurrentlyMuted;
       setMuteToggleKey(prev => prev + 1);
       
-      // Broadcast mute status change to update channel list immediately
-      console.log('📡 Broadcasting channelMuteStatusChanged event:', { channelId: channel.id, muted: newMutedState });
       window.dispatchEvent(new CustomEvent('channelMuteStatusChanged', {
         detail: { 
           channelId: channel.id, 
@@ -152,7 +135,6 @@ const CustomChannelHeader: React.FC = () => {
     }
   };
 
-  // Handle leaving the channel (server-side proper leave/delete)
   const handleLeaveChannel = async () => {
     if (!channel || !client.userID) return;
 
@@ -161,7 +143,6 @@ const CustomChannelHeader: React.FC = () => {
       const channelId = channel.id;
       const accessToken = await getAccessTokenSilently();
       
-      // Call the server-side leave channel API
       const response = await fetch('/api/chat-operations', {
         method: 'POST',
         headers: {
@@ -183,17 +164,14 @@ const CustomChannelHeader: React.FC = () => {
       const result = await response.json();
       console.log('✅ Successfully left/deleted channel:', result);
       
-      // Clear the active channel in Stream Chat context immediately
       setActiveChannel(undefined);
       
-      // Show appropriate success message
       if (result.deleted) {
         showSuccess('Channel deleted successfully');
       } else {
         showSuccess('Left channel successfully');
       }
       
-      // Navigate back to general chat
       navigate('/chat');
       
     } catch (err: any) {
@@ -206,38 +184,27 @@ const CustomChannelHeader: React.FC = () => {
     }
   };
 
-  // Get mute status (includes muteToggleKey to force re-render)
   const isMuted = useMemo(() => {
     return channel?.muteStatus().muted || false;
   }, [channel, muteToggleKey]);
 
-  // Handle audio call
   const handleAudioCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a valid call ID (only a-z, 0-9, _, - allowed) with length limit
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20); // Limit channel ID part
-    const timestamp = Date.now().toString().slice(-8); // Use last 8 digits of timestamp
-    const callId = `audio_${sanitizedChannelId}_${timestamp}`.slice(0, 60); // Ensure under 64 chars
+    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
+    const timestamp = Date.now().toString().slice(-8);
+    const callId = `audio_${sanitizedChannelId}_${timestamp}`.slice(0, 60);
     
-    console.log('🎵 Generated call ID:', callId, 'Length:', callId.length);
-    
-    // Navigate to call page with audio mode
     navigate(`/call/${callId}?type=audio&channel=${channel.id}`);
   };
 
-  // Handle video call
   const handleVideoCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a valid call ID (only a-z, 0-9, _, - allowed) with length limit
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20); // Limit channel ID part
-    const timestamp = Date.now().toString().slice(-8); // Use last 8 digits of timestamp
-    const callId = `video_${sanitizedChannelId}_${timestamp}`.slice(0, 60); // Ensure under 64 chars
+    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
+    const timestamp = Date.now().toString().slice(-8);
+    const callId = `video_${sanitizedChannelId}_${timestamp}`.slice(0, 60);
     
-    console.log('🎥 Generated call ID:', callId, 'Length:', callId.length);
-    
-    // Navigate to call page with video mode
     navigate(`/call/${callId}?type=video&channel=${channel.id}`);
   };
 
@@ -265,9 +232,7 @@ const CustomChannelHeader: React.FC = () => {
           </div>
         </div>
         
-        {/* Call buttons and Options Menu */}
         <div className="str-chat__header-livestream-right">
-          {/* Call Buttons */}
           <div className="call-buttons-container">
             <button
               className="call-button audio-call-button"
@@ -303,14 +268,12 @@ const CustomChannelHeader: React.FC = () => {
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     {isMuted ? (
-                      // Unmute icon
                       <>
                         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                         <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
                       </>
                     ) : (
-                      // Mute icon
                       <>
                         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                         <line x1="23" y1="9" x2="17" y2="15"></line>
@@ -341,7 +304,6 @@ const CustomChannelHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Leave Channel Confirmation Modal */}
       {showLeaveConfirm && (
         <div className="leave-channel-modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
           <div className="leave-channel-modal" onClick={(e) => e.stopPropagation()}>

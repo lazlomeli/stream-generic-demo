@@ -309,7 +309,6 @@
   transform: translate(-50%, -50%);
   width: 400px;
   height: 800px;
-  background-image: url('../assets/iphone-overlay.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

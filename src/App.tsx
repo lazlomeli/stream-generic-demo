@@ -77,11 +77,11 @@ function AppContent() {
                     <Chat />
                   </ProtectedRoute>
                 } />
-                <Route path="/chat/:channelId" element={
+                {/* <Route path="/chat/:channelId" element={
                   <ProtectedRoute>
                     <Chat />
                   </ProtectedRoute>
-                } />
+                } /> */}
                 <Route path="/video" element={
                   <ProtectedRoute allowViewers={true}>
                     <Video />

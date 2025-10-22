@@ -29,7 +29,14 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       return availableUsers;
     }
     
+    if (!client.userID) {
+      console.warn('[CustomChannelList.tsx]: Cannot fetch users - client.userID not available');
+      return [];
+    }
+    
     try {
+      console.log('[CustomChannelList.tsx]: Fetching users, current user:', client.userID);
+      
       const users = await client.queryUsers(
         {},
         { id: 1 },
@@ -37,17 +44,25 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
       );
 
       const userList = users.users
-        .filter(user => user.id !== client.userID)
+        .filter(user => {
+          const shouldInclude = user.id !== client.userID;
+          if (!shouldInclude) {
+            console.log('[CustomChannelList.tsx]: Filtering out current user:', user.id);
+          }
+          return shouldInclude;
+        })
         .map(user => ({
           id: user.id,
           name: user.name || user.id,
           image: user.image
         }));
 
+      console.log(`[CustomChannelList.tsx]: Fetched ${userList.length} users (excluding self)`);
       setAvailableUsers(userList);
       return userList;
     } catch (error) {
       console.error('[CustomChannelList.tsx]: Error fetching users:', error);
+      return [];
     }
   }, [client, availableUsers]);
 

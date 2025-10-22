@@ -56,9 +56,14 @@ const Chat: React.FC<ChatProps> = () => {
 
   console.log('👤 Chat: user', user);
   
-  const sanitizeUserId = (userId: string) => {
+  const sanitizeUserId = useCallback((userId: string) => {
     return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
-  }
+  }, []);
+
+  const sanitizedUserId = useMemo(() => 
+    user?.nickname ? sanitizeUserId(user.nickname) : '',
+    [user?.nickname, sanitizeUserId]
+  );
 
   const handleMobileChannelSelect = (channel: StreamChannel) => {
     setSelectedMobileChannel(channel);
@@ -74,22 +79,23 @@ const Chat: React.FC<ChatProps> = () => {
     if (!isMobileView) {
       setMobileViewState('channelList');
       setSelectedMobileChannel(null);
-    }
-  }, [isMobileView]);
-
-  useEffect(() => {
-    if (isMobileView && channelId && clientRef.current) {
+    } else if (channelId && clientRef.current) {
       const channel = clientRef.current.channel('messaging', channelId);
       setSelectedMobileChannel(channel);
       setMobileViewState('chat');
     }
-  }, [channelId, isMobileView, clientReady]);
+  }, [isMobileView, channelId, clientReady]);
 
   const fetchUsers = useCallback(async () => {
     if (!clientRef.current) return;
     
+    if (!clientRef.current.userID) {
+      console.warn('📱 Mobile: Cannot fetch users - client.userID not available');
+      return;
+    }
+    
     try {
-      console.log('📱 Mobile: Fetching available users...');
+      console.log('📱 Mobile: Fetching available users, current user:', clientRef.current.userID);
       
       const users = await clientRef.current.queryUsers(
         {},
@@ -97,65 +103,49 @@ const Chat: React.FC<ChatProps> = () => {
         { limit: 100 }
       );
 
+      const currentUserId = clientRef.current.userID;
       const userList = users.users
-        .filter(user => user.id !== clientRef.current!.userID)
+        .filter(user => {
+          const shouldInclude = user.id !== currentUserId;
+          if (!shouldInclude) {
+            console.log('📱 Mobile: Filtering out current user:', user.id);
+          }
+          return shouldInclude;
+        })
         .map(user => ({
           id: user.id,
           name: user.name || user.id,
           image: user.image
         }));
 
-      console.log(`✅ Mobile: Fetched ${userList.length} users`);
+      console.log(`✅ Mobile: Fetched ${userList.length} users (excluding self)`);
       setAvailableUsers(userList);
     } catch (error) {
       console.error('❌ Mobile: Error fetching users:', error);
-      const fallbackUsers = [
-        {
-          id: 'alice_smith',
-          name: 'Alice Smith',
-          image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'bob_johnson',
-          name: 'Bob Johnson',
-          image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'carol_williams',
-          name: 'Carol Williams',
-          image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'david_brown',
-          name: 'David Brown',
-          image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-          id: 'emma_davis',
-          name: 'Emma Davis',
-          image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
-        }
-      ];
-      setAvailableUsers(fallbackUsers);
     }
   }, []);
 
-  useEffect(() => {
-    if (clientReady && clientRef.current) {
-      fetchUsers();
-    }
-  }, [clientReady, fetchUsers]);
 
   const handleMobileChannelCreated = useCallback(async (channelId: string) => {
     console.log('Mobile channel created:', channelId);
   }, []);
 
+  const filters = useMemo(() => ({ 
+    type: 'messaging', 
+    members: { $in: [sanitizedUserId] } 
+  }), [sanitizedUserId]);
+  
+  const sort = useMemo(() => ({ last_message_at: -1 } as const), []);
+  
+  const options = useMemo(() => ({ 
+    limit: 20,
+    watch: true,
+    state: true
+  }), []);
+
   const getStreamToken = useCallback(
     async (userId: string): Promise<string> => {
-      console.log('111 dentro', userId);
       const accessToken = await getAccessTokenSilently();
-      
-      console.log('accessToken', accessToken);
       const res = await fetch("/api/auth-tokens", {
         method: "POST",
         headers: {
@@ -202,30 +192,20 @@ const Chat: React.FC<ChatProps> = () => {
         setIsConnecting(true);
         setError(null);
 
-        console.log('111');
-        const token = await getStreamToken(sanitizeUserId(user.nickname as string));
-        console.log('222');
+        const token = await getStreamToken(sanitizedUserId);
         if (cancelled) return;
 
-        console.log('333');
-        console.log('connectUser data', {
-          id: sanitizeUserId(user.nickname as string),
-          name: user.name || user.email || "Anonymous User",
-          image: user.picture || undefined,
-        });
         await client.connectUser(
           {
-            id: sanitizeUserId(user.nickname as string),
+            id: sanitizedUserId,
             name: user.name || user.email || "Anonymous User",
             image: user.picture || undefined,
           },
           token
         );
-        console.log('444');
         if (cancelled) return;
 
         try {
-          console.log('555');
           const accessToken = await getAccessTokenSilently();
           const response = await fetch("/api/chat-operations", {
             method: "POST",
@@ -235,13 +215,10 @@ const Chat: React.FC<ChatProps> = () => {
             },
             body: JSON.stringify({ 
               type: 'add-to-general',
-              userId: sanitizeUserId(user.nickname as string),
+              userId: sanitizedUserId,
             }),
           });
-          console.log('666');
-          console.log('response', response);
           if (!response.ok) {
-            console.log('777');
             const errorData = await response.json();
             if (response.status === 404) {
               console.error('❌ General channel does not exist:', errorData.message);
@@ -257,6 +234,8 @@ const Chat: React.FC<ChatProps> = () => {
         }
 
         setClientReady(true);
+        
+        fetchUsers();
       } catch (e: any) {
         console.error("Error connecting to Stream:", e);
         if (!cancelled) setError("Failed to connect to chat. Please try again.");
@@ -282,7 +261,9 @@ const Chat: React.FC<ChatProps> = () => {
     user,
     apiKey,
     getStreamToken,
-    user?.nickname as string,
+    fetchUsers,
+    getAccessTokenSilently,
+    sanitizedUserId,
   ]);
 
 
@@ -308,17 +289,6 @@ const Chat: React.FC<ChatProps> = () => {
   }
 
   const client = clientRef.current;
-
-  const filters = { 
-    type: 'messaging', 
-    members: { $in: [user?.nickname as string] } 
-  };
-  const sort = { last_message_at: -1 } as const;
-  const options = { 
-    limit: 20,
-    watch: true,
-    state: true
-  };
 
   if (isMobileView) {
     return (

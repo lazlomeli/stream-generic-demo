@@ -50,8 +50,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (type === 'feed') {
       console.log('🍃 AUTH-TOKENS: Generating feed token for:', userId);
       
+      // Create/update user in Activity Feeds if profile information is provided
       if (userProfile) {
-        console.log('👤 AUTH-TOKENS: User profile provided, skipping V3 connection (alpha)');
+        try {
+          console.log('👤 AUTH-TOKENS: Creating/updating feed user profile...');
+          const streamFeedsClient = new StreamClient(apiKey, apiSecret);
+          await streamFeedsClient.upsertUsers([
+            {
+              id: sanitizeUserId(userId),
+              name: userProfile.name,
+              image: userProfile.image,
+            },
+          ]);
+          console.log(`✅ AUTH-TOKENS: Feed user profile updated: ${userId}`);
+        } catch (profileError: any) {
+          // Handle the case where user was deleted
+          if (profileError.message?.includes('was deleted') || profileError.code === 16) {
+            console.log('⚠️ AUTH-TOKENS: Feed user was deleted, attempting to restore...');
+            
+            try {
+              const streamFeedsClient = new StreamClient(apiKey, apiSecret);
+              // Try to restore the deleted user
+              await streamFeedsClient.restoreUsers({ user_ids: [sanitizeUserId(userId)] });
+              console.log('✅ AUTH-TOKENS: Feed user restored successfully');
+              
+              // Now try to update the user again
+              await streamFeedsClient.upsertUsers([
+                {
+                  id: sanitizeUserId(userId),
+                  name: userProfile.name,
+                  image: userProfile.image,
+                },
+              ]);
+              console.log('✅ AUTH-TOKENS: Feed user updated after restoration');
+            } catch (restoreError: any) {
+              console.error('❌ AUTH-TOKENS: Failed to restore feed user:', restoreError.message);
+              console.log('ℹ️ AUTH-TOKENS: Continuing with token generation (user may need manual restoration)');
+            }
+          } else {
+            console.warn(`⚠️ AUTH-TOKENS: Failed to update feed user profile ${userId}:`, profileError.message);
+            console.log('ℹ️ AUTH-TOKENS: Continuing with token generation');
+          }
+        }
       }
 
       console.log('🔑 AUTH-TOKENS: Generating JWT token...');

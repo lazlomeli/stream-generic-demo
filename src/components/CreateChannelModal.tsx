@@ -73,6 +73,13 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       return;
     }
 
+    // Safety check: ensure current user is not in the selected users
+    if (currentUserId && selectedUsers.has(currentUserId)) {
+      console.error('[CreateChannelModal]: Current user found in selected users!');
+      setError('Cannot add yourself to the channel');
+      return;
+    }
+
     setIsCreating(true);
     setError(null);
 
@@ -158,10 +165,19 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     }
   };
 
-  // Filter users based on search query
-  const filteredUsers = availableUsers.filter(user =>
-    user.name.toLowerCase().includes(userSearchQuery.toLowerCase())
-  );
+  // Filter users based on search query and exclude current user
+  // Note: This is computed after the early return, so it can't use useMemo (Rules of Hooks)
+  const filteredUsers = availableUsers
+    .filter(user => {
+      const isCurrentUser = user.id === currentUserId;
+      if (isCurrentUser) {
+        console.log('[CreateChannelModal]: Filtering out current user:', user.id, user.name);
+      }
+      return !isCurrentUser; // Exclude current user
+    })
+    .filter(user => user.name.toLowerCase().includes(userSearchQuery.toLowerCase()));
+  
+  console.log(`[CreateChannelModal]: Showing ${filteredUsers.length} users (total available: ${availableUsers.length}, current user: ${currentUserId})`);
 
   return (
     <div className="create-channel-modal-overlay" onClick={handleClose}>

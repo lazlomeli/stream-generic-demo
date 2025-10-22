@@ -32,17 +32,9 @@ router.post('/feeds-token', async (req, res) => {
     }
 
     console.log('🍃 FEEDS-V3: Generating token for user:', sanitizedUserId);
-
-    // Create or update user if name is provided
-    if (name) {
-      console.log('👤 FEEDS-V3: Creating/updating user:', { user_id: sanitizedUserId, name });
-      await streamFeedsClient.upsertUsers([
-        {
-          id: sanitizedUserId,
-          name: name,
-        },
-      ]);
-    }
+    
+    // Note: User creation/restoration should happen during login via auth-tokens endpoint
+    // This endpoint is only for token generation
 
     // Create feed group with custom ranking
     try {

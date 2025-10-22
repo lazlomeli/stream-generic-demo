@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
       const token = await getAccessTokenSilently()
       
       // Get user ID from Auth0 for the reset endpoint
-      const userId = user?.sub
+      const userId = user?.nickname
       if (!userId) {
         throw new Error('User not authenticated')
       }

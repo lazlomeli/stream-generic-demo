@@ -14,7 +14,7 @@ import { initializeFeedRoutes } from './routes/feed-routes.ts';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5100;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -87,6 +87,48 @@ app.post("/api/auth-tokens", async (req, res) => {
     // Handle feed token generation
     if (type === 'feed') {
       console.log('🍃 AUTH-TOKENS: Generating feed token for:', userId);
+      
+      // Create/update user in Activity Feeds if profile information is provided
+      if (userProfile) {
+        try {
+          console.log('👤 AUTH-TOKENS: Creating/updating feed user profile...');
+          await streamFeedsClient.upsertUsers([
+            {
+              id: sanitizeUserId(userId),
+              name: userProfile.name,
+              image: userProfile.image,
+            },
+          ]);
+          console.log(`✅ AUTH-TOKENS: Feed user profile updated: ${userId}`);
+        } catch (profileError) {
+          // Handle the case where user was deleted
+          if (profileError.message?.includes('was deleted') || profileError.code === 16) {
+            console.log('⚠️ AUTH-TOKENS: Feed user was deleted, attempting to restore...');
+            
+            try {
+              // Try to restore the deleted user
+              await streamFeedsClient.restoreUsers({ user_ids: [sanitizeUserId(userId)] });
+              console.log('✅ AUTH-TOKENS: Feed user restored successfully');
+              
+              // Now try to update the user again
+              await streamFeedsClient.upsertUsers([
+                {
+                  id: sanitizeUserId(userId),
+                  name: userProfile.name,
+                  image: userProfile.image,
+                },
+              ]);
+              console.log('✅ AUTH-TOKENS: Feed user updated after restoration');
+            } catch (restoreError) {
+              console.error('❌ AUTH-TOKENS: Failed to restore feed user:', restoreError.message);
+              console.log('ℹ️ AUTH-TOKENS: Continuing with token generation (user may need manual restoration)');
+            }
+          } else {
+            console.warn(`⚠️ AUTH-TOKENS: Failed to update feed user profile ${userId}:`, profileError.message);
+            console.log('ℹ️ AUTH-TOKENS: Continuing with token generation');
+          }
+        }
+      }
       
       // Generate a Feeds V3-compatible JWT token
       const token = jwt.sign(

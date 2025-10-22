@@ -10,6 +10,198 @@ export function initializeChatRoutes(streamChatClient: StreamChat) {
   return router;
 }
 
+/**
+ * Helper function to generate sample user data
+ */
+function generateSampleUsers() {
+  return [
+    {
+      id: 'sample_alice_2025',
+      name: 'Alice Johnson',
+      role: 'user',
+      image: 'https://getstream.io/random_png/?name=Alice',
+    },
+    {
+      id: 'sample_bob_2025',
+      name: 'Bob Smith',
+      role: 'user',
+      image: 'https://getstream.io/random_png/?name=Bob',
+    },
+    {
+      id: 'sample_charlie_2025',
+      name: 'Charlie Brown',
+      role: 'user',
+      image: 'https://getstream.io/random_png/?name=Charlie',
+    },
+    {
+      id: 'sample_diana_2025',
+      name: 'Diana Prince',
+      role: 'user',
+      image: 'https://getstream.io/random_png/?name=Diana',
+    },
+    {
+      id: 'sample_eve_2025',
+      name: 'Eve Martinez',
+      role: 'user',
+      image: 'https://getstream.io/random_png/?name=Eve',
+    },
+  ];
+}
+
+/**
+ * Reset Chat - Delete all channels (keep users intact)
+ * 
+ * This function only deletes channels. Sample users are permanent and never deleted.
+ * They will be reused/updated during seeding.
+ */
+async function resetChat(
+  client: StreamChat
+): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('🔄 Starting Chat reset...');
+    console.log('ℹ️ Users will NOT be deleted - only channels will be cleaned up');
+
+    // Delete all messaging channels EXCEPT "general" (which we'll just clean up)
+    const channelsResponse = await client.queryChannels({
+      type: 'messaging',
+    });
+
+    console.log(`📋 Found ${channelsResponse.length} messaging channels to process`);
+
+    // Hard delete all channels except "general"
+    for (const channel of channelsResponse) {
+      try {
+        if (channel.id === 'general') {
+          // For general channel, just truncate messages instead of deleting
+          await channel.truncate();
+          console.log(`✅ Cleaned up general channel (preserved)`);
+        } else {
+          // Delete all other channels
+          await channel.delete({ hard_delete: true });
+          console.log(`✅ Deleted channel: ${channel.id}`);
+        }
+      } catch (error: any) {
+        console.error(`❌ Error processing channel ${channel.id}:`, error.message);
+      }
+    }
+
+    // Delete all livestream channels
+    const livestreamChannels = await client.queryChannels({
+      type: 'livestream',
+    });
+
+    console.log(`📺 Found ${livestreamChannels.length} livestream channels to delete`);
+
+    for (const channel of livestreamChannels) {
+      try {
+        await channel.delete({ hard_delete: true });
+        console.log(`✅ Deleted livestream channel: ${channel.id}`);
+      } catch (error: any) {
+        console.error(`❌ Error deleting livestream channel ${channel.id}:`, error.message);
+      }
+    }
+
+    console.log('✅ Chat reset completed successfully (users preserved)');
+    return { success: true, message: 'Chat reset completed' };
+  } catch (error) {
+    console.error('❌ Error during Chat reset:', error);
+    throw error;
+  }
+}
+
+/**
+ * Seed Chat - Create sample users, channels, and messages
+ */
+async function seedChat(
+  client: StreamChat, 
+  currentUserId: string
+): Promise<{ success: boolean; message: string; data: any }> {
+  try {
+    console.log('🌱 Starting Chat seeding...');
+
+    // Create/update sample users (they're permanent, never deleted)
+    const sampleUsers = generateSampleUsers();
+    await client.upsertUsers(sampleUsers);
+    console.log(`✅ Created/updated ${sampleUsers.length} sample users`);
+
+    // Get all user IDs including the current user
+    const allUserIds = [...sampleUsers.map((u) => u.id), currentUserId];
+
+    // Setup the "General" group chat (reuse if exists, create if not)
+    const groupChannelId = 'general';
+    const groupChannel = client.channel('messaging', groupChannelId, {
+      name: 'General',
+      created_by_id: currentUserId,
+      members: allUserIds,
+      isDM: false,
+      channelType: 'chat',
+    } as any);
+    
+    try {
+      // Try to query the existing channel first
+      await groupChannel.query();
+      console.log(`✅ Reusing existing general channel`);
+      
+      // Update members to include everyone
+      await groupChannel.addMembers(allUserIds);
+      console.log(`✅ Updated general channel members`);
+    } catch (error: any) {
+      // If channel doesn't exist, create it
+      if (error.message?.includes('does not exist') || error.code === 16) {
+        await groupChannel.create();
+        console.log(`✅ Created new general channel`);
+      } else {
+        throw error;
+      }
+    }
+
+    // Send a welcome message to the group
+    await groupChannel.sendMessage({
+      text: 'Welcome to the General channel! 👋',
+      user_id: currentUserId,
+    });
+
+    // Create 1:1 DM channels between current user and each sample user
+    const dmChannels: string[] = [];
+    for (const sampleUser of sampleUsers) {
+      const dmChannelId = `dm_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      const dmChannel = client.channel('messaging', dmChannelId, {
+        name: undefined, // DMs don't have names
+        created_by_id: currentUserId,
+        members: [currentUserId, sampleUser.id],
+        isDM: true,
+        channelType: 'chat',
+      } as any);
+      await dmChannel.create();
+      dmChannels.push(dmChannelId);
+      console.log(`✅ Created DM channel with ${sampleUser.name}: ${dmChannelId}`);
+
+      // Send an initial message in the DM
+      await dmChannel.sendMessage({
+        text: `Hi! I'm ${sampleUser.name}. Nice to meet you!`,
+        user_id: sampleUser.id,
+      } as any);
+
+      // Small delay to ensure unique channel IDs
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    console.log('✅ Chat seeding completed successfully');
+    return {
+      success: true,
+      message: 'Chat seeded successfully',
+      data: {
+        groupChannel: groupChannelId,
+        dmChannels,
+        sampleUsers: sampleUsers.map((u) => u.id),
+      },
+    };
+  } catch (error) {
+    console.error('❌ Error during Chat seeding:', error);
+    throw error;
+  }
+}
+
 router.post('/chat-token', async (req, res) => {
   try {
     const { user } = req.body;
@@ -419,6 +611,69 @@ router.post('/chat-operations', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to perform chat operation',
       details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * API endpoint to reset Chat (delete all channels, keep users)
+ */
+router.post('/stream/reset', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required',
+      });
+    }
+
+    console.log(`🔄 [chat-routes.ts]: Reset and seed requested by user: ${userId}`);
+
+    // Step 1: Reset (delete all channels, keep users)
+    await resetChat(streamClient);
+
+    // Step 2: Seed (create sample data)
+    const seedResult = await seedChat(streamClient, userId);
+
+    res.json({
+      success: true,
+      message: 'Chat reset and seeded successfully',
+      data: seedResult.data,
+    });
+  } catch (error) {
+    console.error('[chat-routes.ts]: Error in reset-and-seed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * API endpoint to only seed Chat (without reset)
+ */
+router.post('/stream/seed', async (req, res) => {
+  try {
+    const { userId } = req.body; 
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required',
+      });
+    }
+
+    console.log(`🌱 [chat-routes.ts]: Seed requested by user: ${userId}`);
+
+    const result = await seedChat(streamClient, userId);
+    res.json(result);
+  } catch (error) {
+    console.error('[chat-routes.ts]: Error in seed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 });

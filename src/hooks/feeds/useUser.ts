@@ -19,13 +19,17 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
 
   console.log('🔑 Connecting user with API key:', apiKey ? '✅ Set' : '❌ Missing');
 
-  // Genero token para user de Auth0
-  const res = await fetch("/api/feeds-token", {
+  // Get auth token from unified auth-tokens endpoint (creates/restores user if needed)
+  const res = await fetch("/api/auth-tokens", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      user_id: user.nickname,
-      name: user.name,
+      type: 'feed',
+      userId: user.nickname,
+      userProfile: {
+        name: user.name || user.nickname || 'Anonymous User',
+        image: user.picture || undefined,
+      },
     }),
   });
 
