@@ -47,7 +47,7 @@ export default async function handler(
 
     // Initialize Stream clients
     const streamChatClient = new StreamChat(apiKey, apiSecret);
-    const streamFeedsClient = new StreamClient(apiKey, apiSecret, { basePath: "https://chat.stream-io-api.com" });
+    const streamFeedsClient = new StreamClient(apiKey, apiSecret);
 
     // Step 1: Reset Chat (delete all channels, keep users)
     await resetChat(streamChatClient);

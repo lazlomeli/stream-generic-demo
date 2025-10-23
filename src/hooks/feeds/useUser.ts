@@ -39,7 +39,7 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
   const { token }: AuthTokenResponse = await res.json();
 
   // Create FeedsClient using default Feeds V3 API endpoint
-  const client = new FeedsClient(apiKey, { base_url: "https://chat.stream-io-api.com" });
+  const client = new FeedsClient(apiKey);
   
   try {
     await client.connectUser({ id: user.nickname! }, token);
