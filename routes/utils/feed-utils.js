@@ -4,6 +4,8 @@ import { generateSampleUsers } from './sample-users.js';
 async function ensureFeedGroupsExist(client) {
   console.log('🔧 Ensuring required feed groups exist...');
   
+  console.log('CLIENT FEEDS', client.feeds);
+
   const feedGroupsToCreate = [
     {
       id: 'user',
@@ -28,7 +30,6 @@ async function ensureFeedGroupsExist(client) {
   for (const feedGroup of feedGroupsToCreate) {
     try {
       await client.feeds.createFeedGroup(feedGroup);
-      console.log('CLIENT FEEDS', client.feeds);
       console.log(`✅ Created feed group: ${feedGroup.id}`);
     } catch (error) {
       // Feed group might already exist
