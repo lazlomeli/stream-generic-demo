@@ -1,5 +1,3 @@
-"use client";
-
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "./useUser";
 import { User } from "@auth0/auth0-spa-js";

@@ -55,7 +55,7 @@ class StreamNotificationsManager {
       this.config = config;
       
       // Initialize V3 FeedsClient
-      this.client = new FeedsClient(config.apiKey);
+      this.client = new FeedsClient(config.apiKey, { base_url: "https://chat.stream-io-api.com" });
       
       // Connect user with token (V3 pattern)
       await this.client.connectUser({ id: config.userId }, config.token);

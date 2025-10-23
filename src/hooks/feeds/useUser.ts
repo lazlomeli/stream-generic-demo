@@ -39,7 +39,7 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
   const { token }: AuthTokenResponse = await res.json();
 
   // Create FeedsClient using default Feeds V3 API endpoint
-  const client = new FeedsClient(apiKey);
+  const client = new FeedsClient(apiKey, { base_url: "https://chat.stream-io-api.com" });
   
   try {
     await client.connectUser({ id: user.nickname! }, token);
@@ -53,8 +53,8 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
 };
 
 export function useUser() {
-  const [showUserModal, setShowUserModal] = useState(false);
-  const { isAuthenticated, user: auth0User } = useAuth0();
+  const [showUserModal] = useState(false);
+  const { user: auth0User } = useAuth0();
   const { showError } = useToast();
 
   // Query for user data - now properly depends on auth0User
