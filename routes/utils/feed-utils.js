@@ -28,14 +28,16 @@ async function ensureFeedGroupsExist(client) {
   for (const feedGroup of feedGroupsToCreate) {
     try {
       await client.feeds.createFeedGroup(feedGroup);
+      console.log('CLIENT FEEDS', client.feeds);
       console.log(`✅ Created feed group: ${feedGroup.id}`);
     } catch (error) {
       // Feed group might already exist
-      if (error.code === 4 || error.message?.includes('already exists')) {
-        console.log(`ℹ️ Feed group '${feedGroup.id}' already exists`);
-      } else {
-        console.error(`⚠️ Error creating feed group '${feedGroup.id}':`, error.message);
-      }
+      // if (error.code === 4 || error.message?.includes('already exists')) {
+      //   console.log(`ℹ️ Feed group '${feedGroup.id}' already exists`);
+      // } else {
+      //   console.error(`⚠️ Error creating feed group '${feedGroup.id}':`, error.message);
+      // }
+      console.error(`⚠️ Error creating feed group '${feedGroup.id}':`, error.message);
     }
   }
 }

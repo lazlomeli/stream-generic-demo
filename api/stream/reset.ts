@@ -1,4 +1,4 @@
-import { StreamChat, Channel } from 'stream-chat';
+import { StreamChat } from 'stream-chat';
 import { StreamClient } from '@stream-io/node-sdk';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { resetChat, seedChat } from '../../routes/utils/chat-utils.js';

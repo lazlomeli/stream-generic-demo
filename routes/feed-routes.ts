@@ -86,7 +86,7 @@ router.post('/feeds-token', async (req, res) => {
 /**
  * API endpoint to reset Feeds (delete all activities, reactions, comments, follows - keep users)
  */
-router.post('/feeds/reset', async (req, res) => {
+router.post('/stream/reset', async (req, res) => {
   try {
     const { userId } = req.body;
 
@@ -122,28 +122,28 @@ router.post('/feeds/reset', async (req, res) => {
 /**
  * API endpoint to only seed Feeds (without reset)
  */
-router.post('/feeds/seed', async (req, res) => {
-  try {
-    const { userId } = req.body;
+// router.post('/feeds/seed', async (req, res) => {
+//   try {
+//     const { userId } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'userId is required',
-      });
-    }
+//     if (!userId) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'userId is required',
+//       });
+//     }
 
-    console.log(`🌱 [feeds-routes.ts]: Feeds seed requested by user: ${userId}`);
+//     console.log(`🌱 [feeds-routes.ts]: Feeds seed requested by user: ${userId}`);
 
-    const result = await seedFeeds(streamFeedsClient, userId);
-    res.json(result);
-  } catch (error) {
-    console.error('[feeds-routes.ts]: Error in feeds seed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
+//     const result = await seedFeeds(streamFeedsClient, userId);
+//     res.json(result);
+//   } catch (error) {
+//     console.error('[feeds-routes.ts]: Error in feeds seed:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// });
 
 export default router;
