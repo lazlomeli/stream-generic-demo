@@ -210,7 +210,7 @@ export async function seedFeeds(client, currentUserId) {
     for (let i = 0; i < Math.min(3, createdActivities.length); i++) {
       const activity = createdActivities[i];
       try {
-        await client.feeds.addActivityReaction({
+        await client.feeds.addReaction({
           activity_id: activity.id,
           type: 'like',
           user_id: currentUserId,
