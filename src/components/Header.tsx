@@ -110,8 +110,8 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
         throw new Error('User not authenticated')
       }
       
-      // Reset Chat
-      const chatResponse = await fetch('/api/stream/reset', {
+      // Reset both Chat and Feeds with unified endpoint
+      const response = await fetch('/api/stream/reset', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -120,24 +120,9 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
         body: JSON.stringify({ userId })
       })
 
-      if (!chatResponse.ok) {
-        const chatData = await chatResponse.json()
-        throw new Error(chatData.error || 'Chat reset failed')
-      }
-
-      // Reset Feeds
-      const feedsResponse = await fetch('/api/feeds/reset', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId })
-      })
-
-      if (!feedsResponse.ok) {
-        const feedsData = await feedsResponse.json()
-        throw new Error(feedsData.error || 'Feeds reset failed')
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Reset failed')
       }
 
       showSuccess('App reset and seeded successfully! Fresh sample data has been created.')

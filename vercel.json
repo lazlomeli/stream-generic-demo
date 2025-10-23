@@ -11,9 +11,6 @@
     },
     "api/stream/reset.ts": {
       "maxDuration": 60
-    },
-    "api/feeds/reset.ts": {
-      "maxDuration": 60
     }
   },
   "rewrites": [

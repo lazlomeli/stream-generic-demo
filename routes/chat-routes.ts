@@ -1,13 +1,17 @@
 import express from 'express';
 import { Channel, StreamChat } from 'stream-chat';
+import { StreamClient } from '@stream-io/node-sdk';
 import { resetChat, seedChat } from './utils/chat-utils.js';
+import { resetFeeds, seedFeeds } from './utils/feed-utils.js';
 
 const router = express.Router();
 
 let streamClient: StreamChat;
+let streamFeedsClient: StreamClient;
 
-export function initializeChatRoutes(streamChatClient: StreamChat) {
+export function initializeChatRoutes(streamChatClient: StreamChat, feedsClient: StreamClient) {
   streamClient = streamChatClient;
+  streamFeedsClient = feedsClient;
   return router;
 }
 
@@ -438,21 +442,30 @@ router.post('/stream/reset', async (req, res) => {
       });
     }
 
-    console.log(`🔄 [chat-routes.ts]: Chat reset and seed requested by user: ${userId}`);
+    console.log(`🔄 [chat-routes.ts]: Unified reset and seed requested by user: ${userId}`);
 
     // Step 1: Reset Chat (delete all channels, keep users)
     await resetChat(streamClient);
 
     // Step 2: Seed Chat (create sample data)
-    const seedResult = await seedChat(streamClient, userId);
+    const chatSeedResult = await seedChat(streamClient, userId);
+
+    // Step 3: Reset Feeds
+    await resetFeeds(streamFeedsClient);
+
+    // Step 4: Seed Feeds
+    const feedsSeedResult = await seedFeeds(streamFeedsClient, userId);
 
     res.json({
       success: true,
-      message: 'Chat reset and seeded successfully',
-      data: seedResult.data,
+      message: 'App reset and seeded successfully',
+      data: {
+        chat: chatSeedResult.data,
+        feeds: feedsSeedResult.data,
+      },
     });
   } catch (error) {
-    console.error('[chat-routes.ts]: Error in reset-and-seed:', error);
+    console.error('[chat-routes.ts]: Error in unified reset-and-seed:', error);
     res.status(500).json({
       success: false,
       error: error.message,

@@ -37,8 +37,8 @@ const streamFeedsClient = new StreamClient(
   process.env.STREAM_API_SECRET
 )
 
-// CHAT ROUTES
-const chatRoutes = initializeChatRoutes(streamChatClient);
+// CHAT ROUTES (now handles both chat and feeds reset)
+const chatRoutes = initializeChatRoutes(streamChatClient, streamFeedsClient);
 app.use('/api', chatRoutes);
 
 // FEED ROUTES
@@ -106,9 +106,10 @@ app.post("/api/auth-tokens", async (req, res) => {
         }
       }
 
-      // Setup feed groups and views (idempotent - safe to call multiple times)
+      // Setup custom feed groups and views (idempotent - safe to call multiple times)
+      // Note: Core feed groups like "user" and "timeline" are created by default in Feeds V3
       try {
-        console.log('🔧 AUTH-TOKENS: Setting up feed group with custom ranking...');
+        console.log('🔧 AUTH-TOKENS: Setting up "popular" feed group with custom ranking...');
         await streamFeedsClient.feeds.createFeedGroup({
           id: "popular-feed-group",
           activity_selectors: [{ type: "popular" }],
@@ -124,9 +125,9 @@ app.post("/api/auth-tokens", async (req, res) => {
             },
           },
         });
-        console.log('✅ AUTH-TOKENS: Feed group created/verified');
+        console.log('✅ AUTH-TOKENS: Popular feed group created/verified');
       } catch (feedGroupError) {
-        console.log('ℹ️ AUTH-TOKENS: Feed group already exists or creation skipped');
+        console.log('ℹ️ AUTH-TOKENS: Popular feed group already exists or creation skipped');
       }
 
       try {
