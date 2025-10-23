@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Attachment, AttachmentProps } from 'stream-chat-react';
 import './VoiceRecording.css';
 
-// Import SVG icons
 import PlayerPlayIcon from '../icons/player-play.svg';
 
 interface VoiceRecordingAttachment {
@@ -203,7 +202,6 @@ const CustomVoiceRecording: React.FC<{ attachment: VoiceRecordingAttachment; isQ
 };
 
 const CustomAttachment: React.FC<AttachmentProps> = (props) => {
-  // Check if any of the attachments are voice recordings
   const voiceRecordingAttachment = props.attachments?.find(att => 
     'type' in att && att.type === 'voiceRecording'
   );
@@ -216,8 +214,6 @@ const CustomAttachment: React.FC<AttachmentProps> = (props) => {
       />
     );
   }
-
-  // For all other attachment types, use the default Attachment component
   return <Attachment {...props} />;
 };
 

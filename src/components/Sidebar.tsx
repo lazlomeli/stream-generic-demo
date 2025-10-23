@@ -20,10 +20,8 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const { unreadCount } = useNotifications();
   const [isFeedExpanded, setIsFeedExpanded] = useState(false);
 
-  // Check if we're on a feed-related path
   const isFeedPath = location.pathname.startsWith('/feeds');
 
-  // Expand/collapse feed submenu based on current path
   useEffect(() => {
     if (isFeedPath) {
       setIsFeedExpanded(true);
@@ -34,10 +32,8 @@ const Sidebar: React.FC<SidebarProps> = () => {
 
   const handleFeedsClick = () => {
     if (isFeedPath) {
-      // If already on feeds, toggle the submenu
       setIsFeedExpanded(!isFeedExpanded);
     } else {
-      // Navigate to feeds and expand
       setIsFeedExpanded(true);
       navigate('/feeds');
     }

@@ -9,7 +9,6 @@ interface LoadingSpinnerProps {
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ darkMode = false, mobile = false }) => {
   if (mobile) {
-    // Mobile version that works inside iPhone frame
     return (
       <div 
         className="mobile-loading-container"
@@ -27,7 +26,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ darkMode = false, mobil
           alignItems: 'center',
           backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.95)',
           zIndex: 1000,
-          borderRadius: '40px', // Match iPhone content border radius
+          borderRadius: '40px',
           gap: '1rem'
         }}
       >
@@ -44,7 +43,6 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ darkMode = false, mobil
     )
   }
 
-  // Desktop version (original behavior)
   const overlay = (
     <div 
       className="loading-spinner-container"
@@ -60,14 +58,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ darkMode = false, mobil
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-        zIndex: 99999 /* Much higher z-index to ensure it covers everything including sidebars */
+        zIndex: 99999
       }}
     >
       <LoadingIcon size={80} />
     </div>
   )
 
-  // Use portal to render at document body level, ensuring it covers everything
   return createPortal(overlay, document.body)
 }
 

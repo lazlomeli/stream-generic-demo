@@ -45,10 +45,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       toast.id === id ? { ...toast, isRemoving: true } : toast
     ));
     
-    // Remove toast after fade-out animation completes
     setTimeout(() => {
       removeToast(id);
-    }, 300); // Match the fadeSlideOut animation duration
+    }, 300);
   }, [removeToast]);
 
   const addToast = useCallback((toastData: Omit<Toast, 'id'>) => {
@@ -62,7 +61,6 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     };
 
     setToasts(prev => {
-      // Remove oldest toasts if we exceed the limit
       const updatedToasts = prev.length >= MAX_TOASTS 
         ? prev.slice(-(MAX_TOASTS - 1))
         : prev;
@@ -70,7 +68,6 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       return [...updatedToasts, newToast];
     });
 
-    // Auto-remove toast after duration with fade-out
     setTimeout(() => {
       fadeOutToast(id);
     }, duration);

@@ -30,10 +30,8 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
   const handleNotificationClick = () => {
     if (notification.type === "follow") {
-      // Navigate to the actor's profile (the person who followed you)
       navigate(`/profile/${notification.user.id}`);
     } else if (notification.type === "reaction") {
-      // Navigate to feeds page - get target from notification_context
       const targetId = notification.notification_context?.target?.id;
       if (targetId) {
         navigate(`/feeds?postId=${targetId}`);
@@ -41,7 +39,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         navigate("/feeds");
       }
     } else if (notification.type === "comment") {
-      // Navigate to feeds page for comments
       const targetId = notification.notification_context?.target?.id;
       if (targetId) {
         navigate(`/feeds?postId=${targetId}`);

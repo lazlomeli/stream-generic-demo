@@ -120,7 +120,6 @@ const Chat: React.FC<ChatProps> = () => {
           image: user.image
         }));
 
-      console.log(`✅ Mobile: Fetched ${userList.length} users (excluding self)`);
       setAvailableUsers(userList);
     } catch (error) {
       console.error('❌ Mobile: Error fetching users:', error);

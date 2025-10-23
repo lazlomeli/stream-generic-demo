@@ -23,14 +23,12 @@ import { useResponsive } from '../contexts/ResponsiveContext';
 import nameUtils from '../utils/nameUtils';
 
 
-// Import icons
 import PhoneIcon from '../icons/phone.svg';
 import VideoIcon from '../icons/video.svg';
 import VideoOffIcon from '../icons/video-off.svg';
 import MicrophoneIcon from '../icons/microphone.svg';
 import MicrophoneOffIcon from '../icons/microphone-off.svg';
 
-// Import Stream Video CSS
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import './CallPage.css';
 import './CallPage-mobile.css';
@@ -46,7 +44,7 @@ const CallPage: React.FC<CallPageProps> = () => {
   const { setHideHeader } = useUILayout();
   const { isMobileView } = useResponsive();
 
-  const callType = searchParams.get('type') || 'video'; // 'audio' or 'video'
+  const callType = searchParams.get('type') || 'video';
   const channelId = searchParams.get('channel');
   const mobileParam = searchParams.get('mobile') === 'true';
   
@@ -57,7 +55,6 @@ const CallPage: React.FC<CallPageProps> = () => {
   const [ringingPlayed, setRingingPlayed] = useState(false);
   const [demoUserJoined, setDemoUserJoined] = useState(false);
 
-  // Refs for client and call
   const videoClientRef = useRef<StreamVideoClient | null>(null);
   const callRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -66,27 +63,21 @@ const CallPage: React.FC<CallPageProps> = () => {
 
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
 
-  // Memoize user ID
   const sanitizedUserId = React.useMemo(() => {
     if (!user) return 'anonymous';
     return getSanitizedUserId(user);
   }, [user]);
 
-  // Hide header for call page
   useEffect(() => {
     setHideHeader(true);
     return () => setHideHeader(false);
   }, [setHideHeader]);
 
-  // Force mobile view if the mobile parameter is passed
   useEffect(() => {
     if (mobileParam) {
-      console.log('📱 Mobile call detected, enabling mobile view')
-      // The mobile parameter indicates this call was initiated from mobile view
     }
   }, [mobileParam]);
 
-  // Get Stream token function
   const getStreamToken = useCallback(
     async (tokenType: 'video') => {
       if (!isAuthenticated || !user) {
@@ -98,7 +89,7 @@ const CallPage: React.FC<CallPageProps> = () => {
       const userProfile = {
         name: user.name || user.email || `User ${sanitizedUserId}`,
         image: user.picture,
-        role: 'admin' // Give admin role for call permissions
+        role: 'admin'
       };
 
       const response = await fetch('/api/auth-tokens', {
@@ -125,11 +116,9 @@ const CallPage: React.FC<CallPageProps> = () => {
     [isAuthenticated, user, sanitizedUserId, getAccessTokenSilently]
   );
 
-  // Play ringing sound
   const playRingingSound = useCallback(() => {
     if (ringingPlayed) return;
     
-    // Create a simple ringing tone using Web Audio API
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     
     const playTone = (frequency: number, duration: number, startTime: number) => {
@@ -151,7 +140,6 @@ const CallPage: React.FC<CallPageProps> = () => {
       oscillator.stop(startTime + duration);
     };
 
-    // Play ring tone pattern (two beeps)
     const currentTime = audioContext.currentTime;
     playTone(800, 0.4, currentTime);
     playTone(800, 0.4, currentTime + 0.6);
@@ -159,7 +147,6 @@ const CallPage: React.FC<CallPageProps> = () => {
     setRingingPlayed(true);
   }, [ringingPlayed]);
 
-  // Initialize video client and join call
   const initializeCall = useCallback(async () => {
     if (!callId || !apiKey || !sanitizedUserId || videoClientRef.current || isConnecting) {
       return;
@@ -169,16 +156,10 @@ const CallPage: React.FC<CallPageProps> = () => {
     setError(null);
 
     try {
-      console.log('🎥 Initializing call:', { callId, callType, channelId });
-
-      // Play ringing sound
       playRingingSound();
 
-      // Get video token
       const videoToken = await getStreamToken('video');
-      console.log('🔑 Video token obtained for call');
 
-      // Create video client
       const userConfig = {
         id: sanitizedUserId,
         name: user?.name || user?.email || `User_${sanitizedUserId}`,
@@ -194,27 +175,18 @@ const CallPage: React.FC<CallPageProps> = () => {
       videoClientRef.current = videoClient;
       setVideoClientReady(true);
 
-      // Create the call
-      console.log('🎯 Creating call with ID:', callId);
       const call = videoClient.call('default', callId);
       callRef.current = call;
 
-      // Monitor call state changes
-      console.log('📊 Initial call state:', call.state.callingState);
-
-      // Simplified join options to avoid potential conflicts
-      console.log('🔧 Preparing join options for call type:', callType);
-      
       const joinOptions: any = {
         create: true,
         data: {
           members: [
             {
               user_id: sanitizedUserId,
-              role: 'call_member', // Use call_member role for proper video permissions
+              role: 'call_member',
             }
           ],
-          // Ensure proper call permissions
           settings: {
             video: {
               enabled: true,
@@ -228,7 +200,6 @@ const CallPage: React.FC<CallPageProps> = () => {
         },
       };
 
-      // Set required settings with minimum valid values
       if (callType === 'audio') {
         joinOptions.data.settings_override = {
           video: { 
@@ -259,54 +230,31 @@ const CallPage: React.FC<CallPageProps> = () => {
         };
       }
 
-      // Remove custom permissions to avoid conflicts with token capabilities
-      // The Stream Video SDK should use token-level capabilities instead
-
-      console.log('🚀 Joining call with options:', JSON.stringify(joinOptions, null, 2));
-      
       await call.join(joinOptions);
-      
-      console.log('✅ Successfully joined call:', callId);
-      console.log('📊 Call state after join:', call.state.callingState);
-      console.log('👥 Initial participants:', call.state.participants.length);
-
+    
       setCallJoined(true);
       showSuccess(`${callType === 'audio' ? 'Audio' : 'Video'} call started!`);
       
-      // Monitor call state every second for debugging
       const stateMonitor = setInterval(() => {
         if (callRef.current) {
-          console.log('🔍 Call state check:', callRef.current.state.callingState);
-          console.log('🔍 Participants count:', callRef.current.state.participants.length);
-          
           if (callRef.current.state.callingState === CallingState.LEFT) {
-            console.log('⚠️ Call was left unexpectedly!');
             clearInterval(stateMonitor);
           }
         }
       }, 1000);
       
-      // Add demo user after a delay, but only if call is still active
       setTimeout(async () => {
-        clearInterval(stateMonitor); // Stop monitoring after demo user attempt
+        clearInterval(stateMonitor);
         
-        // Double-check that the call is still active before adding demo user
         if (callRef.current && callRef.current.state.callingState === CallingState.JOINED) {
-          console.log('🎯 Main call still active after 5 seconds, adding demo user...');
           await addDemoUser();
         } else {
-          console.log('⚠️ Main call no longer active after 5 seconds, skipping demo user');
           if (callRef.current) {
-            console.log('⚠️ Current state:', callRef.current.state.callingState);
           }
         }
-      }, 5000); // Increased to 5 seconds to see if timing is the issue
+      }, 5000);
 
     } catch (err: any) {
-      console.error('❌ Error initializing call:', err);
-      console.error('❌ Full error object:', err);
-      console.error('❌ Error stack:', err.stack);
-      
       setError(err.message || 'Failed to start call');
       showError(`Failed to start call: ${err.message}`);
     } finally {
@@ -314,30 +262,21 @@ const CallPage: React.FC<CallPageProps> = () => {
     }
   }, [callId, apiKey, sanitizedUserId, isConnecting, callType, channelId, getStreamToken, user, playRingingSound, showSuccess, showError]);
 
-  // Add demo user that actually joins the call
   const addDemoUser = async () => {
     if (!apiKey || !callId || demoUserJoined || !callRef.current) return;
 
     try {
-      console.log('👥 Adding demo user to call...');
-      
-      // Check if main call is still active before adding demo user
       const mainCallState = callRef.current.state.callingState;
-      console.log('📞 Main call state before demo user:', mainCallState);
       
       if (mainCallState === CallingState.LEFT || mainCallState === CallingState.IDLE) {
-        console.log('⚠️ Main call not active, skipping demo user');
         return;
       }
       
-      // Use a new demo user ID since bob_johnson was hard deleted and cannot be recovered
       const demoUserId = 'demo_user_2025';
       const demoUserName = 'Demo User';
       const demoUserImage = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
       
-      // Get token for demo user
       const accessToken = await getAccessTokenSilently();
-      console.log('🔑 Getting auth token for demo user:', demoUserId);
       
       const response = await fetch('/api/auth-tokens', {
         method: 'POST',
@@ -357,14 +296,11 @@ const CallPage: React.FC<CallPageProps> = () => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Failed to get demo user token:', response.status, errorText);
         throw new Error(`Failed to get demo user token: ${response.status} ${errorText}`);
       }
 
       const tokenData = await response.json();
-      console.log('✅ Successfully got token for demo user:', demoUserId);
       
-      // Create demo user video client
       const demoUserClient = new StreamVideoClient({
         apiKey,
         user: {
@@ -377,24 +313,18 @@ const CallPage: React.FC<CallPageProps> = () => {
 
       demoUserClientRef.current = demoUserClient;
 
-      // Create call instance for demo user
       const demoCall = demoUserClient.call('default', callId);
       demoUserCallRef.current = demoCall;
 
-      // Simplified join options for demo user
       const demoJoinOptions: any = {
-        create: false, // Don't create, join existing call
+        create: false,
       };
 
-      // Don't override settings, use defaults to avoid conflicts
       await demoCall.join(demoJoinOptions);
-      
-      // Check if demo user actually joined successfully
+
       const demoCallState = demoCall.state.callingState;
-      console.log('📞 Demo call state after join:', demoCallState);
-      
+
       if (demoCallState === CallingState.JOINED) {
-        console.log('✅ Demo user joined call successfully');
         setDemoUserJoined(true);
         showSuccess('🎉 Demo user joined the call!');
       } else {
@@ -403,46 +333,34 @@ const CallPage: React.FC<CallPageProps> = () => {
 
     } catch (err: any) {
       console.error('❌ Error adding demo user:', err);
-      console.log('🔍 Demo user join failed, but main call should continue');
-      // Don't show error to user since this is just demo functionality
-      // The main call should continue working even if demo user fails
     }
   };
 
-  // Initialize call when component mounts
   useEffect(() => {
     if (isAuthenticated && user && !isLoading) {
       initializeCall();
     }
 
-    // Only cleanup when component actually unmounts, not on re-renders
     return () => {
-      console.log('🧹 Cleanup effect running...');
-      
-      // Add safety checks to prevent double cleanup
       if (callRef.current && callRef.current.state.callingState !== 'left') {
-        console.log('🧹 Leaving main call...');
         callRef.current.leave().catch((err: any) => {
           console.warn('⚠️ Error leaving main call:', err.message);
         });
       }
       
       if (videoClientRef.current) {
-        console.log('🧹 Disconnecting main client...');
         videoClientRef.current.disconnectUser().catch((err: any) => {
           console.warn('⚠️ Error disconnecting main client:', err.message);
         });
       }
       
       if (demoUserCallRef.current && demoUserCallRef.current.state.callingState !== 'left') {
-        console.log('🧹 Leaving demo call...');
         demoUserCallRef.current.leave().catch((err: any) => {
           console.warn('⚠️ Error leaving demo call:', err.message);
         });
       }
       
       if (demoUserClientRef.current) {
-        console.log('🧹 Disconnecting demo client...');
         demoUserClientRef.current.disconnectUser().catch((err: any) => {
           console.warn('⚠️ Error disconnecting demo client:', err.message);
         });
@@ -451,17 +369,13 @@ const CallPage: React.FC<CallPageProps> = () => {
   }, [isAuthenticated, user, isLoading]);
 
   const handleEndCall = useCallback(() => {
-    console.log('📞 User ended call manually');
-    
     if (callRef.current && callRef.current.state.callingState !== 'left') {
-      console.log('📞 Leaving main call...');
       callRef.current.leave().catch((err: any) => {
         console.warn('⚠️ Error in handleEndCall (main):', err.message);
       });
     }
     
     if (demoUserCallRef.current && demoUserCallRef.current.state.callingState !== 'left') {
-      console.log('📞 Leaving demo call...');
       demoUserCallRef.current.leave().catch((err: any) => {
         console.warn('⚠️ Error in handleEndCall (demo):', err.message);
       });
@@ -535,22 +449,13 @@ const CallPage: React.FC<CallPageProps> = () => {
 };
 
 
-// Custom mobile video layout component for WhatsApp/FaceTime style
 interface MobileVideoLayoutProps {
   participants: any[];
 }
 
 const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) => {
-  // Find local and remote participants
   const localParticipant = participants.find(p => p.isLocalParticipant);
   const remoteParticipants = participants.filter(p => !p.isLocalParticipant);
-
-  console.log('📱 Mobile Video Layout:', {
-    totalParticipants: participants.length,
-    hasLocal: !!localParticipant,
-    remoteCount: remoteParticipants.length
-  });
-
 
   if (participants.length === 0) {
     return (
@@ -564,7 +469,6 @@ const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) =
 
   return (
     <div className="mobile-video-container">
-      {/* Main full-screen video (local participant's video) */}
       {localParticipant && (
         <div className="mobile-main-video">
           <ParticipantView 
@@ -575,7 +479,6 @@ const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) =
         </div>
       )}
 
-      {/* Picture-in-Picture overlay for remote participant(s) */}
       {remoteParticipants.length > 0 && (
         <div className="mobile-pip-container">
           {remoteParticipants.slice(0, 1).map((participant, index) => (
@@ -588,7 +491,6 @@ const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) =
             </div>
           ))}
           
-          {/* Show additional participants count if more than 1 remote */}
           {remoteParticipants.length > 1 && (
             <div className="mobile-additional-count">
               +{remoteParticipants.length - 1} more
@@ -597,7 +499,6 @@ const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) =
         </div>
       )}
 
-      {/* Audio-only fallback for participants without video */}
       {remoteParticipants.length === 0 && localParticipant && (
         <div className="mobile-audio-only">
           <div className="mobile-avatar-large">
@@ -617,7 +518,6 @@ const MobileVideoLayout: React.FC<MobileVideoLayoutProps> = ({ participants }) =
   );
 };
 
-// Call interface component
 interface CallInterfaceProps {
   callType: string;
   onEndCall: () => void;
@@ -630,17 +530,6 @@ const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, user
   const callingState = useCallCallingState();
   const participants = useParticipants();
   const { isMobileView } = useResponsive();
-
-  console.log('🔍 Call Interface - State:', callingState, 'Participants:', participants.length);
-  
-  // Log detailed participant info
-  participants.forEach((participant, index) => {
-    console.log(`👤 Participant ${index + 1}:`, {
-      id: participant.userId,
-      name: participant.name,
-      isLocalParticipant: participant.isLocalParticipant
-    });
-  });
 
   if (callingState === CallingState.LEFT) {
     return (
@@ -688,7 +577,6 @@ const CallInterface: React.FC<CallInterfaceProps> = ({ callType, onEndCall, user
   );
 };
 
-// Custom Call Controls Component
 interface CustomCallControlsProps {
   callType: string;
   onEndCall: () => void;
@@ -709,53 +597,20 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
   const participants = useParticipants();
   const ownCapabilities = useOwnCapabilities();
 
-  // Get the local participant (you) to check actual video state
   const localParticipant = participants.find(p => p.isLocalParticipant);
   const actualCameraState = localParticipant?.videoStream ? true : false;
   
-  // Use actual camera state instead of the potentially incorrect isCameraOff
   const isActuallyOff = !actualCameraState;
 
-  // Log current states and capabilities for debugging
-  console.log('🔍 Control states:', {
-    microphone: { isMute, hasDevice: !!microphone },
-    camera: { 
-      isCameraOff, 
-      actualCameraState,
-      isActuallyOff,
-      hasDevice: !!camera, 
-      status: camera?.state?.status,
-      localParticipant: !!localParticipant,
-      publishedTracks: localParticipant?.publishedTracks,
-      hasBrowserPermission,
-      isPromptingPermission
-    },
-    capabilities: {
-      hasCapabilities: !!ownCapabilities,
-      canSendVideo: ownCapabilities?.includes(OwnCapability.SEND_VIDEO),
-      canSendAudio: ownCapabilities?.includes(OwnCapability.SEND_AUDIO),
-      allCapabilities: ownCapabilities
-    }
-  });
-
-  // Check for camera permission issues
   React.useEffect(() => {
     const checkCameraStatus = async () => {
       if (callType === 'video' && camera) {
-        console.log('🔍 Checking camera permissions and status...');
-        
         try {
-          // Check browser camera permissions
           const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName });
-          console.log('📹 Camera permission:', permissions.state);
-          
-          // Only auto-enable if camera is actually off (not just the state says so)
           if (camera && isActuallyOff && callType === 'video') {
-            console.log('📹 Camera is actually OFF but this is a video call - attempting to enable...');
             setTimeout(async () => {
               try {
                 await camera.enable();
-                console.log('📹 Camera enabled successfully');
               } catch (err) {
                 console.error('❌ Failed to enable camera:', err);
               }
@@ -772,17 +627,12 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
 
   const handleMicrophoneToggle = async () => {
     try {
-      console.log('🎤 Toggling microphone...');
-      console.log('🎤 Current state - isMute:', isMute);
-      console.log('🎤 Microphone object:', microphone);
-      
       if (!microphone) {
         console.error('❌ Microphone object not available');
         return;
       }
 
       await microphone.toggle();
-      console.log('🎤 Microphone toggled successfully');
     } catch (error) {
       console.error('❌ Failed to toggle microphone:', error);
     }
@@ -790,29 +640,19 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
 
   const handleCameraToggle = async () => {
     try {
-      console.log('📹 Toggling camera...');
-      console.log('📹 Current state - isCameraOff:', isCameraOff);
-      console.log('📹 Camera object:', camera);
-      
       if (!camera) {
         console.error('❌ Camera object not available');
         return;
       }
 
-      // Check if user has video permissions
       const canSendVideo = ownCapabilities?.includes(OwnCapability.SEND_VIDEO);
-      console.log('📹 User can send video:', canSendVideo);
       
       if (!canSendVideo) {
-        console.log('🔐 User lacks send-video capability, attempting to grant permission...');
         try {
           await call?.grantPermissions(userId, [
             OwnCapability.SEND_AUDIO,
             OwnCapability.SEND_VIDEO,
           ]);
-          console.log('✅ Video permissions granted successfully');
-          
-          // Wait a bit for permissions to take effect
           await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (permError) {
           console.error('❌ Failed to grant video permissions:', permError);
@@ -820,56 +660,28 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
         }
       }
 
-      // Check browser permissions
       if (!hasBrowserPermission) {
         console.error('❌ Browser camera permission not granted');
         throw new Error('Please grant camera permission in your browser settings.');
       }
 
-      // Check camera status
-      console.log('📹 Camera status:', {
-        state: camera.state.status,
-        isCameraOff,
-        isActuallyOff,
-        actualCameraState,
-        hasBrowserPermission
-      });
-
-      // Use actual camera state for toggling
       if (isActuallyOff) {
-        console.log('📹 Camera is actually OFF, trying to enable...');
         await camera.enable();
       } else {
-        console.log('📹 Camera is actually ON, trying to disable...');
         await camera.disable();
       }
-      
-      console.log('📹 Camera state changed successfully');
-      
-      // Log new state after toggle
-      setTimeout(() => {
-        console.log('📹 New camera state after change:', {
-          isCameraOff,
-          state: camera.state.status
-        });
-      }, 200);
       
     } catch (error) {
       console.error('❌ Failed to toggle camera:', error);
       console.error('❌ Error details:', error);
       
-      // Don't try fallback if it's a permission issue
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('permission') || errorMessage.includes('Permission')) {
-        console.log('❌ Permission error detected, not trying fallback');
         return;
       }
       
-      // Fallback: try the toggle method
       try {
-        console.log('📹 Trying fallback toggle method...');
         await camera.toggle();
-        console.log('📹 Fallback toggle succeeded');
       } catch (fallbackError) {
         console.error('❌ Fallback toggle also failed:', fallbackError);
       }
@@ -879,7 +691,6 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
   return (
     <div className="custom-call-controls">
       <div className="call-controls-row">
-        {/* Microphone Toggle */}
         <button
           className={`call-control-btn microphone-btn ${isMute ? 'muted' : ''}`}
           onClick={handleMicrophoneToggle}
@@ -892,7 +703,6 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
           />
         </button>
 
-        {/* Camera Toggle (only show for video calls) */}
         {callType === 'video' && (
           <button
             className={`call-control-btn camera-btn ${isActuallyOff ? 'camera-off' : ''}`}
@@ -908,7 +718,6 @@ const CustomCallControls: React.FC<CustomCallControlsProps> = ({ callType, onEnd
           </button>
         )}
 
-        {/* End Call Button */}
         <button
           className="call-control-btn end-call-btn"
           onClick={onEndCall}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react'
-import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
@@ -20,7 +20,6 @@ import Login from './pages/Login'
 import { QueryProvider } from './utils/queryProvider'
 import NotificationsPage from './pages/Notifications'
 
-// Context for controlling UI layout
 interface UILayoutContextType {
   hideHeader: boolean
   setHideHeader: (hide: boolean) => void
@@ -42,14 +41,11 @@ function AppContent() {
   const [hideHeader, setHideHeader] = useState(false)
   const { isMobileView } = useResponsive()
 
-  // Determine if we should show the sidebars (feeds, bookmarked, notifications, and profile pages)
   const showSidebars = isAuthenticated && !isMobileView && (location.pathname.startsWith('/feeds') || location.pathname === '/bookmarked' || location.pathname === '/notifications' || location.pathname.startsWith('/profile/'))
   
-  // Video and call pages should use full layout without sidebars, similar to chat
   const isVideoPage = location.pathname === '/video'
   const isCallPage = location.pathname.startsWith('/call/')
   
-  // Hide header in mobile view for all pages
   const shouldHideHeader = hideHeader || isMobileView
 
   if (error) {
@@ -77,11 +73,6 @@ function AppContent() {
                     <Chat />
                   </ProtectedRoute>
                 } />
-                {/* <Route path="/chat/:channelId" element={
-                  <ProtectedRoute>
-                    <Chat />
-                  </ProtectedRoute>
-                } /> */}
                 <Route path="/video" element={
                   <ProtectedRoute allowViewers={true}>
                     <Video />

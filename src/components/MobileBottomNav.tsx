@@ -4,7 +4,6 @@ import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import CastIcon from '../icons/cast.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
-import NotificationBell from './NotificationBell'
 
 interface MobileBottomNavProps {
   currentPath: string
@@ -74,13 +73,11 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentPath }) => {
         </button>
       ))}
       
-      {/* Special notification bell item */}
       <button
         onClick={handleNotificationsClick}
         className={`mobile-nav-item ${currentPath === '/notifications' ? 'active' : ''}`}
         title="Alerts"
       >
-        {/* <NotificationBell className="mobile-nav-bell" showClickHandler={false} /> */}
         <span>Alerts</span>
       </button>
     </div>

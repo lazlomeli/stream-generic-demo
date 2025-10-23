@@ -82,14 +82,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
     }
   };
 
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-    //   router.back();
-    }
-  };
-
   return (
     <div className="user-profile-container">
       {/* Profile Info */}

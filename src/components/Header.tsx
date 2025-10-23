@@ -10,7 +10,6 @@ import BookmarkIcon from '../icons/bookmark.svg'
 import ResetIcon from '../icons/restore.svg'  
 import { useResponsive } from '../contexts/ResponsiveContext'
 import { useToast } from '../contexts/ToastContext'
-import NotificationBell from './NotificationBell'
 
 interface HeaderProps {
   showNavigation?: boolean;

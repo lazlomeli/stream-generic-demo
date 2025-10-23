@@ -3,7 +3,6 @@ import { useUser } from "../hooks/feeds/useUser";
 import { useEffect, useRef } from "react";
 import { NotificationItem } from "../components/NotificationItem";
 import "./Notifications.css";
-import { NotificationActivity } from "getstream";
 
 export default function NotificationsPage() {
   const { error, loading: clientLoading } = useUser();

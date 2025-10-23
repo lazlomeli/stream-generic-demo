@@ -1,5 +1,3 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CommentResponse,
@@ -8,7 +6,7 @@ import {
 import { useUser } from "./useUser";
 import { FeedsClient } from "@stream-io/feeds-client";
 import { useToast } from "../../contexts/ToastContext";
-// Add comment to Stream API
+
 const addCommentToAPI = async (
   client: FeedsClient,
   objectId: string,
@@ -24,7 +22,6 @@ const addCommentToAPI = async (
   return res.comment;
 };
 
-// Add reply to comment
 const addReplyToAPI = async (
   client: FeedsClient,
   objectId: string,
@@ -42,7 +39,6 @@ const addReplyToAPI = async (
   return res.comment;
 };
 
-// Delete comment from Stream API
 const deleteCommentFromAPI = async (
   client: FeedsClient,
   commentId: string
@@ -52,7 +48,6 @@ const deleteCommentFromAPI = async (
   });
 };
 
-// Add comment reaction to Stream API
 const addCommentReactionToAPI = async (
   client: FeedsClient,
   commentId: string,
@@ -65,7 +60,6 @@ const addCommentReactionToAPI = async (
   });
 };
 
-// Delete comment reaction from Stream API
 const deleteCommentReactionFromAPI = async (
   client: FeedsClient,
   commentId: string,
@@ -82,7 +76,6 @@ export function useComments() {
   const { showError } = useToast();
   const queryClient = useQueryClient();
 
-  // Mutation for adding comment
   const addCommentMutation = useMutation({
     mutationFn: async ({
       objectId,
@@ -102,14 +95,12 @@ export function useComments() {
       return await addCommentToAPI(client, objectId, comment, objectType);
     },
     onSuccess: () => {
-      // Invalidate activities to refresh comments
       queryClient.invalidateQueries({
         queryKey: ["activities"],
       });
     },
   });
 
-  // Mutation for adding reply
   const addReplyMutation = useMutation({
     mutationFn: async ({
       objectId,
@@ -137,14 +128,12 @@ export function useComments() {
       );
     },
     onSuccess: () => {
-      // Invalidate activities to refresh replies
       queryClient.invalidateQueries({
         queryKey: ["activities"],
       });
     },
   });
 
-  // Mutation for deleting comment
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
       if (!client) {
@@ -154,14 +143,12 @@ export function useComments() {
       return commentId;
     },
     onSuccess: () => {
-      // Invalidate activities to refresh after comment deletion
       queryClient.invalidateQueries({
         queryKey: ["activities"],
       });
     },
   });
 
-  // Mutation for adding comment reaction
   const addCommentReactionMutation = useMutation({
     mutationFn: async ({
       commentId,
@@ -176,14 +163,12 @@ export function useComments() {
       return await addCommentReactionToAPI(client, commentId, type);
     },
     onSuccess: () => {
-      // Invalidate activities to refresh comment reactions
       queryClient.invalidateQueries({
         queryKey: ["activities"],
       });
     },
   });
 
-  // Mutation for deleting comment reaction
   const deleteCommentReactionMutation = useMutation({
     mutationFn: async ({
       commentId,
@@ -201,7 +186,6 @@ export function useComments() {
       return { commentId, type, userId };
     },
     onSuccess: () => {
-      // Invalidate activities to refresh comment reactions
       queryClient.invalidateQueries({
         queryKey: ["activities"],
       });
@@ -307,9 +291,6 @@ export function useComments() {
     type: string,
     userId: string
   ) => {
-    console.log('comment COMMENTS', comment);
-    console.log('userId COMMENTS', userId);
-    console.log('type COMMENTS', type);
     return comment.latest_reactions?.find(
       (reaction) => reaction.user.id === userId && reaction.type === type
     );

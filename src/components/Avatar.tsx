@@ -1,5 +1,3 @@
-"use client";
-
 import { useUser } from "../hooks/feeds/useUser";
 import "./Avatar.css";
 
@@ -10,7 +8,6 @@ interface AvatarProps {
   className?: string;
 }
 
-// Array of color classes for different user initials
 const avatarColors = [
   "color-blue",
   "color-green", 

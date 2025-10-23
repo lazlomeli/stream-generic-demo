@@ -26,7 +26,6 @@ router.post('/chat-token', async (req, res) => {
     }
 
     if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-      console.error('[chat-routes.ts] - /chat-token: Missing Stream API credentials');
       return res.status(500).json({ 
         error: 'Stream API credentials not configured. Check your .env file.' 
       });
@@ -41,7 +40,6 @@ router.post('/chat-token', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('[chat-routes.ts]: Error generating chat token:', error);
     res.status(500).json({ error: 'Failed to generate chat token' });
   }
 });
@@ -90,7 +88,6 @@ router.post('/get-chat-user', async (req, res) => {
         });
       }
     } catch (chatError) {
-      console.warn(`[chat-routes.ts]: Failed to fetch Stream Chat user ${userId}:`, chatError.message);
       res.status(404).json({ 
         user: null,
         error: chatError.message
@@ -98,7 +95,6 @@ router.post('/get-chat-user', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('[chat-routes.ts]: Error fetching Stream Chat user:', error);
     res.status(500).json({ error: 'Failed to fetch user from Stream Chat' });
   }
 });
@@ -116,7 +112,6 @@ router.post('/create-channel', async (req, res) => {
     }
 
     if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-      console.error('[chat-routes.ts] - /create-channel: Missing Stream API credentials');
       return res.status(500).json({ 
         error: 'Stream API credentials not configured. Check your .env file.' 
       });
@@ -166,7 +161,6 @@ router.post('/create-channel', async (req, res) => {
       const userChannel = streamClient.channel('messaging', channel.id);
       await userChannel.watch();
     } catch (retrieveError) {
-      console.error('[chat-routes.ts]: Could not retrieve created channel:', retrieveError);
     }
 
     res.json({
@@ -183,7 +177,6 @@ router.post('/create-channel', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error creating channel:', error);
     res.status(500).json({ 
       error: 'Failed to create channel',
       details: error.message 
@@ -196,23 +189,19 @@ router.post('/chat-operations', async (req, res) => {
     const { type, userId, channelId, channelName, selectedUsers, isDM } = req.body;
 
     if (!userId || !type) {
-      console.error('[chat-routes.ts]: Missing required fields:', { userId: !!userId, type: !!type });
       return res.status(400).json({ error: 'userId and type are required' });
     }
 
     if (!['create-livestream-channel', 'create-channel', 'add-to-general', 'leave-channel'].includes(type)) {
-      console.error('[chat-routes.ts]: Invalid type:', type);
       return res.status(400).json({ error: 'Invalid operation type' });
     }
 
     if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
-      console.error('[chat-routes.ts] - /chat-operations: Missing Stream API credentials');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
     const client = StreamChat.getInstance(process.env.STREAM_API_KEY as string, process.env.STREAM_API_SECRET as string);
 
-    // CREATE LIVE
     if (type === 'create-livestream-channel') {
       
       if (!channelId) {
@@ -220,12 +209,10 @@ router.post('/chat-operations', async (req, res) => {
       }
 
       try {
-        // Create livestream channel
         const channel = client.channel('livestream', channelId, {
-          // name: `Live Stream ${channelId}`,
           created_by_id: userId,
           members: [userId],
-          channelType: 'livestream' // Mark as livestream channel
+          channelType: 'livestream'
         } as any);
 
         await channel.create();
@@ -236,7 +223,6 @@ router.post('/chat-operations', async (req, res) => {
           message: 'Livestream channel created successfully'
         });
       } catch (error) {
-        console.error('❌ CHAT-OPERATIONS: Error creating livestream channel:', error);
         return res.status(500).json({ 
           error: 'Failed to create livestream channel',
           details: error instanceof Error ? error.message : String(error)
@@ -275,15 +261,13 @@ router.post('/chat-operations', async (req, res) => {
                      channelMemberIds[0] === sortedMembers[0] && 
                      channelMemberIds[1] === sortedMembers[1];
               
-              // @ts-ignore - isDM is a custom field added to channel data
+              // @ts-ignore
               const isMarkedAsDM = channel.data?.isDM === true;
               
               return isExactMemberMatch && isMarkedAsDM;
             });
     
             if (exactMatch) {
-              console.log('[chat-routes.ts]: Found existing DM channel:', exactMatch.id);
-              
               return res.status(200).json({
                 success: true,
                 channelId: exactMatch.id,
@@ -292,7 +276,7 @@ router.post('/chat-operations', async (req, res) => {
               });
             }
           } catch (queryError) {
-            console.warn('[chat-routes.ts]: Error querying for existing DM:', queryError);
+            console.error('Error querying existing DM channel:', queryError);
           }
         }
         
@@ -309,7 +293,6 @@ router.post('/chat-operations', async (req, res) => {
     
         const channel = client.channel('messaging', channelId, channelData);
         await channel.create();
-        console.log('[chat-routes.ts]: Created new channel:', channel.id);
     
         return res.status(200).json({
           success: true,
@@ -318,7 +301,6 @@ router.post('/chat-operations', async (req, res) => {
           existing: false
         });
       } catch (error) {
-        console.error('[chat-routes.ts]: Error creating channel:', error);
         return res.status(500).json({ 
           error: 'Failed to create channel',
           details: error instanceof Error ? error.message : String(error)
@@ -356,14 +338,12 @@ router.post('/chat-operations', async (req, res) => {
             await channel.create();
             channelJustCreated = true;
           } catch (createError) {
-            console.error('[chat-routes.ts]: Failed to create general channel:', createError);
             return res.status(500).json({
               error: "General channel does not exist and could not be created",
               message: createError instanceof Error ? createError.message : String(createError)
             });
           }
         } else {
-          console.error('[chat-routes.ts]: Error querying general channel:', queryError);
           return res.status(500).json({
             error: "General channel lookup failed",
             message: queryError instanceof Error ? queryError.message : String(queryError)
@@ -375,7 +355,6 @@ router.post('/chat-operations', async (req, res) => {
         try {
           await channel.addMembers([userId]);
         } catch (error) {
-          console.error('[chat-routes.ts]: Error adding user to general:', error);
           return res.status(500).json({ 
             error: 'Failed to add user to general channel',
             details: error instanceof Error ? error.message : String(error)
@@ -406,7 +385,6 @@ router.post('/chat-operations', async (req, res) => {
           message: 'User removed from channel successfully'
         });
       } catch (error) {
-        console.error('[chat-routes.ts]: Error removing user from channel:', error);  
         return res.status(500).json({ 
           error: 'Failed to remove user from channel',
           details: error instanceof Error ? error.message : String(error)
@@ -415,12 +393,6 @@ router.post('/chat-operations', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('[chat-routes.ts]: Critical error:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      type: req.body?.type,
-      userId: req.body?.userId
-    });
     res.status(500).json({ 
       error: 'Failed to perform chat operation',
       details: error instanceof Error ? error.message : String(error)
@@ -428,9 +400,6 @@ router.post('/chat-operations', async (req, res) => {
   }
 });
 
-/**
- * API endpoint to reset Chat (delete all channels, keep users)
- */
 router.post('/stream/reset', async (req, res) => {
   try {
     const { userId } = req.body;
@@ -442,18 +411,9 @@ router.post('/stream/reset', async (req, res) => {
       });
     }
 
-    console.log(`🔄 [chat-routes.ts]: Unified reset and seed requested by user: ${userId}`);
-
-    // Step 1: Reset Chat (delete all channels, keep users)
     await resetChat(streamClient);
-
-    // Step 2: Seed Chat (create sample data)
     const chatSeedResult = await seedChat(streamClient, userId);
-
-    // Step 3: Reset Feeds
     await resetFeeds(streamFeedsClient);
-
-    // Step 4: Seed Feeds
     const feedsSeedResult = await seedFeeds(streamFeedsClient, userId);
 
     res.json({
@@ -465,7 +425,6 @@ router.post('/stream/reset', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[chat-routes.ts]: Error in unified reset-and-seed:', error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -473,9 +432,6 @@ router.post('/stream/reset', async (req, res) => {
   }
 });
 
-/**
- * API endpoint to only seed Chat (without reset)
- */
 router.post('/stream/seed', async (req, res) => {
   try {
     const { userId } = req.body; 
@@ -487,12 +443,9 @@ router.post('/stream/seed', async (req, res) => {
       });
     }
 
-    console.log(`🌱 [chat-routes.ts]: Seed requested by user: ${userId}`);
-
     const result = await seedChat(streamClient, userId);
     res.json(result);
   } catch (error) {
-    console.error('[chat-routes.ts]: Error in seed:', error);
     res.status(500).json({
       success: false,
       error: error.message,

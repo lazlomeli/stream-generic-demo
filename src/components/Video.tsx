@@ -32,23 +32,19 @@ import videoLoop from '../assets/video-loop.mov'
 import '@stream-io/video-react-sdk/dist/css/styles.css'
 import './Video.css'
 
-// Generate consistent random color for username based on user ID
 const generateUserColor = (userId: string): string => {
-  // Use a simple hash function to generate consistent colors
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
     hash = userId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
-  // Generate HSL color with good saturation and lightness for readability
+
   const hue = Math.abs(hash % 360);
-  const saturation = 70 + (Math.abs(hash) % 30); // 70-100%
-  const lightness = 45 + (Math.abs(hash) % 20);  // 45-65%
+  const saturation = 70 + (Math.abs(hash) % 30);
+  const lightness = 45 + (Math.abs(hash) % 20);
   
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-// Custom Message Bubble Component
 interface CustomMessageBubbleProps {
   message: any
   hostUserId: string
@@ -60,40 +56,32 @@ const CustomMessageBubble: React.FC<CustomMessageBubbleProps> = ({ message, host
     return null
   }
   
-  // Filter out system messages (stream notifications)
   if (message.type === 'system') {
     return null
   }
   
-  // Also filter out messages that look like system notifications
   try {
     const parsed = JSON.parse(message.text)
     if (parsed.type && parsed.type.startsWith('stream.')) {
       return null
     }
   } catch (e) {
-    // Not JSON, continue with normal message display
   }
     
-  // Extract user data safely
   const messageUser = message.user || {}
   const messageUserId = messageUser.id || 'unknown'
   const messageUserName = messageUser.name || messageUser.display_name || messageUserId || 'Unknown'
   
-  // Check if this message is from the host
   const isMessageFromHost = messageUserId === hostUserId
   
-  // Generate consistent color for this user
   const userColor = generateUserColor(messageUserId)
   
   return (
     <div className="custom-message-bubble">
-      {/* LIVE badge for host messages */}
       {isMessageFromHost && (
         <span className="live-badge">LIVE</span>
       )}
       
-      {/* Username with color */}
       <span 
         className="username" 
         style={{ color: userColor }}
@@ -101,10 +89,8 @@ const CustomMessageBubble: React.FC<CustomMessageBubbleProps> = ({ message, host
         {messageUserName}
       </span>
       
-      {/* Message separator */}
       <span className="separator">: </span>
       
-      {/* Message text */}
       <span className="message-text">
         {message.text}
       </span>
@@ -112,7 +98,6 @@ const CustomMessageBubble: React.FC<CustomMessageBubbleProps> = ({ message, host
   )
 }
 
-// Custom Message List Component
 interface CustomMessageListProps {
   channel: StreamChannel | null
   hostUserId: string
@@ -130,20 +115,17 @@ const CustomMessageList: React.FC<CustomMessageListProps> = ({ channel, hostUser
   useEffect(() => {
     if (!channel) return
 
-    // Get initial messages
     const loadMessages = async () => {
       try {
         const result = await channel.query({ messages: { limit: 50 } })
         setMessages(result.messages || [])
         setTimeout(scrollToBottom, 100)
       } catch (error) {
-        console.error('Failed to load messages:', error)
       }
     }
 
     loadMessages()
 
-    // Listen for new messages
     const handleNewMessage = (event: any) => {
       setMessages(prev => [...prev, event.message])
       setTimeout(scrollToBottom, 100)
@@ -159,12 +141,10 @@ const CustomMessageList: React.FC<CustomMessageListProps> = ({ channel, hostUser
       setMessages(prev => prev.filter(msg => msg.id !== event.message.id))
     }
 
-    // Set up event listeners
     channel.on('message.new', handleNewMessage)
     channel.on('message.updated', handleMessageUpdated)
     channel.on('message.deleted', handleMessageDeleted)
 
-    // Cleanup
     return () => {
       channel.off('message.new', handleNewMessage)
       channel.off('message.updated', handleMessageUpdated)
@@ -207,7 +187,6 @@ const CustomMessageList: React.FC<CustomMessageListProps> = ({ channel, hostUser
   )
 }
 
-// Custom Message Input Component
 interface CustomMessageInputProps {
   channel: StreamChannel | null
   currentUserId: string
@@ -228,10 +207,8 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = ({ channel, curren
         text: message.trim(),
       })
       setMessage('')
-      // Focus back on input after sending
       setTimeout(() => inputRef.current?.focus(), 100)
     } catch (error) {
-      console.error('Failed to send message:', error)
     } finally {
       setIsSending(false)
     }
@@ -318,7 +295,6 @@ const CustomMessageInput: React.FC<CustomMessageInputProps> = ({ channel, curren
   )
 }
 
-// Error Boundary for Stream Chat
 class ChatErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -333,7 +309,6 @@ class ChatErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('💥 Chat Error:', error, errorInfo)
   }
 
   render() {
@@ -349,7 +324,6 @@ class ChatErrorBoundary extends React.Component<
   }
 }
 
-// Viewer Waiting Room Component
 interface ViewerWaitingRoomProps {
   chatClient: StreamChat | null
   channel: StreamChannel | null
@@ -382,7 +356,6 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
             onStreamGoesLive()
           }
         } catch (e) {
-          // Not a system message
         }
       }
     }
@@ -510,7 +483,6 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
       setCopySuccess(true)
       setTimeout(() => setCopySuccess(false), 2000)
     } catch (err) {
-      console.error('Failed to copy:', err)
     }
   }
 
@@ -532,13 +504,12 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
   const handleGoLive = async () => {
     setTimerActive(false)
     
-    // Notify viewers via chat
     if (channel) {
       await channel.sendMessage({
         text: JSON.stringify({ type: 'stream.went_live', timestamp: Date.now() }),
         silent: true,
         type: 'system'
-      }).catch(console.warn)
+      }).catch(() => {})
     }
     
     onGoLive()
@@ -721,7 +692,6 @@ const CustomLivestreamControls: React.FC = () => {
     try {
       await microphone.toggle()
     } catch (error) {
-      console.error('Failed to toggle microphone:', error)
     }
   }
 
@@ -729,7 +699,6 @@ const CustomLivestreamControls: React.FC = () => {
     try {
       await camera.toggle()
     } catch (error) {
-      console.error('Failed to toggle camera:', error)
     }
   }
 
@@ -737,13 +706,11 @@ const CustomLivestreamControls: React.FC = () => {
     try {
       await screenShare.toggle()
     } catch (error) {
-      console.error('Failed to toggle screen share:', error)
     }
   }
 
   const handleReactionClick = () => {
     setShowReactions(!showReactions)
-    console.log('❤️ Reaction sent!')
   }
 
   const handleStopLivestream = () => {
@@ -753,19 +720,14 @@ const CustomLivestreamControls: React.FC = () => {
   const confirmStopLivestream = async () => {
     try {
       setShowStopModal(false)
-      console.log('🛑 Stopping livestream...')
       
       if (call) {
         await call.stopLive()
-        console.log('✅ Livestream stopped successfully')
-        
         await call.leave()
-        console.log('✅ Left the call successfully')
       }
       
       window.location.href = '/'
     } catch (error) {
-      console.error('❌ Failed to stop livestream:', error)
       window.location.href = '/'
     }
   }
@@ -848,11 +810,11 @@ const CustomLivestreamControls: React.FC = () => {
       {/* Reaction Menu (if shown) */}
       {showReactions && (
         <div className="reaction-menu">
-          <button onClick={() => console.log('❤️')}>❤️</button>
-          <button onClick={() => console.log('👍')}>👍</button>
-          <button onClick={() => console.log('🎉')}>🎉</button>
-          <button onClick={() => console.log('👏')}>👏</button>
-          <button onClick={() => console.log('🔥')}>🔥</button>
+          <button onClick={() => {}}>❤️</button>
+          <button onClick={() => {}}>👍</button>
+          <button onClick={() => {}}>🎉</button>
+          <button onClick={() => {}}>👏</button>
+          <button onClick={() => {}}>🔥</button>
         </div>
       )}
 
@@ -910,14 +872,6 @@ const EnhancedLivestreamLayout: React.FC<EnhancedLivestreamLayoutProps> = ({
   const { screenShare, isMute: isScreenShareOff } = useScreenShareState()
   const isScreenSharing = !isScreenShareOff
   const [activeTab, setActiveTab] = useState<'participants' | 'chat'>('chat')
-
-  // Debug logging for screen share state
-  console.log('🖥️ Screen Share State:', {
-    isLive,
-    isScreenSharing,
-    isScreenShareOff,
-    willApplyClass: isLive && isScreenSharing
-  })
 
   if (callingState === CallingState.JOINING) {
     return (
@@ -1117,19 +1071,15 @@ const Video: React.FC<VideoProps> = () => {
   }, [isAnonymousViewer])
 
   const handleSetupComplete = () => {
-    console.log('✅ Setup completed, transitioning to livestream mode')
     setSetupCompleted(true)
     setBackstageMode(true)
     setHideHeader(true)
   }
 
-  // Set initial state for viewers (only once)
   useEffect(() => {
     if (isViewer && !setupCompleted) {
-      console.log('👁️ Viewer detected, skipping setup screen')
       setSetupCompleted(true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isViewer])
 
   useEffect(() => {
@@ -1138,56 +1088,39 @@ const Video: React.FC<VideoProps> = () => {
 
   const handleGoLive = async () => {
     try {
-      console.log('🚀 Going live...')
-      
-      // Actually transition the Stream call from backstage to live
       if (callRef.current) {
         await callRef.current.goLive()
-        console.log('✅ Call.goLive() successful - backstage disabled, stream is now live')
       }
       
-      // Update UI state
       setBackstageMode(false)
       setLivestreamActive(true)
-      console.log('✅ UI updated to live mode')
     } catch (error) {
-      console.error('❌ Failed to go live:', error)
     }
   }
 
-  // Token helper - simplified
   const getStreamToken = useCallback(
     async (type: 'video' | 'chat', callId?: string): Promise<string> => {
-      console.log(`🔑 getStreamToken called for type: ${type}, callId: ${callId}`)
-      
       if (isAnonymousViewer && anonymousViewerId) {
-        console.log('🔑 Fetching token for anonymous viewer:', anonymousViewerId)
         const res = await fetch('/api/auth-tokens', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type,
             userId: anonymousViewerId,
-            callId: type === 'video' ? callId : undefined, // Only pass callId for video tokens
+            callId: type === 'video' ? callId : undefined,
             userProfile: { name: 'Anonymous Viewer', role: 'admin' }
           }),
         })
-        console.log(`🔑 Token response status (anonymous): ${res.status}`)
         if (!res.ok) {
           const errorText = await res.text()
-          console.error('❌ Token fetch failed:', errorText)
           throw new Error(`auth-tokens failed: ${res.status}`)
         }
         const json = await res.json()
-        console.log('✅ Token received (anonymous)')
         return json.token
       }
   
-      console.log('🔑 Getting Auth0 access token...')
       const accessToken = await getAccessTokenSilently()
-      console.log('✅ Auth0 access token received')
       
-      console.log('🔑 Fetching Stream token for user:', sanitizedUserId)
       const res = await fetch('/api/auth-tokens', {
         method: 'POST',
         headers: {
@@ -1197,7 +1130,7 @@ const Video: React.FC<VideoProps> = () => {
         body: JSON.stringify({
           type,
           userId: sanitizedUserId,
-          callId: type === 'video' ? callId : undefined, // Only pass callId for video tokens
+          callId: type === 'video' ? callId : undefined,
           userProfile: {
             name: user?.name || user?.email || `User_${sanitizedUserId}`,
             image: user?.picture,
@@ -1205,50 +1138,36 @@ const Video: React.FC<VideoProps> = () => {
           }
         }),
       })
-      console.log(`🔑 Token response status: ${res.status}`)
       if (!res.ok) {
         const errorText = await res.text()
-        console.error('❌ Token fetch failed:', errorText)
         throw new Error(`auth-tokens failed: ${res.status}`)
       }
       const json = await res.json()
-      console.log('✅ Stream token received')
       return json.token
     },
     [getAccessTokenSilently, user, sanitizedUserId, isAnonymousViewer, anonymousViewerId]
   )
 
-  // Initialize Video Client - simplified
   const initializeVideoClient = useCallback(async (sharedCallId: string) => {
-    console.log('📹 initializeVideoClient called:', { sharedCallId, isAnonymousViewer, anonymousViewerId, sanitizedUserId })
     const effectiveUserId = isAnonymousViewer ? anonymousViewerId : sanitizedUserId
-    console.log('👤 Effective user ID:', effectiveUserId)
     
     if (!apiKey || !effectiveUserId) {
-      console.error('❌ Missing required params:', { hasApiKey: !!apiKey, effectiveUserId })
       return
     }
   
-    // Reuse existing client for same user
     // @ts-ignore
     if (videoClientRef.current?.user?.id === effectiveUserId) {
-      console.log('✅ Reusing existing video client')
       return
     }
   
-    // Disconnect if switching users
     if (videoClientRef.current) {
-      console.log('🔄 Disconnecting existing video client...')
-      await videoClientRef.current.disconnectUser().catch(console.warn)
+      await videoClientRef.current.disconnectUser().catch(() => {})
       videoClientRef.current = null
     }
   
     try {
-      console.log('🔑 Fetching video token with callId...')
-      const videoToken = await getStreamToken('video', sharedCallId) // Pass callId here
-      console.log('✅ Video token received')
+      const videoToken = await getStreamToken('video', sharedCallId)
       
-      console.log('🎬 Creating StreamVideoClient...')
       const videoClient = new StreamVideoClient({
         apiKey,
         user: {
@@ -1258,58 +1177,34 @@ const Video: React.FC<VideoProps> = () => {
         },
         token: videoToken,
       })
-      console.log('✅ StreamVideoClient created')
   
       videoClientRef.current = videoClient
       setVideoClientReady(true)
       setCallId(sharedCallId)
       
-      console.log('📞 Creating call object...')
       const call = videoClient.call('default', sharedCallId)
       callRef.current = call
-      console.log('✅ Call object created')
-  
-      console.log('🔧 Getting or creating call...')
   
       if (isViewer) {
-        // Viewers: Just get the existing call and join
         setBackstageMode(true)
         setLivestreamActive(false)
 
-        console.log('👁️ Viewer: Getting existing call...')
         try {
           await call.get()
-          console.log('✅ Call retrieved')
         } catch (err) {
-          console.error('❌ Failed to get call:', err)
           throw new Error('This livestream does not exist or has ended')
         }
         
-        console.log('🚪 Joining call as viewer...')
-        await call.join({ create: false }) // Don't create, just join
-        console.log('✅ Successfully joined call')
+        await call.join({ create: false })
         
-        // Check if the livestream is already live
-        console.log('👁️ Checking if stream is already live...')
         const checkLiveStatus = () => {
           const backstageEnabled = call.state.backstage
-          const startedAt = call.state.startedAt
-          const participants = call.state.participants
-          
-          console.log('🔍 Call state check:', {
-            backstageEnabled,
-            startedAt: startedAt ? new Date(startedAt).toISOString() : null,
-            participantCount: participants.length
-          })
-          
           const isCallLive = backstageEnabled === false
           
           if (isCallLive) {
-            console.log('🔴 Stream is already live!')
             setBackstageMode(false)
             setLivestreamActive(true)
           } else {
-            console.log('⏳ Stream in backstage mode, showing waiting room')
             setBackstageMode(true)
             setLivestreamActive(false)
           }
@@ -1319,20 +1214,15 @@ const Video: React.FC<VideoProps> = () => {
         setTimeout(checkLiveStatus, 1500)
         
         call.on('call.live_started', () => {
-          console.log('🔴 Call went live event received!')
           setBackstageMode(false)
           setLivestreamActive(true)
         })
         
         call.on('call.ended', () => {
-          console.log('🛑 Call ended event received!')
           setLivestreamActive(false)
         })
         
       } else {
-        // Streamers: Create the call with backstage enabled
-        console.log('🎤 Streamer: Creating call with backstage enabled...')
-        
         try {
           await call.getOrCreate({
             ring: false,
@@ -1345,56 +1235,31 @@ const Video: React.FC<VideoProps> = () => {
               },
             },
           })
-          console.log('✅ Call created with backstage')
           
         } catch (err) {
-          console.error('❌ Failed to create/configure call:', err)
           throw err
         }
         
-        console.log('🚪 Joining call as streamer...')
         await call.join()
-        console.log('✅ Successfully joined call as streamer')
       }
   
     } catch (err) {
-      console.error('❌ Failed to initialize video client:', err)
-      console.error('Error details:', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined
-      })
       setError(err instanceof Error ? err.message : 'Failed to initialize video')
     }
   }, [apiKey, sanitizedUserId, getStreamToken, user, anonymousViewerId, isAnonymousViewer, isViewer])
 
-  // Initialize Chat Client - simplified
   const initializeChatClient = useCallback(async (sharedCallId: string) => {
-    // Use anonymous ID for anonymous viewers, authenticated ID for everyone else
     const effectiveChatUserId = isAnonymousViewer ? anonymousViewerId : sanitizedUserId
     
-    console.log('💬 initializeChatClient called:', { 
-      sharedCallId, 
-      sanitizedUserId, 
-      anonymousViewerId,
-      effectiveChatUserId,
-      isAnonymousViewer,
-      hasChatClient: !!chatClientRef.current 
-    })
-    
     if (!apiKey || !effectiveChatUserId || chatClientRef.current) {
-      console.log('⏸️ Skipping chat init:', { hasApiKey: !!apiKey, effectiveChatUserId, hasChatClient: !!chatClientRef.current })
       return
     }
 
     try {
-      console.log('🔑 Fetching chat token...')
       const chatToken = await getStreamToken('chat')
-      console.log('✅ Chat token received')
       
-      console.log('💬 Getting StreamChat instance...')
       const chatClient = StreamChat.getInstance(apiKey)
       
-      console.log('🔌 Connecting chat user...')
       await chatClient.connectUser(
         {
           id: effectiveChatUserId,
@@ -1403,18 +1268,15 @@ const Video: React.FC<VideoProps> = () => {
         },
         chatToken
       )
-      console.log('✅ Chat user connected')
 
       chatClientRef.current = chatClient
       setChatClientReady(true)
 
       const channelId = sharedCallId
-      console.log('📺 Channel ID:', channelId)
       
       if (isStreamer || isAuthenticatedViewer) {
-        console.log('🏗️ Creating/joining livestream channel via API...')
         const accessToken = await getAccessTokenSilently()
-        const response = await fetch('/api/chat-operations', {
+        await fetch('/api/chat-operations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1426,13 +1288,9 @@ const Video: React.FC<VideoProps> = () => {
             userId: effectiveChatUserId
           }),
         })
-        console.log('✅ Channel creation response:', response.status)
       } else if (isAnonymousViewer) {
-        console.log('👁️ Anonymous viewer joining channel via API (if needed)...')
-        // Anonymous viewers can just watch the channel without backend setup
-        // The backend endpoint handles anonymous users if needed
         try {
-          const response = await fetch('/api/chat-operations', {
+          await fetch('/api/chat-operations', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1443,85 +1301,46 @@ const Video: React.FC<VideoProps> = () => {
               userId: effectiveChatUserId
             }),
           })
-          console.log('✅ Anonymous viewer channel response:', response.status)
         } catch (err) {
-          console.log('⚠️ Anonymous viewer channel setup skipped:', err)
-          // Not critical for anonymous viewers
         }
       }
 
-      console.log('👁️ Watching channel...')
       const channel = chatClient.channel('livestream', channelId)
       await channel.watch()
-      console.log('✅ Channel watched successfully')
       channelRef.current = channel
       setChannelReady(true)
-      console.log('✅ Channel state updated, component will re-render')
 
     } catch (err) {
-      console.error('❌ Failed to initialize chat client:', err)
-      console.error('Error details:', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined
-      })
       setError(err instanceof Error ? err.message : 'Failed to initialize chat')
     }
   }, [apiKey, sanitizedUserId, anonymousViewerId, isAnonymousViewer, getStreamToken, user, isStreamer, isAuthenticatedViewer, getAccessTokenSilently])
 
-  // Main initialization effect
 useEffect(() => {
-  console.log('🔍 Main init effect triggered:', {
-    isAnonymousViewer,
-    isAuthenticated,
-    hasUser: !!user,
-    hasApiKey: !!apiKey,
-    sanitizedUserId,
-    initializationAttempted: initializationAttemptedRef.current,
-    setupCompleted,
-    liveStreamId
-  })
-
   if (isAnonymousViewer) {
     if (!apiKey || initializationAttemptedRef.current || !setupCompleted) {
-      console.log('⏸️ Skipping init (anonymous):', { hasApiKey: !!apiKey, initAttempted: initializationAttemptedRef.current, setupCompleted })
       return
     }
   } else {
     if (!isAuthenticated || !user || !apiKey || !sanitizedUserId || initializationAttemptedRef.current || !setupCompleted) {
-      console.log('⏸️ Skipping init (authenticated):', { 
-        isAuthenticated, 
-        hasUser: !!user, 
-        hasApiKey: !!apiKey, 
-        sanitizedUserId, 
-        initAttempted: initializationAttemptedRef.current, 
-        setupCompleted 
-      })
       return
     }
   }
 
   const initialize = async () => {
-    console.log('🚀 Starting initialization...')
     initializationAttemptedRef.current = true
     const sharedCallId = liveStreamId || `live-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    console.log('📞 Call ID:', sharedCallId)
     
-    // ✅ SET VIEWER STATE IMMEDIATELY (BEFORE async operations)
     if (isViewer) {
-      console.log('👁️ Setting viewer to backstage mode immediately')
       setBackstageMode(true)
       setLivestreamActive(false)
     }
     
     try {
-      console.log('⏳ Initializing video and chat clients in parallel...')
       await Promise.all([
         initializeVideoClient(sharedCallId),
         initializeChatClient(sharedCallId)
       ])
-      console.log('✅ Both clients initialized successfully')
     } catch (err) {
-      console.error('❌ Failed to initialize clients:', err)
       setError(err instanceof Error ? err.message : 'Failed to initialize')
     }
   }
@@ -1529,78 +1348,36 @@ useEffect(() => {
   initialize()
 }, [isAuthenticated, user, apiKey, sanitizedUserId, setupCompleted, isAnonymousViewer, liveStreamId, initializeVideoClient, initializeChatClient, isViewer])
 
-  // Cleanup
   useEffect(() => {
     return () => {
-      callRef.current?.leave().catch(console.warn)
-      chatClientRef.current?.disconnectUser().catch(console.warn)
+      callRef.current?.leave().catch(() => {})
+      chatClientRef.current?.disconnectUser().catch(() => {})
       setHideHeader(false)
     }
   }, [setHideHeader])
-  // Render logic
-  console.log('🎨 Render logic - State check:', {
-    isAuthenticated,
-    isAnonymousViewer,
-    hasApiKey: !!apiKey,
-    setupCompleted,
-    isViewer,
-    backstageMode,
-    livestreamActive,
-    videoClientReady,
-    chatClientReady,
-    channelReady,
-    hasVideoClient: !!videoClientRef.current,
-    hasCall: !!callRef.current,
-    hasChatClient: !!chatClientRef.current,
-    hasChannel: !!channelRef.current,
-    error
-  })
-
-  // Add this new debug log
-  console.log('🎯 Render decision tree:', {
-    willShowSetup: !setupCompleted && !isViewer,
-    willShowBackstage: backstageMode && !livestreamActive,
-    willShowLive: !backstageMode || livestreamActive,
-    isInBackstageBlock: backstageMode && !livestreamActive && videoClientReady && videoClientRef.current && callRef.current,
-    isInViewerBackstageBlock: backstageMode && !livestreamActive && videoClientReady && videoClientRef.current && callRef.current && isViewer
-  })
 
   if (!isAuthenticated && !isAnonymousViewer) {
-    console.log('❌ Render: Not authenticated')
     return wrapInMobileView(<div className="video-error">Please log in to access the livestream.</div>)
   }
 
   if (!apiKey) {
-    console.log('❌ Render: No API key')
     return wrapInMobileView(<div className="video-error">Stream API key not configured.</div>)
   }
 
   if (!setupCompleted && !isViewer) {
-    console.log('🎬 Render: Showing LivestreamSetup')
     return wrapInMobileView(<LivestreamSetup onSetupComplete={handleSetupComplete} />)
   }
 
   if (backstageMode && !livestreamActive) {
-    console.log('🎭 Render: In backstage mode')
     if (!videoClientReady || !videoClientRef.current || !callRef.current) {
-      console.log('⏳ Render: Loading (waiting for video client in backstage)', {
-        videoClientReady,
-        hasVideoClient: !!videoClientRef.current,
-        hasCall: !!callRef.current
-      })
       return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
     }
 
     if (error) {
-      console.log('❌ Render: Error in backstage:', error)
       return wrapInMobileView(<div className="video-error">Error: {error}</div>)
     }
 
     if (isViewer) {
-      console.log('👁️ Render: Viewer in backstage')
-      
-      // Show ViewerWaitingRoom immediately, chat will load in the background
-      console.log('✅ Render: ViewerWaitingRoom')
       return (
         <div className="video-container">
           <StreamVideo client={videoClientRef.current}>
@@ -1621,18 +1398,10 @@ useEffect(() => {
         </div>
       )
     } else {
-      console.log('🎤 Render: Streamer in backstage')
       if (!chatClientReady || !channelReady || !chatClientRef.current || !channelRef.current) {
-        console.log('⏳ Render: Loading (waiting for chat in streamer backstage)', {
-          chatClientReady,
-          channelReady,
-          hasChatClient: !!chatClientRef.current,
-          hasChannel: !!channelRef.current
-        })
         return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
       }
 
-      console.log('✅ Render: BackstageMode')
       return (
         <div className="video-container">
           <StreamVideo client={videoClientRef.current}>
@@ -1652,32 +1421,17 @@ useEffect(() => {
     }
   }
 
-  console.log('📺 Render: Live stream mode')
-
-  // For anonymous viewers, we don't require chat to be ready
   const requiresChat = !isAnonymousViewer
   
   if (!videoClientReady || !videoClientRef.current || !callRef.current) {
-    console.log('⏳ Render: Loading (waiting for video client in live mode)', {
-      videoClientReady,
-      hasVideoClient: !!videoClientRef.current,
-      hasCall: !!callRef.current
-    })
     return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
   }
   
   if (requiresChat && (!chatClientReady || !channelReady || !chatClientRef.current || !channelRef.current)) {
-    console.log('⏳ Render: Loading (waiting for chat in live mode)', {
-      chatClientReady,
-      channelReady,
-      hasChatClient: !!chatClientRef.current,
-      hasChannel: !!channelRef.current
-    })
     return wrapInMobileView(<LoadingSpinner darkMode mobile={isMobileView} />)
   }
   
   if (error) {
-    console.log('❌ Render: Error in live mode:', error)
     return wrapInMobileView(<div className="video-error">Error: {error}</div>)
   }
 

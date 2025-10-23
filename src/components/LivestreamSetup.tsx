@@ -1,6 +1,4 @@
 import React, { useState } from 'react'
-import VideoIcon from '../icons/video.svg'
-import CastIcon from '../icons/cast.svg'
 import videoLoop from '../assets/video-loop.mov'
 import InfinityIcon from '../icons/infinity.svg'
 import RecordingIcon from '../icons/player-record-on.svg'
@@ -26,13 +24,11 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
   const handleOptionSelect = (type: 'webrtc' | 'rtmp') => {
     setSelectedType(type)
     
-    // Auto-navigate for WebRTC
     if (type === 'webrtc') {
       onSetupComplete({
         streamType: type
       })
     }
-    // For RTMP, wait for form completion
   }
 
   const handleRtmpContinue = () => {
@@ -51,7 +47,6 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
 
   return (
     <div className="livestream-setup">
-      {/* Video background */}
       <video 
         className="video-background"
         autoPlay 
@@ -63,12 +58,10 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
         <source src={videoLoop} type="video/quicktime" />
       </video>
       
-      {/* Stream Logo */}
       <div className="stream-logo">
         <img src={StreamIcon} alt="Stream" />
       </div>
       
-      {/* Go Back button */}
       <div className="setup-back">
         <button className="back-btn" onClick={handleGoBack}>
           <img src={CaretIcon} alt="Go Back" className="back-icon" />
@@ -103,7 +96,6 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
           </div>
         </div>
 
-        {/* Feature highlights - small and transparent */}
         <div className="feature-highlights">
           <div className="feature-item">
             <div className="feature-header">

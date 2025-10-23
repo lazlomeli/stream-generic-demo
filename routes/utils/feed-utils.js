@@ -1,21 +1,7 @@
 import { generateSampleUsers } from './sample-users.js';
 
-/**
- * Reset Feeds - Delete all activities, reactions, comments, and follows (keep users intact)
- * 
- * This function only deletes feed data. Sample users are permanent and never deleted.
- * They will be reused/updated during seeding.
- * 
- * @param {import('@stream-io/node-sdk').StreamClient} client
- * @returns {Promise<{success: boolean, message: string}>}
- */
 export async function resetFeeds(client) {
   try {
-    console.log('🔄 Starting Feeds reset...');
-    console.log('ℹ️ Users will NOT be deleted - only activities, reactions, comments, and follows will be cleaned up');
-
-    // Step 1: Query and delete all activities (with pagination)
-    console.log('📋 Querying and deleting activities...');
     let totalActivitiesDeleted = 0;
     
     try {
@@ -36,7 +22,6 @@ export async function resetFeeds(client) {
             hard_delete: true,
           });
           totalActivitiesDeleted += activityIds.length;
-          console.log(`✅ Deleted ${activityIds.length} activities (total: ${totalActivitiesDeleted})`);
         }
 
         activitiesNextCursor = activitiesResponse.next;
@@ -44,16 +29,12 @@ export async function resetFeeds(client) {
       }
     } catch (activitiesError) {
       if (activitiesError.code === 404 || activitiesError.metadata?.responseCode === 404) {
-        console.log('ℹ️ No activities found (this is normal for a new app)');
+        console.error('Activities not found:', activitiesError);
       } else {
-        console.error('⚠️ Error querying activities:', activitiesError.message);
+        console.error('Error deleting activities:', activitiesError);
       }
     }
 
-    console.log(`📋 Total activities deleted: ${totalActivitiesDeleted}`);
-
-    // Step 2: Query and delete all follows (with pagination)
-    console.log('📋 Querying and deleting follows...');
     let totalFollowsDeleted = 0;
     
     try {
@@ -73,9 +54,7 @@ export async function resetFeeds(client) {
               target: follow.target_feed.feed,
             });
             totalFollowsDeleted++;
-            console.log(`✅ Deleted follow: ${follow.source_feed.feed} -> ${follow.target_feed.feed}`);
           } catch (error) {
-            console.error(`❌ Error deleting follow:`, error.message);
           }
         }
 
@@ -84,30 +63,18 @@ export async function resetFeeds(client) {
       }
     } catch (followsError) {
       if (followsError.code === 404 || followsError.metadata?.responseCode === 404) {
-        console.log('ℹ️ No follows found (this is normal for a new app)');
       } else {
-        console.error('⚠️ Error querying follows:', followsError.message);
       }
     }
 
-    console.log(`📋 Total follows deleted: ${totalFollowsDeleted}`);
-
-    console.log('✅ Feeds reset completed successfully (users preserved)');
     return { success: true, message: 'Feeds reset completed' };
   } catch (error) {
-    console.error('❌ Error during Feeds reset:', error);
+    console.error('Error resetting feeds:', error);
     throw error;
   }
 }
 
-/**
- * Ensure required feed groups exist
- * 
- * @param {import('@stream-io/node-sdk').StreamClient} client
- */
 async function ensureFeedGroupsExist(client) {
-  console.log('🔧 Ensuring required feed groups exist...');
-  
   const feedGroupsToCreate = [
     {
       id: 'user',
@@ -132,50 +99,32 @@ async function ensureFeedGroupsExist(client) {
   for (const feedGroup of feedGroupsToCreate) {
     try {
       await client.feeds.createFeedGroup(feedGroup);
-      console.log(`✅ Created feed group: ${feedGroup.id}`);
     } catch (error) {
-      // Feed group might already exist
       if (error.code === 4 || error.message?.includes('already exists')) {
-        console.log(`ℹ️ Feed group '${feedGroup.id}' already exists`);
+        console.error('Feed group already exists:', error);
       } else {
-        console.error(`⚠️ Error creating feed group '${feedGroup.id}':`, error.message);
+        console.error('Error creating feed group:', error);
       }
     }
   }
 }
 
-/**
- * Seed Feeds - Create sample users, activities, reactions, comments, and follows
- * 
- * @param {import('@stream-io/node-sdk').StreamClient} client
- * @param {string} currentUserId
- * @returns {Promise<{success: boolean, message: string, data: any}>}
- */
 export async function seedFeeds(client, currentUserId) {
   try {
-    console.log('🌱 Starting Feeds seeding...');
-
-    // Step 0: Ensure feed groups exist
     await ensureFeedGroupsExist(client);
 
-    // Step 1: Create/update sample users
     const sampleUsers = generateSampleUsers();
     await client.upsertUsers(sampleUsers);
-    console.log(`✅ Created/updated ${sampleUsers.length} sample users`);
 
-    // Step 2: Create individual feed instances for each user
-    console.log('🔧 Creating individual feed instances...');
     for (const user of sampleUsers) {
       try {
         const userFeed = client.feeds.feed('user', user.id);
         await userFeed.getOrCreate({ user_id: user.id });
-        console.log(`✅ Created feed instance: user:${user.id}`);
       } catch (error) {
-        console.error(`❌ Could not create feed for ${user.name}:`, error.message);
+        console.error('Error getting or creating user feed:', error);
       }
     }
 
-    // Step 3: Create sample activities for each user
     const createdActivities = [];
     const activityTexts = [
       '🌟 Just joined the platform! Excited to share my journey.',
@@ -185,7 +134,6 @@ export async function seedFeeds(client, currentUserId) {
       '🚀 Working on an exciting new project!',
     ];
 
-    console.log('📝 Creating activities...');
     for (let i = 0; i < sampleUsers.length; i++) {
       const user = sampleUsers[i];
       const userFeed = `user:${user.id}`;
@@ -199,14 +147,11 @@ export async function seedFeeds(client, currentUserId) {
         });
         
         createdActivities.push(activityResponse.activity);
-        console.log(`✅ Created activity for ${user.name}`);
       } catch (error) {
-        console.error(`❌ Could not create activity for ${user.name}:`, error.message);
+        console.error('Error adding reaction:', error);
       }
     }
 
-    // Step 4: Add some sample reactions (likes) to activities
-    console.log('👍 Adding reactions...');
     for (let i = 0; i < Math.min(3, createdActivities.length); i++) {
       const activity = createdActivities[i];
       try {
@@ -215,14 +160,10 @@ export async function seedFeeds(client, currentUserId) {
           type: 'like',
           user_id: currentUserId,
         });
-        console.log(`✅ Added like to activity: ${activity.id}`);
       } catch (error) {
-        console.warn(`⚠️ Could not add reaction:`, error.message);
       }
     }
 
-    // Step 5: Add some sample comments
-    console.log('💬 Adding comments...');
     for (let i = 0; i < Math.min(2, createdActivities.length); i++) {
       const activity = createdActivities[i];
       try {
@@ -232,13 +173,11 @@ export async function seedFeeds(client, currentUserId) {
           comment: 'Great post! 👍',
           user_id: currentUserId,
         });
-        console.log(`✅ Added comment to activity: ${activity.id}`);
       } catch (error) {
-        console.warn(`⚠️ Could not add comment:`, error.message);
+        console.error('Error adding comment:', error);
       }
     }
 
-    console.log('✅ Feeds seeding completed successfully');
     return {
       success: true,
       message: 'Feeds seeded successfully',
@@ -248,7 +187,7 @@ export async function seedFeeds(client, currentUserId) {
       },
     };
   } catch (error) {
-    console.error('❌ Error during Feeds seeding:', error);
+    console.error('Error seeding feeds:', error);
     throw error;
   }
 }

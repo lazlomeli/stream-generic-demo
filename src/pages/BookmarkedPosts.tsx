@@ -8,7 +8,6 @@ export default function BookmarksPage() {
   const {
     error: userError,
     loading: clientLoading,
-    retryConnection,
   } = useUser();
 
   const {

@@ -12,7 +12,7 @@ interface FeedsProps {
 }
 
 const Feeds = ({ feedType }: FeedsProps) => {
-  const { activities: globalActivities, clearSearch, isLoading } = useSearch();
+  const { activities: globalActivities, isLoading } = useSearch();
   const { popularActivities, isLoading: isLoadingPopularActivities } = usePopularActivities();
   const { activities: followingActivities, loading: isLoadingFollowingActivities } = useFeedActivities();
 

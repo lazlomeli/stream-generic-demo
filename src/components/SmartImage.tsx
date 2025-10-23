@@ -28,17 +28,15 @@ const SmartImage: React.FC<SmartImageProps> = ({ src, alt, className = '', title
     };
     
     const handleError = () => {
-      console.log(`Image failed to load: ${src}`);
+      console.error(`Image failed to load: ${src}`);
       setImageState('error');
     };
 
     img.onload = handleLoad;
     img.onerror = handleError;
     
-    // Start loading the image
     img.src = src;
 
-    // Cleanup
     return () => {
       img.onload = null;
       img.onerror = null;

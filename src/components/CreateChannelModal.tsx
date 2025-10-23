@@ -41,10 +41,8 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
   const handleUserToggle = (userId: string) => {
     if (isDM) {
-      // For DM, only allow one user selection (radio button behavior)
       setSelectedUsers(new Set([userId]));
     } else {
-      // For groups, allow multiple selections (checkbox behavior)
       const newSelectedUsers = new Set(selectedUsers);
       if (newSelectedUsers.has(userId)) {
         newSelectedUsers.delete(userId);
@@ -73,9 +71,8 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       return;
     }
 
-    // Safety check: ensure current user is not in the selected users
     if (currentUserId && selectedUsers.has(currentUserId)) {
-      console.error('[CreateChannelModal]: Current user found in selected users!');
+      console.error('Current user found in selected users!');
       setError('Cannot add yourself to the channel');
       return;
     }
@@ -86,18 +83,13 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     try {
       const accessToken = await getAccessTokenSilently();
       
-      // For DM channels, don't set a name - it will be determined dynamically per user
-      // For group channels, use the provided name
       let finalChannelName = isDM ? '' : channelName.trim();
       let channelImageData = null;
       
-      // Don't set image for DM either - it will be determined dynamically per user
       if (!isDM && channelImage) {
-        // Only set image for group channels if provided
         channelImageData = channelImage;
       }
       
-      // Create request body
       const requestBody = {
         userId: currentUserId || '',
         channelName: finalChannelName,
@@ -125,21 +117,16 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
       const result = await response.json();
       
-      // Show success message based on whether channel already existed
       if (result.existing) {
         setSuccess(isDM ? 'Opening existing conversation...' : 'Channel already exists, opening it...');
       } else {
         setSuccess(isDM ? 'Direct message created successfully!' : 'Channel created successfully!');
       }
       
-      // Reset form
       setChannelName('');
       setSelectedUsers(new Set());
-      
-      // Immediately notify parent and close modal
       onChannelCreated(result.channelId);
       
-      // Close modal after a brief delay to show success message
       setTimeout(() => {
         onClose();
       }, 800);
@@ -165,19 +152,17 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     }
   };
 
-  // Filter users based on search query and exclude current user
-  // Note: This is computed after the early return, so it can't use useMemo (Rules of Hooks)
   const filteredUsers = availableUsers
     .filter(user => {
       const isCurrentUser = user.id === currentUserId;
       if (isCurrentUser) {
-        console.log('[CreateChannelModal]: Filtering out current user:', user.id, user.name);
+        console.log('Filtering out current user:', user.id, user.name);
       }
-      return !isCurrentUser; // Exclude current user
+      return !isCurrentUser;
     })
     .filter(user => user.name.toLowerCase().includes(userSearchQuery.toLowerCase()));
   
-  console.log(`[CreateChannelModal]: Showing ${filteredUsers.length} users (total available: ${availableUsers.length}, current user: ${currentUserId})`);
+  console.log(`Showing ${filteredUsers.length} users (total available: ${availableUsers.length}, current user: ${currentUserId})`);
 
   return (
     <div className="create-channel-modal-overlay" onClick={handleClose}>
@@ -225,7 +210,6 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
           <div className="form-group">
             <label style={{ fontSize: 'small' }} className='form-group-label'>{isDM ? 'Select User to Message *' : 'Add Members *'}</label>
             
-            {/* Search input for users */}
             <div className="user-search-container">
               <input
                 type="text"

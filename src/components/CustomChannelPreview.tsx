@@ -13,7 +13,7 @@ const CustomChannelPreview: React.FC<ChannelPreviewUIComponentProps> = (props) =
 
   const channelId = channel.id || '';
 
-  // @ts-ignore - isDM is a custom field added to ChannelData type
+  // @ts-ignore
   const isDM = channel.data?.isDM === true;
 
   const channelName = displayTitle || 'Channel';

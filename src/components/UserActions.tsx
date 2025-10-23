@@ -54,7 +54,6 @@ export function UserAvatar({
   userId: string;
   size?: "sm" | "md" | "lg";
 }) {
-  // Try to find user by ID to get their name for initials
   const storedUser = localStorage.getItem("user");
   let userName = "";
   if (storedUser) {
@@ -64,7 +63,7 @@ export function UserAvatar({
         userName = userData.name;
       }
     } catch {
-      // Ignore parsing errors
+      console.error('Error parsing user data');
     }
   }
 

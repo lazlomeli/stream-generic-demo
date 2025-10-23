@@ -1,7 +1,3 @@
-// components/ReactionsPanel.tsx
-
-"use client";
-
 import { useUser } from "../hooks/feeds/useUser";
 import { ActivityResponse } from "@stream-io/feeds-client";
 import { Heart, Bookmark, Pin, MessageCircle } from "lucide-react";
@@ -24,7 +20,6 @@ export default function ReactionsPanel({ activity }: Props) {
   useEffect(() => {
     if (!user) return;
 
-    // Update reaction counts from activity
     const counts: Record<string, number> = {};
     const userReacts = new Set<string>();
 
@@ -42,8 +37,6 @@ export default function ReactionsPanel({ activity }: Props) {
       });
     }
 
-    // Check if activity is pinned by current user
-    // Look for pinned activities in the activity data
     const pinnedActivities = (activity as unknown as Record<string, unknown>)
       .pinned_activities;
     const isPinnedByUser = Array.isArray(pinnedActivities)
@@ -53,7 +46,6 @@ export default function ReactionsPanel({ activity }: Props) {
         )
       : false;
 
-    // Check if activity is bookmarked by current user
     const ownBookmarks = (activity as unknown as Record<string, unknown>)
       .own_bookmarks;
     const isBookmarkedByUser =
@@ -72,7 +64,6 @@ export default function ReactionsPanel({ activity }: Props) {
       setLoading(true);
 
       if (userReactions.has(type)) {
-        // Delete existing reaction
         await client.deleteActivityReaction({
           activity_id: activity.id,
           type,
@@ -87,8 +78,7 @@ export default function ReactionsPanel({ activity }: Props) {
           [type]: Math.max(0, (prev[type] || 0) - 1),
         }));
       } else {
-        // Add new reaction with notification enabled
-        await client.addReaction({
+        await client.addReaction({ // TODO: .addActivityReaction ?
           activity_id: activity.id,
           type,
           create_notification_activity: true,
@@ -141,7 +131,6 @@ export default function ReactionsPanel({ activity }: Props) {
       setLoading(true);
 
       if (isBookmarked) {
-        // Delete bookmark - we need to delete the specific bookmark
         const bookmarks =
           (activity as unknown as Record<string, unknown>).own_bookmarks || [];
         if (Array.isArray(bookmarks) && bookmarks.length > 0) {
@@ -149,7 +138,7 @@ export default function ReactionsPanel({ activity }: Props) {
           await client.deleteBookmark({
             activity_id: activity.id,
             folder_id: (firstBookmark.folder as Record<string, unknown>)
-              ?.id as string, // Delete from the first folder
+              ?.id as string,
           });
         }
         setIsBookmarked(false);
@@ -188,7 +177,6 @@ export default function ReactionsPanel({ activity }: Props) {
   return (
     <div className="reactions-container">
       <div className="reactions-buttons">
-        {/* Like/Heart */}
         <button
           disabled={loading}
           onClick={() => handleReaction("like")}
@@ -208,7 +196,6 @@ export default function ReactionsPanel({ activity }: Props) {
           <span className="reaction-count">{activity.comment_count}</span>
         </button>
 
-        {/* Pin */}
         <button
           disabled={loading}
           onClick={handlePin}
@@ -218,7 +205,6 @@ export default function ReactionsPanel({ activity }: Props) {
           <Pin className={`reaction-icon ${isPinned ? "filled" : ""}`} />
         </button>
 
-        {/* Bookmark */}
         <button
           disabled={loading}
           onClick={handleBookmark}

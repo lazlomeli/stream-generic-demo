@@ -2,7 +2,6 @@
 const getFirstName = (fullName: string | undefined): string => {
   if (!fullName) return 'Unknown';
   
-  // Split by space and take the first part
   const nameParts = fullName.trim().split(' ');
   return nameParts[0] || 'Unknown';
 };

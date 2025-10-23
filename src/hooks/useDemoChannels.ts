@@ -1,5 +1,4 @@
 import React from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import type { StreamChat } from "stream-chat";
 import { listMyChannels, type ChannelItem } from "./listMyChannels";
 import { useLastMessageListener } from "./useLastMessageListener";

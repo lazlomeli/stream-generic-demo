@@ -19,14 +19,10 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
     navigate(`/profile/${userId}`);
   };
 
-  console.log('whoToFollow', whoToFollow);
-  console.log('isLoadingWhoToFollow', isLoadingWhoToFollow);
-
   return (
     <aside className="right-sidebar">
       <div className="right-sidebar-content">
 
-        {/* Suggested Users Section */}
         <div className="sidebar-section">
           <h3 className="section-title">Suggested for you</h3>
           <div className="users-list">
@@ -48,7 +44,6 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
                   </div>
                   <div className="user-info">
                     <div className="user-name">{user.name}</div>
-                    {/* Follow button */}
                     <UserActions targetUserId={user.id} />
                   </div>
                 </div>

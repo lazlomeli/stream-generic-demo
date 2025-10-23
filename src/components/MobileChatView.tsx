@@ -17,42 +17,34 @@ interface MobileChatViewProps {
 const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
   const navigate = useNavigate()
 
-  // Get channel name - try different properties
   const channelName = (channel.data as any)?.name || 
                      channel.data?.id ||
                      (channel.data?.member_count && channel.data.member_count > 2 
                        ? `Group Chat (${channel.data.member_count} members)`
                        : 'Chat')
 
-  // Handle audio call
   const handleAudioCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a short, unique call ID (max 64 chars for Stream Video)
     const shortId = Math.random().toString(36).substring(2, 15);
-    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+    const timestamp = Date.now().toString().slice(-8);
     const callId = `audio_${shortId}_${timestamp}`;
     
-    // Navigate to call page with audio mode and mobile flag
     navigate(`/call/${callId}?type=audio&channel=${channel.id}&mobile=true`);
   };
 
-  // Handle video call
   const handleVideoCall = () => {
     if (!channel || !channel.id) return;
     
-    // Generate a short, unique call ID (max 64 chars for Stream Video)
     const shortId = Math.random().toString(36).substring(2, 15);
-    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+    const timestamp = Date.now().toString().slice(-8);
     const callId = `video_${shortId}_${timestamp}`;
     
-    // Navigate to call page with video mode and mobile flag
     navigate(`/call/${callId}?type=video&channel=${channel.id}&mobile=true`);
   };
 
   return (
     <div className="mobile-chat-view">
-      {/* Mobile chat header with back button */}
       <div className="mobile-chat-header">
         <button onClick={onBack} className="mobile-back-btn" title="Back to chats">
           ←
@@ -64,7 +56,6 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
           </span>
         </div>
         <div className="mobile-chat-actions">
-          {/* Video/Audio Call Buttons */}
           <div className="mobile-call-buttons">
             <button
               className="mobile-call-button mobile-audio-call-button"
@@ -84,7 +75,6 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
         </div>
       </div>
 
-      {/* Chat content */}
       <Channel channel={channel} Attachment={CustomAttachment}>
         <Window>
           <div className="mobile-message-area">

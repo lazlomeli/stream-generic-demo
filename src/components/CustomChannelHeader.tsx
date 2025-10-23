@@ -18,7 +18,7 @@ const CustomChannelHeader: React.FC = () => {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
-  const [muteToggleKey, setMuteToggleKey] = useState(0); // Force re-render for mute status
+  const [muteToggleKey, setMuteToggleKey] = useState(0);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
 
   if (!channel) {
@@ -33,7 +33,7 @@ const CustomChannelHeader: React.FC = () => {
     );
   }
 
-  // @ts-ignore - isDM is a custom field added to ChannelData type
+  // @ts-ignore
   const isDM = channel.data?.isDM === true;
   const channelType = isDM ? 'dm' : 'group';
   

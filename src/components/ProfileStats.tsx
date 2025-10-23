@@ -5,7 +5,6 @@ import { FollowUser } from "../hooks/feeds/useProfileStats";
 import { useUser } from "../hooks/feeds/useUser";
 import { X, UserPlus, UserMinus } from "lucide-react";
 import { User } from "@auth0/auth0-react";
-import { useUserActions } from "../hooks/feeds/useUserActions";
 import "./ProfileStats.css";
 
 interface ProfileStatsProps {
@@ -27,106 +26,10 @@ interface FollowersModalProps {
   isOwnProfile?: boolean;
 }
 
-function FollowersModal({
-  isOpen,
-  onClose,
-  title,
-  users,
-  isLoading,
-  onFollow,
-  onUnfollow,
-  isFollowing,
-  isFollowLoading,
-  isUnfollowLoading,
-  isOwnProfile = false,
-}: FollowersModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-container">
-        {/* Header */}
-        <div className="modal-header">
-          <h3 className="modal-title">{title}</h3>
-          <button
-            onClick={onClose}
-            className="modal-close-button"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="modal-content">
-          {isLoading ? (
-            <div className="modal-loading">
-              <div className="loading-spinner" />
-              <p className="loading-text">Loading...</p>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="modal-empty">
-              <p className="empty-text">No {title.toLowerCase()} found</p>
-            </div>
-          ) : (
-            <div className="user-list">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="user-item"
-                >
-                  <Link
-                    to={`/profile/${user.id}`}
-                    className="user-info-link"
-                  >
-                    <div className="user-avatar">
-                      <span className="user-avatar-text">
-                        {user.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="user-details">
-                      <p className="user-name">{user.name}</p>
-                      <p className="user-handle">@{user.id}</p>
-                    </div>
-                  </Link>
-                  {/* Only show follow buttons if not own profile */}
-                  {!isOwnProfile && onFollow && onUnfollow && isFollowing && (
-                    <button
-                      onClick={() => {
-                        if (isFollowing(user.id)) {
-                          onUnfollow(user.id);
-                        } else {
-                          onFollow(user.id);
-                        }
-                      }}
-                      disabled={isFollowLoading || isUnfollowLoading}
-                      className={`follow-button ${
-                        isFollowing(user.id)
-                          ? "following"
-                          : ""
-                      }`}
-                    >
-                      {isFollowing(user.id) ? (
-                        <UserMinus className="h-4 w-4" />
-                      ) : (
-                        <UserPlus className="h-4 w-4" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"followers" | "following">("followers");
   const { user: currentUser } = useUser();
-  const { isOwnUser } = useUserActions(user.id);
 
   const profileStats = useProfileStats(user.id);
   const {
@@ -140,7 +43,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
     isUnfollowingLoading,
   } = profileStats;
 
-  // Filter out current user from lists when viewing own profile
   const filteredFollowers = isOwnProfile 
     ? followers.filter(follower => follower.id !== user.id)
     : followers;
@@ -169,7 +71,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
   return (
     <>
       <div className="profile-stats-container">
-        {/* Followers */}
         <button
           onClick={() => handleOpenModal("followers")}
           className="stat-button"
@@ -178,7 +79,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
           <div className="stat-label">Followers</div>
         </button>
 
-        {/* Following */}
         <button
           onClick={() => handleOpenModal("following")}
           className="stat-button"
@@ -188,11 +88,9 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
         </button>
       </div>
 
-      {/* Combined Modal with Tabs */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-container">
-            {/* Header with Tabs */}
             <div className="modal-tabs-header">
               <div className="modal-tabs">
                 <button
@@ -224,7 +122,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
               </button>
             </div>
 
-            {/* Content */}
             <div className="modal-content">
               {isLoading ? (
                 <div className="modal-loading">
@@ -256,7 +153,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                           <p className="user-handle">@{user.id}</p>
                         </div>
                       </Link>
-                      {/* Only hide follow button for current user's own profile */}
                       {user.id !== currentUser?.nickname && (
                         <button
                           onClick={() => {

@@ -11,23 +11,18 @@ const EnrichedText: React.FC<EnrichedTextProps> = ({ text, className = '' }) => 
     return null;
   }
 
-  // URL regex pattern to detect URLs
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  // Check if text contains URLs
   if (!urlRegex.test(text)) {
-    // No URLs found, return plain text
     return <p className={className}>{text}</p>;
   }
 
-  // Split text by URLs and create clickable links
   const parts = text.split(urlRegex);
   
   return (
     <p className={className}>
       {parts.map((part, index) => {
         if (urlRegex.test(part)) {
-          // This is a URL, make it clickable
           return (
             <a
               key={index}
@@ -36,7 +31,6 @@ const EnrichedText: React.FC<EnrichedTextProps> = ({ text, className = '' }) => 
               rel="noopener noreferrer"
               className="enriched-link"
               onClick={(e) => {
-                // Prevent event bubbling to avoid triggering post interactions
                 e.stopPropagation();
               }}
             >
@@ -44,7 +38,6 @@ const EnrichedText: React.FC<EnrichedTextProps> = ({ text, className = '' }) => 
             </a>
           );
         }
-        // Regular text
         return part;
       })}
     </p>

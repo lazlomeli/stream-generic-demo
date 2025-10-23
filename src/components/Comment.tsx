@@ -1,6 +1,3 @@
-// CommentsPanel.tsx
-"use client";
-
 import { useEffect, useState } from "react";
 import { ActivityResponse, CommentResponse } from "@stream-io/feeds-client";
 import { Heart, TextQuote, Trash2 } from "lucide-react";
@@ -18,7 +15,6 @@ interface CommentWithReplies extends CommentResponse {
   replies: CommentWithReplies[];
 }
 
-// Separate ReplyForm component with its own state
 const ReplyForm = ({
   comment,
   onReply,
@@ -109,12 +105,10 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
   const { addComment, addReply, deleteComment, toggleCommentReaction } =
     useComments();
 
-  // Update showCommentInput when showInput prop changes
   useEffect(() => {
     setShowCommentInput(false);
   }, []);
 
-  // Update comment reactions state when activity changes
   useEffect(() => {
     const reactions: Record<string, Set<string>> = {};
     const counts: Record<string, Record<string, number>> = {};
@@ -123,7 +117,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
       const userReacts = new Set<string>();
       const commentCounts: Record<string, number> = {};
       
-      // Get user reactions
       if (comment.latest_reactions) {
         comment.latest_reactions.forEach((reaction) => {
           if (reaction.user.id === user?.nickname) {
@@ -132,7 +125,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
         });
       }
       
-      // Get reaction counts
       if (comment.reaction_groups) {
         Object.entries(comment.reaction_groups).forEach(([type, group]) => {
           commentCounts[type] = group.count || 0;
@@ -192,16 +184,13 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
       const success = await toggleCommentReaction(comment.id, type, hasReaction, user?.nickname);
       
       if (success) {
-        // Update local state immediately like activity reactions
         setCommentReactions((prev) => {
           const currentReactions = prev[comment.id] || new Set<string>();
           const newReactions = new Set(currentReactions);
 
           if (hasReaction) {
-            // Remove reaction
             newReactions.delete(type);
           } else {
-            // Add reaction
             newReactions.add(type);
           }
           return {
@@ -210,7 +199,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
           };
         });
 
-        // Update reaction counts immediately
         setReactionCounts((prev) => {
           const currentCounts = prev[comment.id] || {};
           const currentCount = currentCounts[type] || 0;
@@ -241,20 +229,17 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
     comment: CommentResponse,
     type: string
   ) => {
-    // Use local state first for immediate updates
     const localReactions = commentReactions[comment.id];
     if (localReactions) {
       return localReactions.has(type);
     }
     
-    // Fallback to original comment data
     if (comment.own_reactions && comment.own_reactions.length > 0) {
       return comment.own_reactions.find(
         (reaction) => reaction.type === type
       );
     }
     
-    // Fallback to latest_reactions if own_reactions is not available
     return comment.latest_reactions?.find(
       (reaction) => reaction.type === type && reaction.user.id === user?.nickname
     );
@@ -271,30 +256,25 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
     }
   };
 
-  // Organize comments into hierarchical structure
   const organizeComments = (
     comments: CommentResponse[]
   ): CommentWithReplies[] => {
     const commentMap = new Map<string, CommentWithReplies>();
     const rootComments: CommentWithReplies[] = [];
 
-    // First pass: create map of all comments with empty replies array
     comments.forEach((comment) => {
       commentMap.set(comment.id, { ...comment, replies: [] });
     });
 
-    // Second pass: organize into hierarchy
     comments.forEach((comment) => {
       const commentWithReplies = commentMap.get(comment.id)!;
 
       if (comment.parent_id) {
-        // This is a reply
         const parentComment = commentMap.get(comment.parent_id);
         if (parentComment) {
           parentComment.replies.push(commentWithReplies);
         }
       } else {
-        // This is a root comment
         rootComments.push(commentWithReplies);
       }
     });
@@ -302,7 +282,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
     return rootComments;
   };
 
-  // Recursive component to render comment and its replies
   const CommentItem = ({
     comment,
     level = 0,
@@ -372,7 +351,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
               )}
             </div>
 
-            {/* Reply Input */}
             {replyingTo === comment.id && (
               <ReplyForm
                 comment={comment}
@@ -406,7 +384,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
       className="comments-container"
       data-activity-id={activity.id}
     >
-      {/* Toggle Comments Button */}
       {commentCount > 0 && (
         <button
           onClick={() => setShowComments(!showComments)}
@@ -416,10 +393,8 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
         </button>
       )}
 
-      {/* Show comments section when toggled on */}
       {showComments && (
         <>
-          {/* Comment Input Section */}
           {showCommentInput ? (
             <div className="comment-input-section">
               <div className="comment-input-wrapper">
@@ -446,7 +421,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                       } else if (e.key === "Escape") {
                         setShowCommentInput(false);
                         setNewComment("");
-                        // If there are no comments, hide the comments section
                         if (commentCount === 0) {
                           setShowComments(false);
                         }
@@ -466,7 +440,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                         onClick={() => {
                           setShowCommentInput(false);
                           setNewComment("");
-                          // If there are no comments, hide the comments section
                           if (commentCount === 0) {
                             setShowComments(false);
                           }
@@ -494,7 +467,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
             </div>
           )}
 
-          {/* Comments List */}
           {activity.comments.length > 0 && (
             <div className="comments-list">
               <h3 className="comments-title">
@@ -514,7 +486,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
         </>
       )}
 
-      {/* When comments are hidden and there are no comments, show a button to add one */}
       {!showComments && commentCount === 0 && (
         <button
           onClick={() => {

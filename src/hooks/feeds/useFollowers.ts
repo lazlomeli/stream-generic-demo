@@ -1,13 +1,9 @@
-"use client";
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "./useUser";
 import { FeedsClient, FollowResponse } from "@stream-io/feeds-client";
 
-// Query key for followers
 const FOLLOWERS_QUERY_KEY = ["followers"];
 
-// Fetch followers from Stream API
 const fetchFollowers = async (
   client: FeedsClient,
   userId: string
@@ -27,7 +23,6 @@ export function useFollowers() {
   const { user, client } = useUser();
   const queryClient = useQueryClient();
 
-  // Query for followers data
   const {
     data: followers = [],
     isLoading: loading,
@@ -42,14 +37,12 @@ export function useFollowers() {
       return fetchFollowers(client, user?.nickname!);
     },
     enabled: !!client && !!user?.nickname,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Mutation for adding follower
   const addFollowerMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Optimistically update the cache
       queryClient.setQueryData(
         [...FOLLOWERS_QUERY_KEY, user?.nickname],
         (old: string[] = []) => [...old, userId]
@@ -57,15 +50,12 @@ export function useFollowers() {
       return userId;
     },
     onError: () => {      
-      // Revert on error
       refreshFollowers();
     },
   });
 
-  // Mutation for removing follower
   const removeFollowerMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Optimistically update the cache
       queryClient.setQueryData(
         [...FOLLOWERS_QUERY_KEY, user?.nickname],
         (old: string[] = []) => old.filter((id) => id !== userId)
@@ -73,7 +63,6 @@ export function useFollowers() {
       return userId;
     },
     onError: () => {
-      // Revert on error
       refreshFollowers();
     },
   });
