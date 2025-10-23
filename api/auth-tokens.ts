@@ -161,52 +161,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('📹 AUTH-TOKENS: Generating video token for:', userId);
       
       const streamClient = new StreamClient(apiKey, apiSecret);
-
-      let finalUserId = userId;
-      
-      if (userId === 'demo_user_2025') {
-        console.log('👥 AUTH-TOKENS: Handling demo user demo_user_2025');
-        try {
-          // @ts-ignore
-          const existingUser = await streamClient.queryUsers({ id: 'demo_user_2025' });
-          if (existingUser.users.length === 0) {
-            console.log('🔧 AUTH-TOKENS: Demo user does not exist, creating...');
-            await streamClient.upsertUsers({ 
-              // @ts-ignore
-              id: 'demo_user_2025',
-              name: 'Demo User',
-              image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-            });
-            console.log('✅ AUTH-TOKENS: Demo user demo_user_2025 created');
-          } else {
-            console.log('✅ AUTH-TOKENS: Demo user demo_user_2025 already exists, skipping creation');
-          }
-        } catch (error) {
-          console.log('⚠️ AUTH-TOKENS: Error handling demo user, but continuing:', error);
-        }
+      const sanitizedUserId = sanitizeUserId(userId);
+    
+      console.log('🔧 AUTH-TOKENS: Full request body:', JSON.stringify(req.body, null, 2));
+      console.log('🔧 AUTH-TOKENS: Request headers:', {
+        'content-type': req.headers['content-type'],
+        'cache-control': req.headers['cache-control'],
+        'x-cache-buster': req.headers['x-cache-buster']
+      });
+    
+      // STEP 1: Create/update user with admin role (CRITICAL!)
+      console.log('👤 AUTH-TOKENS: Creating/updating user with ADMIN role:', sanitizedUserId);
+      try {
+        const upsertResult = await streamClient.upsertUsers([{
+          id: sanitizedUserId,
+          name: userProfile?.name || `User_${sanitizedUserId}`,
+          image: userProfile?.image,
+          role: 'admin', // EXPLICIT admin role
+        }]);
+        console.log('✅ AUTH-TOKENS: User upserted with admin role:', JSON.stringify(upsertResult, null, 2));
+      } catch (upsertError: any) {
+        console.error('❌ AUTH-TOKENS: Failed to upsert user:', upsertError?.message || upsertError);
+        // Continue anyway
       }
       
-      console.log('⚡ AUTH-TOKENS: SKIPPING user profile updates - using token-only approach');
-
-      const userRole = 'admin';
-      console.log('🔑 AUTH-TOKENS: Generating video token for demo role:', userRole);
+      // STEP 2: If callId is provided, add user as member to that call
+      const callId = req.body.callId;
+      if (callId) {
+        console.log(`📞 AUTH-TOKENS: Adding user ${sanitizedUserId} as member to call ${callId}`);
+        try {
+          const call = streamClient.video.call('default', callId);
+          await call.getOrCreate({
+            data: {
+              members: [{ user_id: sanitizedUserId, role: 'call_member' }],
+            },
+          });
+          console.log(`✅ AUTH-TOKENS: User added as member to call ${callId}`);
+        } catch (callError: any) {
+          console.error('❌ AUTH-TOKENS: Failed to add user to call:', callError?.message || callError);
+        }
+      } else {
+        console.log('ℹ️ AUTH-TOKENS: No callId provided, skipping call membership');
+      }
       
+      // STEP 3: Generate token
       const now = Math.floor(Date.now() / 1000);
-      console.log(`🔑 AUTH-TOKENS: Generating token for user ID: ${finalUserId}`);
       
       const tokenPayload: any = {
-        user_id: finalUserId,
+        user_id: sanitizedUserId,
         iss: 'stream-video',
         exp: now + (24 * 60 * 60),
         iat: now,
         nbf: now,
-        jti: `video_${finalUserId}_${now}_${Math.random().toString(36).substr(2, 9)}`,
-        capabilities: [
-          'join-call',
-          'send-audio', 
-          'send-video',
-          'mute-users'
-        ]
+        jti: `video_${sanitizedUserId}_${now}_${Math.random().toString(36).substr(2, 9)}`,
       };
       
       tokenPayload.capabilities = [
@@ -219,7 +226,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'end-call', 
         'create-call',
         'update-call-permissions',
-        // Livestream specific capabilities  
         'create-livestream',
         'join-livestream',
         'end-livestream',
@@ -230,7 +236,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'send-reaction',
         'manage-call-settings',
         'call-admin',
-        'super-admin'
+        'super-admin',
       ];
       
       tokenPayload.call_cids = ['*'];
@@ -238,24 +244,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tokenPayload.call_role = 'admin';
       tokenPayload.livestream_role = 'admin';
       
-      tokenPayload.bypass_permissions = true;
-      tokenPayload.is_admin = true;
-      tokenPayload.grant_all_permissions = true;
-      
-      console.log('🔧 AUTH-TOKENS: Video token payload:', JSON.stringify(tokenPayload, null, 2));
+      console.log('🔧 AUTH-TOKENS: Video token payload with livestream capabilities:', {
+        user_id: tokenPayload.user_id,
+        capabilities: tokenPayload.capabilities,
+        role: tokenPayload.role,
+        call_cids: tokenPayload.call_cids
+      });
       
       const videoToken = jwt.sign(tokenPayload, apiSecret, {
         algorithm: 'HS256'
       });
-
-      console.log('✅ AUTH-TOKENS: Video token generated successfully');
-      console.log('🔧 AUTH-TOKENS: Generated token (first 50 chars):', videoToken.substring(0, 50) + '...');
+    
+      console.log('✅ AUTH-TOKENS: Video token generated with livestream permissions');
+      console.log('🔧 AUTH-TOKENS: Generated token (first 100 chars):', videoToken.substring(0, 100) + '...');
+      
+      // Verify token payload
+      const decoded = jwt.decode(videoToken) as any;
+      console.log('🔍 AUTH-TOKENS: Generated token payload verification:', {
+        user_id: decoded.user_id,
+        role: decoded.role,
+        call_role: decoded.call_role,
+        livestream_role: decoded.livestream_role,
+        capabilities: decoded.capabilities?.slice(0, 5),
+        totalCapabilities: decoded.capabilities?.length,
+        call_cids: decoded.call_cids
+      });
+      
       return res.status(200).json({
         token: videoToken,
         apiKey: apiKey,
-        userId: finalUserId,
-        originalUserId: userId,
-        isAdminUser: finalUserId !== userId
+        userId: sanitizedUserId,
       });
     }
 

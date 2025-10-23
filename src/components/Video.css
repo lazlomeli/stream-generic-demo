@@ -82,6 +82,34 @@
   object-fit: cover;
 }
 
+/* Screen sharing - position camera as small preview when screen is being shared during live stream */
+/* Only active when .screen-sharing-active class is present (livestream is live AND user is screen sharing) */
+.enhanced-livestream-layout.screen-sharing-active .str-video__participant-view:not([data-screen-share="true"]) video,
+.enhanced-livestream-layout.screen-sharing-active .str-video__video:not(.str-video__screen-share-video) {
+  position: fixed !important;
+  left: 20px !important;
+  top: 20px !important;
+  height: 200px !important;
+  width: 300px !important;
+  z-index: 10 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Alternative more specific selector for the camera feed wrapper */
+.enhanced-livestream-layout.screen-sharing-active .str-video__participant-view--type-video {
+  position: fixed !important;
+  left: 20px !important;
+  top: 20px !important;
+  height: 200px !important;
+  width: 300px !important;
+  z-index: 10 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .video-container {
