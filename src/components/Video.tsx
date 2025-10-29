@@ -722,12 +722,50 @@ const CustomLivestreamControls: React.FC = () => {
       setShowStopModal(false)
       
       if (call) {
+        // Collect anonymous viewer IDs before stopping the livestream
+        const participants = call.state.participants || [];
+        const anonymousViewerIds = participants
+          .map(p => p.userId)
+          .filter((userId): userId is string => {
+            return typeof userId === 'string' && userId.startsWith('viewer_');
+          });
+
+        console.log(`🧹 Found ${anonymousViewerIds.length} anonymous viewers to delete:`, anonymousViewerIds);
+
+        // Stop the livestream
         await call.stopLive()
         await call.leave()
+
+        // Delete anonymous viewer users after stopping the livestream
+        if (anonymousViewerIds.length > 0) {
+          try {
+            const response = await fetch('/api/chat-operations', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                type: 'delete-anonymous-viewers',
+                userIds: anonymousViewerIds
+              }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log(`✅ Deleted ${result.deletedCount} anonymous viewers`);
+            } else {
+              console.error('⚠️ Failed to delete anonymous viewers:', await response.text());
+            }
+          } catch (deleteError) {
+            console.error('❌ Error deleting anonymous viewers:', deleteError);
+            // Don't block navigation even if cleanup fails
+          }
+        }
       }
       
       window.location.href = '/'
     } catch (error) {
+      console.error('❌ Error stopping livestream:', error);
       window.location.href = '/'
     }
   }

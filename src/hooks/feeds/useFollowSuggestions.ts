@@ -18,7 +18,7 @@ const fetchWhoToFollowData = async (
       // Option 1: Try getFollowSuggestions first
       const suggestions = await client.getFollowSuggestions({
         feed_group_id: "user",
-        limit: 10,
+        limit: 5,
       });
   
       let userIds: string[] = [];
@@ -27,20 +27,22 @@ const fetchWhoToFollowData = async (
         // Parse feed IDs to get user IDs
         userIds = suggestions.suggestions
           .map((s) => s.feed.split(':')[1])
-          .filter((id): id is string => !!id);
+          .filter((id): id is string => !!id)
+          .slice(0, 5);
       } else {
         // Option 2: Fallback to getting all users (for small apps)
         const allUsers = await client.queryUsers({
           payload: {
             filter_conditions: {},
-            limit: 20,
+            limit: 5,
           },
         });
         
-        // Filter out current user
+        // Filter out current user and limit to 5
         userIds = allUsers.users
           .filter((u) => u.id !== user.nickname)
-          .map((u) => u.id);
+          .map((u) => u.id)
+          .slice(0, 5);
       }
   
       if (userIds.length === 0) {
@@ -56,7 +58,7 @@ const fetchWhoToFollowData = async (
         },
       });
   
-      return usersResponse.users || [];
+      return (usersResponse.users || []).slice(0, 5);
     } catch (error) {
       console.error("Error fetching who to follow:", error);
       toast.error("Error fetching who to follow");

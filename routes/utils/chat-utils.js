@@ -30,6 +30,38 @@ export async function resetChat(client) {
       }
     }
 
+    // Delete anonymous viewers (users starting with "viewer_")
+    try {
+      console.log('🧹 Checking for anonymous viewers to delete...');
+      const usersResponse = await client.queryUsers({
+        id: { $autocomplete: 'viewer_' }
+      });
+
+      const anonymousViewers = usersResponse.users.filter(user => user.id.startsWith('viewer_'));
+      
+      if (anonymousViewers.length > 0) {
+        console.log(`🧹 Found ${anonymousViewers.length} anonymous viewers to delete:`, anonymousViewers.map(u => u.id));
+        
+        const deletePromises = anonymousViewers.map(user => 
+          client.deleteUser(user.id, { 
+            mark_messages_deleted: true,
+            hard_delete: true 
+          }).catch(error => {
+            console.error(`❌ Error deleting anonymous viewer ${user.id}:`, error);
+            return null;
+          })
+        );
+
+        await Promise.all(deletePromises);
+        console.log(`✅ Successfully deleted ${anonymousViewers.length} anonymous viewers`);
+      } else {
+        console.log('✓ No anonymous viewers found');
+      }
+    } catch (error) {
+      console.error('⚠️ Error deleting anonymous viewers during reset:', error);
+      // Don't fail the entire reset if this fails
+    }
+
     return { success: true, message: 'Chat reset completed' };
   } catch (error) {
     console.error('Error resetting chat:', error);

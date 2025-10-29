@@ -20,27 +20,21 @@ const Feeds = ({ feedType }: FeedsProps) => {
   const highlightedPostId = searchParams.get('postId');
   const postRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // Select activities based on feedType
   const getActivities = () => {
     switch (feedType) {
       case 'trending':
-        console.log('popularActivities', popularActivities);
         return popularActivities;
       case 'following':
-        console.log('feedActivities', followingActivities);
         return followingActivities;
       case 'for-you':
-        console.log('globalActivities', globalActivities);
         return globalActivities;
       default:
-        console.log('default', globalActivities);
         return globalActivities;
     }
   };
 
   const activities = getActivities();
 
-  // Get the appropriate loading state
   const getLoadingState = () => {
     switch (feedType) {
       case 'trending':
@@ -56,25 +50,20 @@ const Feeds = ({ feedType }: FeedsProps) => {
 
   const isLoadingActivities = getLoadingState();
 
-  // Scroll to and highlight the post when postId is in URL
   useEffect(() => {
     if (highlightedPostId && postRefs.current[highlightedPostId]) {
       const postElement = postRefs.current[highlightedPostId];
       
-      // Smooth scroll to the post
       setTimeout(() => {
         postElement?.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'center' 
         });
         
-        // Add temporary highlight animation
         postElement?.classList.add('post-highlighted');
         
-        // Remove highlight after animation
         setTimeout(() => {
           postElement?.classList.remove('post-highlighted');
-          // Clear the postId from URL
           setSearchParams({});
         }, 2000);
       }, 300);
@@ -85,7 +74,6 @@ const Feeds = ({ feedType }: FeedsProps) => {
     return <div>Loading...</div>
   }
 
-  // Get the display title based on feed type
   const getFeedTitle = () => {
     switch (feedType) {
       case 'trending':

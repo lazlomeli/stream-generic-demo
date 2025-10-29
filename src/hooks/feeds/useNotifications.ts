@@ -2,7 +2,7 @@ import { useUser } from "./useUser";
 import { Feed } from "@stream-io/feeds-client";
 import { 
   useNotificationStatus,
-  useAggregatedActivities,
+  useFeedActivities,  // Changed from useAggregatedActivities
 } from "@stream-io/feeds-client/react-bindings";
 import { useToast } from "../../contexts/ToastContext";
 import { useEffect, useState } from "react";
@@ -54,11 +54,14 @@ export function useNotifications() {
     const notificationFeed = client.feed("notification", user.nickname);
     
     notificationFeed
-      .getOrCreate({ watch: true })
+      .getOrCreate({ 
+        watch: true,
+        limit: 20
+      })
       .then(() => {
         globalFeed = notificationFeed;
         setFeed(notificationFeed);
-        notifySubscribers(); // Notify all instances
+        notifySubscribers();
       })
       .catch((error) => {
         showError("Error setting up notifications");
@@ -70,7 +73,7 @@ export function useNotifications() {
 
   // Use SDK's built-in hooks (convert null to undefined for proper typing)
   const notificationStatus = useNotificationStatus(feed || undefined);
-  const aggregatedData = useAggregatedActivities(feed || undefined);
+  const activitiesData = useFeedActivities(feed || undefined);  // Changed from useAggregatedActivities
 
   const unreadCount = notificationStatus?.unseen || notificationStatus?.unread || 0;
 
@@ -90,13 +93,10 @@ export function useNotifications() {
     }
   };
 
-  const isLoading = !feed || aggregatedData?.is_loading || false;
+  const isLoading = !feed || activitiesData?.is_loading || false;
 
   return {
-    notifications: {
-      aggregated_activities: aggregatedData?.aggregated_activities || [],
-      notification_status: notificationStatus,
-    },
+    notifications: activitiesData?.activities || [],  // Changed to return flat activities
     isLoading,
     error: null,
     unreadCount,

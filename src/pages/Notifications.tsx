@@ -20,8 +20,8 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (
       !hasMarkedAsSeenRef.current && 
-      notifications?.aggregated_activities && 
-      notifications.aggregated_activities.length > 0
+      notifications && 
+      notifications.length > 0
     ) {
       hasMarkedAsSeenRef.current = true;
       markAsSeen();
@@ -46,7 +46,7 @@ export default function NotificationsPage() {
         </p>
       </div>
 
-      {!notifications?.aggregated_activities || notifications.aggregated_activities.length === 0 ? (
+      {!notifications || notifications.length === 0 ? (
         <div className="notifications-empty">
           <div className="notifications-empty-title">No notifications yet</div>
           <p className="notifications-empty-description">
@@ -55,14 +55,12 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <div className="notifications-list">
-          {notifications.aggregated_activities.flatMap((aggregated) => 
-            (aggregated.activities || []).map((notification) => (
-              <NotificationItem
-                key={`notification-${notification.id}`}
-                notification={notification as any}
-              />
-            ))
-          )}
+          {notifications.map((notification) => (
+            <NotificationItem
+              key={`notification-${notification.id}`}
+              notification={notification as any}
+            />
+          ))}
         </div>
       )}
     </div>

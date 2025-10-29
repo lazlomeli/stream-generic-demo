@@ -192,7 +192,7 @@ router.post('/chat-operations', async (req, res) => {
       return res.status(400).json({ error: 'userId and type are required' });
     }
 
-    if (!['create-livestream-channel', 'create-channel', 'add-to-general', 'leave-channel'].includes(type)) {
+    if (!['create-livestream-channel', 'create-channel', 'add-to-general', 'leave-channel', 'delete-anonymous-viewers'].includes(type)) {
       return res.status(400).json({ error: 'Invalid operation type' });
     }
 
@@ -388,6 +388,64 @@ router.post('/chat-operations', async (req, res) => {
         return res.status(500).json({ 
           error: 'Failed to remove user from channel',
           details: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    if (type === 'delete-anonymous-viewers') {
+      const { userIds } = req.body;
+
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'userIds array is required' });
+      }
+
+      // Filter to only include user IDs that start with "viewer_" for safety
+      const anonymousViewerIds = userIds.filter((id: string) => id.startsWith('viewer_'));
+
+      if (anonymousViewerIds.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: 'No anonymous viewer users to delete',
+          deletedCount: 0
+        });
+      }
+
+      try {
+        console.log(`🧹 Deleting ${anonymousViewerIds.length} anonymous viewer users:`, anonymousViewerIds);
+        
+        // Delete users from Stream Chat
+        const deletePromises = anonymousViewerIds.map((userId: string) => 
+          client.deleteUser(userId, { 
+            mark_messages_deleted: true,
+            hard_delete: true 
+          }).catch((error: any) => {
+            // Log errors but don't fail the whole operation if a user doesn't exist
+            if (error.code === 16 || error.message?.includes('does not exist')) {
+              console.log(`⚠️ User ${userId} doesn't exist, skipping`);
+              return null;
+            }
+            console.error(`❌ Error deleting user ${userId}:`, error);
+            return null;
+          })
+        );
+
+        await Promise.all(deletePromises);
+
+        console.log(`✅ Successfully deleted ${anonymousViewerIds.length} anonymous viewer users`);
+
+        return res.status(200).json({
+          success: true,
+          message: `Deleted ${anonymousViewerIds.length} anonymous viewer users`,
+          deletedCount: anonymousViewerIds.length,
+          userIds: anonymousViewerIds
+        });
+
+      } catch (error: any) {
+        console.error('❌ Error deleting anonymous viewers:', error);
+        return res.status(500).json({
+          error: 'Failed to delete anonymous viewers',
+          details: error instanceof Error ? error.message : String(error),
+          code: error.code || 'unknown'
         });
       }
     }
