@@ -65,10 +65,16 @@
   gap: 0.5rem;
 }
 
+/* Mobile: Stack user details vertically */
+.activity-user-details.mobile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
 .activity-username-button {
   font-weight: 600;
   color: rgb(31 41 55);
-  overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   max-width: 50%;

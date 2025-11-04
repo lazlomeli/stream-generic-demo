@@ -1,7 +1,6 @@
 /* Channel List Container */
 .channel-list {
   width: 24rem; /* w-64 */
-  border-right: 1px solid #e5e7eb; /* border-r border-gray-200 */
   background-color: white;
 }
 
@@ -56,23 +55,24 @@
 
 /* Channel Item Button */
 .channel-item-button {
+  padding: 0.5rem 1rem;
+  height: 48px;
   width: 100%;
-  padding: 0.75rem; /* Increased from 0.375rem for more height */
-  border-radius: 0.375rem; /* Slightly more rounded */
   text-align: left;
   transition: all 0.15s ease-in-out;
   border: none;
   background: none;
   cursor: pointer;
+  border-bottom: 0.5px solid #dddfe2;
 }
 
 .channel-item-button:hover {
-  background-color: #f9fafb; /* hover:bg-gray-50 */
+  background-color: #f7f7f7; /* hover:bg-gray-50 */
 }
 
 .channel-item-button.selected {
-  background-color: #eff6ff; /* bg-blue-50 */
-  border: 1px solid #bfdbfe; /* border border-blue-200 */
+  background-color: #efefef; /* bg-blue-50 */
+  /* border: 1px solid #adb3b8; */
 }
 
 /* Channel Item Content */

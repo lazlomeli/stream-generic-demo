@@ -6,7 +6,7 @@ import CustomAttachment from './CustomAttachment'
 import CustomMessageInput from './CustomMessageInput'
 import PinnedMessages from './PinnedMessages'
 import VoiceMessageHandler from './VoiceMessageHandler'
-import PhoneIcon from '../icons/phone.svg'
+import PhoneIcon from '../icons/call.svg'
 import VideoIcon from '../icons/video.svg'
 
 interface MobileChatViewProps {

@@ -4,8 +4,10 @@ import { ProfileStats } from "../components/ProfileStats";
 import { UserPlus, UserMinus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FeedsClient, ActivityResponse } from "@stream-io/feeds-client";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
+import { useResponsive } from "../contexts/ResponsiveContext";
 import Activity from "../components/Activity";
+import MobileBottomNav from "../components/MobileBottomNav";
 import "./UserProfile.css";
 
 interface UserProfileProps {
@@ -15,6 +17,8 @@ interface UserProfileProps {
 export function UserProfile({ onBack }: UserProfileProps) {
   const { user: currentUser, client } = useUser();
   const { userId } = useParams<{ userId: string }>();
+  const location = useLocation();
+  const { isMobileView, toggleView } = useResponsive();
   const [realUserName, setRealUserName] = useState('');
   const [userPosts, setUserPosts] = useState<ActivityResponse[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -82,7 +86,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
     }
   };
 
-  return (
+  const profileContent = (
     <div className="user-profile-container">
       {/* Profile Info */}
       <div className="profile-info">
@@ -146,6 +150,32 @@ export function UserProfile({ onBack }: UserProfileProps) {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+
+  if (isMobileView) {
+    return (
+      <div className="profile-page-container mobile-view">
+        <div className="profile-page-content mobile-content">
+          {profileContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          Desktop
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="profile-page-container desktop-view">
+      <div className="profile-page-content desktop-content">
+        {profileContent}
       </div>
     </div>
   );

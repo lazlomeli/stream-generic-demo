@@ -9,6 +9,8 @@ import "./Comment.css";
 
 interface CommentsPanelProps {
   activity: ActivityResponse;
+  showComments: boolean;
+  onToggleComments: () => void;
 }
 
 interface CommentWithReplies extends CommentResponse {
@@ -91,12 +93,11 @@ const ReplyForm = ({
   );
 };
 
-export default function CommentsPanel({ activity }: CommentsPanelProps) {
+export default function CommentsPanel({ activity, showComments, onToggleComments }: CommentsPanelProps) {
   const { showError } = useToast();
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyLoading, setReplyLoading] = useState(false);
   const [commentReactions, setCommentReactions] = useState<Record<string, Set<string>>>({});
@@ -384,15 +385,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
       className="comments-container"
       data-activity-id={activity.id}
     >
-      {commentCount > 0 && (
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="toggle-comments-button"
-        >
-          {showComments ? "Hide comments" : `View comments (${commentCount})`}
-        </button>
-      )}
-
       {showComments && (
         <>
           {showCommentInput ? (
@@ -421,8 +413,8 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                       } else if (e.key === "Escape") {
                         setShowCommentInput(false);
                         setNewComment("");
-                        if (commentCount === 0) {
-                          setShowComments(false);
+                        if (commentCount === 0 && showComments) {
+                          onToggleComments();
                         }
                       }
                     }}
@@ -440,8 +432,8 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
                         onClick={() => {
                           setShowCommentInput(false);
                           setNewComment("");
-                          if (commentCount === 0) {
-                            setShowComments(false);
+                          if (commentCount === 0 && showComments) {
+                            onToggleComments();
                           }
                         }}
                         className="comment-cancel-button"
@@ -484,18 +476,6 @@ export default function CommentsPanel({ activity }: CommentsPanelProps) {
             </div>
           )}
         </>
-      )}
-
-      {!showComments && commentCount === 0 && (
-        <button
-          onClick={() => {
-            setShowComments(true);
-            setShowCommentInput(true);
-          }}
-          className="toggle-comments-button"
-        >
-          Add a comment
-        </button>
       )}
     </div>
   );

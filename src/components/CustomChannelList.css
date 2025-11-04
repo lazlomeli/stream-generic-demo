@@ -10,6 +10,8 @@
 .stream-channel-list {
   flex: 1;
   overflow-y: auto;
+  width: 277px;
+  border-right: 0.5px solid #adb3b8;
 }
 
 /* Override Stream's default channel list styles to match our custom design */
@@ -18,14 +20,14 @@
   height: 100% !important;
 }
 
-.stream-channel-list .str-chat__channel-list-messenger {
+/* .stream-channel-list .str-chat__channel-list-messenger {
   width: 100% !important;
   height: 100% !important;
   background: white;
-}
+} */
 
-.stream-channel-list .str-chat__channel-list-messenger__main {
-  padding: 0.5rem;
+.str-chat__channel-list-react {
+  border: none !important;
 }
 
 /* Hide Stream's default load more button if not needed */
@@ -33,37 +35,46 @@
   display: none;
 }
 
-.create-channel-section {
+/* Header with search and create buttons */
+.channel-list-header {
   padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  background-color: white;
   display: flex;
-  gap: 0.75rem;
-  height: 75px
+  align-items: center;
+  gap: 1rem;
+  border-right: 0.5px solid #adb3b8;
+  border-bottom: 0.5px solid #adb3b8;
+}
+
+/* Search wrapper takes up remaining space */
+.channel-search-wrapper {
+  flex: 1;
+}
+
+/* Dropdown wrapper for positioning */
+.create-dropdown-wrapper {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .create-channel-button {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: white;
+  color: black;
+  border: 0.5px solid #adb3b8;
+  border-radius: 0.3rem;
   cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .create-channel-button:hover {
-  background: linear-gradient(135deg, #0080ca 0%, #002690 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background-color: #f3f4f6;
+  transition: background-color 0.3s ease;
 }
 
 .create-channel-button:active {
@@ -71,48 +82,84 @@
 }
 
 .create-channel-icon {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 300;
   line-height: 1;
 }
 
-.create-channel-text {
-  font-weight: 500;
+/* Dropdown Menu */
+.create-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 160px;
+  overflow: hidden;
+  z-index: 1000;
+  animation: dropdownSlideIn 0.15s ease-out;
 }
 
-/* Different styling for DM button */
-.create-channel-button.dm-button {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.create-channel-button.dm-button:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-
-
-/* Channel Search Container */
-.channel-search-container {
-  padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-}
-
-.channel-search-input {
+.dropdown-menu-item {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  background: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: background-color 0.15s ease;
   font-size: 0.875rem;
-  background-color: white;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
+}
+
+.dropdown-menu-item:hover {
+  background-color: #f3f4f6;
+}
+
+.dropdown-menu-item:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdown-item-icon {
+  flex-shrink: 0;
+  filter: invert(30%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.5) contrast(1);
+}
+
+
+
+/* Channel Search Input */
+.channel-search-input {
+  width: 100%;
+  height: 36px;
+  /* padding: 0.75rem 1rem; */
+  border: 0.5px solid #adb3b8;
+  border-radius: 0.3rem;
+  font-size: 0.875rem;
+  background-color: #f9fafb;
   transition: all 0.2s ease;
   outline: none;
 }
 
 .channel-search-input:focus {
   border-color: #3b82f6;
+  background-color: white;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -228,20 +275,24 @@
 
 /* Responsive design */
 @media (max-width: 640px) {
-  .create-channel-section {
+  .channel-list-header {
     padding: 0.75rem;
+    gap: 0.5rem;
   }
   
   .create-channel-button {
-    padding: 0.875rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .channel-search-container {
-    padding: 0.75rem;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
   }
 
   .channel-search-input {
+    height: 40px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .dropdown-menu-item {
     padding: 0.625rem 0.875rem;
     font-size: 0.8125rem;
   }

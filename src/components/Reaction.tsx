@@ -2,13 +2,15 @@ import { useUser } from "../hooks/feeds/useUser";
 import { ActivityResponse } from "@stream-io/feeds-client";
 import { Heart, Bookmark, Pin, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useResponsive } from "../contexts/ResponsiveContext";
 import "./Reaction.css";
 
 type Props = {
   activity: ActivityResponse;
+  onCommentsClick: () => void;
 };
 
-export default function ReactionsPanel({ activity }: Props) {
+export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
   const [loading, setLoading] = useState(false);
   const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>(
@@ -17,6 +19,7 @@ export default function ReactionsPanel({ activity }: Props) {
   const [isPinned, setIsPinned] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const { user, client } = useUser();
+  const { isMobileView } = useResponsive();
   useEffect(() => {
     if (!user) return;
 
@@ -184,15 +187,19 @@ export default function ReactionsPanel({ activity }: Props) {
           title={userReactions.has("like") ? "Unlike" : "Like"}
         >
           <Heart
-            className={`reaction-icon ${
+            className={`reaction-icon ${isMobileView ? "mobile" : ""} ${
               userReactions.has("like") ? "filled" : ""
             }`}
           />
           <span className="reaction-count">{reactionCount("like")}</span>
         </button>
 
-        <button title="Comments" className="reaction-button">
-          <MessageCircle className="reaction-icon" />
+        <button 
+          onClick={onCommentsClick}
+          title="Comments" 
+          className="reaction-button"
+        >
+          <MessageCircle className={`reaction-icon ${isMobileView ? "mobile" : ""}`} />
           <span className="reaction-count">{activity.comment_count}</span>
         </button>
 
@@ -202,7 +209,7 @@ export default function ReactionsPanel({ activity }: Props) {
           className={getReactionStyles("pin")}
           title={isPinned ? "Unpin" : "Pin"}
         >
-          <Pin className={`reaction-icon ${isPinned ? "filled" : ""}`} />
+          <Pin className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isPinned ? "filled" : ""}`} />
         </button>
 
         <button
@@ -212,7 +219,7 @@ export default function ReactionsPanel({ activity }: Props) {
           title={isBookmarked ? "Remove bookmark" : "Bookmark"}
         >
           <Bookmark
-            className={`reaction-icon ${isBookmarked ? "filled" : ""}`}
+            className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isBookmarked ? "filled" : ""}`}
           />
         </button>
       </div>

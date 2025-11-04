@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run server & vite",
     "server": "node server.js",
     "dev:local": "npm run build && npm run server",
     "build": "tsc && vite build",

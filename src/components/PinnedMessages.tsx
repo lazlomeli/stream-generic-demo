@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useChannelStateContext, useChatContext } from 'stream-chat-react';
 import PinIcon from '../icons/pin.svg';
+import AttachmentIcon from '../icons/attachment.svg';
 import './PinnedMessages.css';
 
 const PinnedMessages: React.FC = () => {
@@ -253,10 +254,25 @@ const PinnedMessages: React.FC = () => {
               onClick={() => scrollToMessage(message.id)}
             >
               <div className="pinned-message-text">
-                {message.text ? message.text : 
-                 message.attachments?.length ? 
-                 `📎 ${message.attachments.length} attachment${message.attachments.length > 1 ? 's' : ''}` :
-                 'No text content'}
+                {message.text ? (
+                  message.text
+                ) : message.attachments?.length ? (
+                  <>
+                    <img 
+                      src={AttachmentIcon} 
+                      alt="Attachment" 
+                      className="pinned-icon"
+                      style={{ 
+                        marginRight: '8px', 
+                        verticalAlign: 'middle', 
+                        filter: 'brightness(0) saturate(0%) grayscale(1) opacity(0.63)' 
+                      }} 
+                    />
+                    {`${message.attachments.length} attachment${message.attachments.length > 1 ? 's' : ''}`}
+                  </>
+                ) : (
+                  'No text content'
+                )}
               </div>
               <span className="pinned-message-time">
                 {formatTime(message.created_at || new Date())}

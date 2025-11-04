@@ -2,8 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { StreamChat } from 'stream-chat';
 import { StreamClient } from '@stream-io/node-sdk';
-import { connect } from 'getstream';
-import multer from 'multer';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,7 +12,7 @@ import { initializeFeedRoutes } from './routes/feed-routes.ts';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5100;
+const PORT = process.env.PORT || 3001;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

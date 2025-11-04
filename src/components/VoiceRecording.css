@@ -10,6 +10,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  padding-right: 8px;
 }
 
 .mobile-view .custom-attachment-button-external {
@@ -20,7 +21,7 @@
   position: absolute;
   right: 100px; /* Position it to the left of the voice recording button */
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-45%);
   z-index: 10;
   
   display: flex;
@@ -29,7 +30,6 @@
   width: 32px;
   height: 32px;
   padding: 8px;
-  margin-right: 25px;
   
   background: transparent;
   border: none;
@@ -41,9 +41,7 @@
 }
 
 .custom-attachment-button-external:hover {
-  background-color: #f3f4f6;
   color: #2563eb;
-  transform: translateY(-50%) scale(1.05);
 }
 
 .custom-attachment-button-external:active {
@@ -90,12 +88,11 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 50%;
+  border-radius: 3px;
   background: linear-gradient(135deg,#3b82f6,#8b5cf6);
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .voice-record-button-integrated:hover {

@@ -53,8 +53,6 @@ const Chat: React.FC<ChatProps> = () => {
   }>>([]);
 
   const clientRef = useRef<StreamChat | null>(null);
-
-  console.log('👤 Chat: user', user);
   
   const sanitizeUserId = useCallback((userId: string) => {
     return userId.replace(/[^a-zA-Z0-9@_-]/g, '');

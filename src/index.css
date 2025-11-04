@@ -5,16 +5,65 @@
 /* Custom styles */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+code, pre {
+  font-family: 'Geist Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Override Stream Chat fonts */
+.str-chat,
+.str-chat *,
+.str-chat__container,
+.str-chat__channel,
+.str-chat__main-panel,
+.str-chat__list,
+.str-chat__message,
+.str-chat__message-text,
+.str-chat__input,
+.str-chat__textarea,
+.str-chat-channel-list,
+.str-chat-channel-preview,
+.messaging {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif !important;
+}
+
+/* Override Stream Video fonts */
+.str-video,
+.str-video *,
+.str-video__call-controls,
+.str-video__participant,
+.str-video__participant-details {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif !important;
+}
+
+/* Override Stream Feeds fonts */
+.raf-activity,
+.raf-feed,
+.raf-comment,
+.raf-reaction {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif !important;
+}
+
+/* Override for all Stream code elements */
+.str-chat code,
+.str-chat pre,
+.str-video code,
+.str-video pre {
+  font-family: 'Geist Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace !important;
 }
 
 /* Custom scrollbar */

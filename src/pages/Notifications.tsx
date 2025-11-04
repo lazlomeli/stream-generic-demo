@@ -1,7 +1,10 @@
 import { useNotifications } from "../hooks/feeds/useNotifications";
 import { useUser } from "../hooks/feeds/useUser";
 import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { useResponsive } from "../contexts/ResponsiveContext";
 import { NotificationItem } from "../components/NotificationItem";
+import MobileBottomNav from "../components/MobileBottomNav";
 import "./Notifications.css";
 
 export default function NotificationsPage() {
@@ -12,6 +15,8 @@ export default function NotificationsPage() {
     error: notificationsError,
     markAsSeen,
   } = useNotifications();
+  const location = useLocation();
+  const { isMobileView, toggleView } = useResponsive();
 
   const loading = clientLoading || notificationsLoading;
 
@@ -36,7 +41,7 @@ export default function NotificationsPage() {
     return <div className="notifications-error">Error!</div>;
   }
 
-  return (
+  const notificationsContent = (
     <div className="feeds-container">
       <div className="notifications-header">
         <h1 className="notifications-title">Notifications</h1>
@@ -63,6 +68,32 @@ export default function NotificationsPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+
+  if (isMobileView) {
+    return (
+      <div className="notifications-page-container mobile-view">
+        <div className="notifications-page-content mobile-content">
+          {notificationsContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          Desktop
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="notifications-page-container desktop-view">
+      <div className="notifications-page-content desktop-content">
+        {notificationsContent}
+      </div>
     </div>
   );
 }

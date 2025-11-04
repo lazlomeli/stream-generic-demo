@@ -23,7 +23,7 @@ import { useResponsive } from '../contexts/ResponsiveContext';
 import nameUtils from '../utils/nameUtils';
 
 
-import PhoneIcon from '../icons/phone.svg';
+import PhoneIcon from '../icons/call.svg';
 import VideoIcon from '../icons/video.svg';
 import VideoOffIcon from '../icons/video-off.svg';
 import MicrophoneIcon from '../icons/microphone.svg';

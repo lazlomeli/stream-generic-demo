@@ -8,7 +8,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -20,7 +20,7 @@ body {
 .app {
   /* min-height: 100vh; */
   background: white;
-  padding-top: 4rem; /* Account for fixed header */
+  padding-top: 2.5rem; /* Account for fixed header */
 }
 
 /* Remove padding when header is hidden (fullscreen mode) */
@@ -93,43 +93,27 @@ body {
   background-color: rgba(255, 255, 255, 0.5); /* 50% transparent white */
   backdrop-filter: blur(10px); /* Blur effect for glassmorphism */
   -webkit-backdrop-filter: blur(10px); /* Safari support */
-  border-bottom: 1px solid rgba(243, 244, 246, 0.8); /* Semi-transparent border */
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid #adb3b8; 
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   width: 100%;
   z-index: 200; /* Above sidebars (z-index: 100) but below modals */
-  height: 4rem; /* Stable height that never changes */
-  min-height: 4rem; /* Ensure minimum height */
-  max-height: 4rem; /* Prevent height from growing */
+  height: 40px;
+  display: flex;
+  align-items: center;
 }
 
 .header-container {
   width: 100%;
-  padding: 0 1rem;
+  /* padding: 0 1rem; */
 }
 
 @media (min-width: 640px) {
   .header-container {
-    padding: 0 1.5rem;
+    padding: 0 1.1rem;
   }
-}
-
-@media (min-width: 1024px) {
-  .header-container {
-    padding: 0 2rem;
-  }
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 4rem;
-  min-height: 4rem; /* Ensure consistent height */
-  max-height: 4rem; /* Prevent expansion */
 }
 
 /* Left side - Navigation icons */
@@ -144,36 +128,46 @@ body {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  padding-left: 7px;
+}
+
+.header-content {
+  display: flex;
 }
 
 .header-nav-button {
-  padding: 0.5rem;
+  /* padding: 0.3rem; */
   color: #4b5563;
   background: transparent;
-  border: none;
-  border-radius: 0.5rem;
+  border: 0.5px solid #adb3b8;
+  border-radius: 0.3rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  width: 27px;
+  height: 27px;
 }
 
 .header-nav-button:hover {
-  color: #2563eb;
-  background-color: #eff6ff;
-  transform: scale(1.05);
+  background-color: #f7f7f7;
 }
 
 .header-nav-button img {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 14px;
+  height: 14px;
+}
+
+.header-logo {
+  border: none;
+  background: white;
 }
 
 .header-logo img {
-  width: 2rem;
-  height: 2rem;
+  width: 24px;
+  height: 24px;
 }
 
 /* Center - Responsive Toggle Button and Reset */
@@ -190,27 +184,19 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
+  /* background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%); */
+  border: 0.5px solid white;
   color: white;
-  border: none;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 0.3rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 27px;
+  background: linear-gradient(170deg,#0066ff 50%,#014ac0 75%);
 }
 
 .responsive-toggle-button:hover {
   background: linear-gradient(135deg, #0078be 0%, #001e6f 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.responsive-toggle-button img {
-  width: 1rem;
-  height: 1rem;
-  filter: brightness(0) invert(1); /* Make icons white */
+  transition: background-color 0.3s ease;
 }
 
 /* Right side - User info and actions */
@@ -235,8 +221,8 @@ body {
 }
 
 .user-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: 26px !important;
+  height: 26px !important;
   background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%);
   border-radius: 50%;
   display: flex;
@@ -248,11 +234,11 @@ body {
   overflow: hidden;
 }
 
-.user-avatar img {
+/* .user-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
+} */
 
 .user-name {
   font-size: 0.875rem;
@@ -261,11 +247,11 @@ body {
 }
 
 .header-logout-button {
-  padding: 0.5rem;
+  border: 0.5px solid #adb3b8;
+  padding: 0.3rem;
   color: #dc2626;
   background: transparent;
-  border: none;
-  border-radius: 0.5rem;
+  border-radius: 0.3rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -274,14 +260,12 @@ body {
 }
 
 .header-logout-button:hover {
-  color: #b91c1c;
-  background-color: #fef2f2;
-  transform: scale(1.05);
+  background-color: #f7f7f7;
 }
 
 .header-logout-button img {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 16px;
+  height: 16px;
 }
 
 /* Reset Button Styles */
@@ -290,8 +274,7 @@ body {
 }
 
 .reset-button:hover {
-  color: #b91c1c !important;
-  background-color: #fef2f2 !important;
+  background-color: #f7f7f7 !important;
 }
 
 .reset-button:disabled {
@@ -853,18 +836,8 @@ body {
     height: 18px;
   }
   
-  .header-container {
-    padding: 0 0.75rem;
-  }
-  
   /* Keep header height consistent on mobile */
   .header {
-    height: 4rem;
-    min-height: 4rem;
-    max-height: 4rem;
-  }
-  
-  .header-content {
     height: 4rem;
     min-height: 4rem;
     max-height: 4rem;
@@ -874,10 +847,6 @@ body {
     width: 4rem;
     height: 4rem;
     font-size: 1.5rem;
-  }
-  
-  .header-icons {
-    gap: 1rem;
   }
   
   .user-name {
@@ -904,25 +873,12 @@ body {
     padding: 0 0.75rem;
   }
   
-  .header-left {
-    gap: 1rem;
-  }
-  
-  .header-icons {
-    gap: 0.75rem;
-  }
-  
   .user-name {
     display: none;
   }
   
   .header-logout-button {
     padding: 0.375rem;
-  }
-  
-  .header-logout-button img {
-    width: 1.125rem;
-    height: 1.125rem;
   }
 }
 
@@ -973,25 +929,8 @@ body {
   margin-left: 2rem;
 }
 
-/* ===== HOVER EFFECTS ===== */
-.header-nav-button:hover {
-  transform: scale(1.05);
-}
-
-.header-logout-button:hover {
-  transform: scale(1.05);
-}
-
 .login-cta:hover {
   transform: translateY(-2px);
-}
-
-/* ===== FOCUS STATES ===== */
-.header-nav-button:focus,
-.header-logout-button:focus,
-.header-auth-button:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
 }
 
 .login-cta:focus {

@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import FallbackAvatar from './FallbackAvatar';
 import { useToast } from '../contexts/ToastContext';
 import OptionsIcon from '../icons/options.svg';
-import PhoneIcon from '../icons/phone.svg';
-import VideoIcon from '../icons/video.svg';
+import PhoneIcon from '../icons/call.svg';
+import VideoIcon from '../icons/video-call.svg';
 import './CustomChannelHeader.css';
 
 const CustomChannelHeader: React.FC = () => {

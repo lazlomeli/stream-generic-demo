@@ -2,8 +2,9 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
-import CastIcon from '../icons/cast.svg'
+import CastIcon from '../icons/stream.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
+import BellIcon from '../icons/bell.svg'
 
 interface MobileBottomNavProps {
   currentPath: string
@@ -78,6 +79,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentPath }) => {
         className={`mobile-nav-item ${currentPath === '/notifications' ? 'active' : ''}`}
         title="Alerts"
       >
+        <img src={BellIcon} alt="Alerts" />
         <span>Alerts</span>
       </button>
     </div>

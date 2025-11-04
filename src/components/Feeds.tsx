@@ -2,9 +2,11 @@ import { Composer } from './Composer';
 import Activity from './Activity';
 import { useEffect, useRef } from 'react';
 import { useSearch } from '../hooks/feeds/useSearch';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { usePopularActivities } from '../hooks/feeds/usePopularActivities';
 import { useFeedActivities } from '../hooks/feeds/useFeedActivities';
+import { useResponsive } from '../contexts/ResponsiveContext';
+import MobileBottomNav from './MobileBottomNav';
 import './Feeds.css';
 
 interface FeedsProps {
@@ -15,6 +17,8 @@ const Feeds = ({ feedType }: FeedsProps) => {
   const { activities: globalActivities, isLoading } = useSearch();
   const { popularActivities, isLoading: isLoadingPopularActivities } = usePopularActivities();
   const { activities: followingActivities, loading: isLoadingFollowingActivities } = useFeedActivities();
+  const { isMobileView, toggleView } = useResponsive();
+  const location = useLocation();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const highlightedPostId = searchParams.get('postId');
@@ -89,7 +93,7 @@ const Feeds = ({ feedType }: FeedsProps) => {
 
   const feedTitle = getFeedTitle();
 
-  return (
+  const feedsContent = (
     <div className="feeds-container">
       {feedTitle && (
         <div style={{ 
@@ -114,7 +118,33 @@ const Feeds = ({ feedType }: FeedsProps) => {
         ))}
       </div>
     </div>
-  )
+  );
+
+  if (isMobileView) {
+    return (
+      <div className="feeds-page-container mobile-view">
+        <div className="feeds-page-content mobile-content">
+          {feedsContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          Desktop
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="feeds-page-container desktop-view">
+      <div className="feeds-page-content desktop-content">
+        {feedsContent}
+      </div>
+    </div>
+  );
 };
 
 export default Feeds;

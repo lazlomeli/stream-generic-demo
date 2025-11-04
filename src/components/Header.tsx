@@ -5,7 +5,7 @@ import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import LogoutIcon from '../icons/logout-2.svg'
 import StreamLogo from '../assets/stream-logo.png'
-import CastIcon from '../icons/cast.svg'
+import CastIcon from '../icons/stream.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
 import ResetIcon from '../icons/restore.svg'  
 import { useResponsive } from '../contexts/ResponsiveContext'
@@ -161,7 +161,7 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
             {/* Stream Logo - always visible */}
             <button
               onClick={handleHomeClick}
-              className="header-nav-button header-logo"
+              className="header-logo"
               title="Home"
             >
               <img src={StreamLogo} alt="Stream Logo" />

@@ -1,3 +1,314 @@
+/* ===== RESPONSIVE PROFILE LAYOUT ===== */
+
+/* Profile Page Container */
+.profile-page-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Desktop View */
+.profile-page-container.desktop-view {
+  height: calc(100vh - 4rem);
+  background-color: white;
+  display: flex;
+}
+
+.profile-page-content.desktop-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+/* Mobile View */
+.profile-page-container.mobile-view {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3680bc 0%, #133d5f 100%);
+  padding: 2rem;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Desktop Toggle Button (positioned outside iPhone frame) */
+.desktop-toggle-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  padding: 5px 10px 5px 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.desktop-toggle-button:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.desktop-toggle-button:active {
+  transform: translateY(0);
+}
+
+/* Mobile Content - iPhone Frame */
+.profile-page-content.mobile-content {
+  position: relative;
+  width: 375px;
+  height: 730px;
+  border-radius: 40px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile Profile Container Adjustments */
+.mobile-view .user-profile-container {
+  width: 100%;
+  height: calc(100% - 60px); /* Account for bottom nav */
+  margin: 0;
+  border: none;
+  border-radius: 40px 40px 0 0;
+  overflow-y: auto;
+  box-shadow: none;
+  padding: 1rem;
+  /* Hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.mobile-view .user-profile-container::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Mobile Bottom Nav positioning */
+.mobile-view .mobile-bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0 0 40px 40px;
+}
+
+/* ===== MOBILE PROFILE SCALING ===== */
+
+/* Scale down profile info */
+.mobile-view .profile-info {
+  gap: 0.75rem;
+  margin-bottom: 1rem !important;
+}
+
+.mobile-view .profile-avatar {
+  width: 3rem !important;
+  height: 3rem !important;
+}
+
+.mobile-view .profile-avatar-text {
+  font-size: 1.125rem !important;
+}
+
+.mobile-view .profile-name {
+  font-size: 0.9375rem !important;
+  margin: 0 0 0.125rem 0 !important;
+}
+
+.mobile-view .profile-username {
+  font-size: 0.75rem !important;
+}
+
+/* Scale down follow button */
+.mobile-view .follow-toggle-button {
+  padding: 0.375rem 0.75rem !important;
+  font-size: 0.75rem !important;
+}
+
+.mobile-view .follow-icon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+}
+
+.mobile-view .follow-loading-spinner {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+}
+
+/* Scale down stats section */
+.mobile-view .profile-stats-section {
+  margin-bottom: 1rem !important;
+}
+
+.mobile-view .profile-stats {
+  padding: 0.75rem !important;
+}
+
+.mobile-view .stat-item {
+  font-size: 0.75rem !important;
+}
+
+.mobile-view .stat-value {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.mobile-view .stat-label {
+  font-size: 0.6875rem !important;
+}
+
+/* Scale down posts section */
+.mobile-view .profile-posts-section {
+  padding-top: 1rem !important;
+}
+
+.mobile-view .posts-title {
+  font-size: 0.9375rem !important;
+  margin: 0 0 0.625rem 0 !important;
+}
+
+.mobile-view .posts-list {
+  gap: 0.75rem !important;
+}
+
+.mobile-view .posts-loading,
+.mobile-view .posts-empty {
+  padding: 1.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Scale down activities in mobile profile */
+.mobile-view .activity-container {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.mobile-view .activity-header {
+  margin-bottom: 0.5rem;
+}
+
+.mobile-view .activity-author-name {
+  font-size: 0.8125rem !important;
+}
+
+.mobile-view .activity-timestamp {
+  font-size: 0.6875rem !important;
+}
+
+.mobile-view .activity-content {
+  font-size: 0.8125rem !important;
+  line-height: 1.4 !important;
+  margin-bottom: 0.5rem;
+}
+
+.mobile-view .activity-text {
+  font-size: 0.8125rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Scale down activity images */
+.mobile-view .activity-image,
+.mobile-view .smart-image-container {
+  max-height: 200px !important;
+  margin: 0.5rem 0 !important;
+}
+
+/* Scale down reactions and actions */
+.mobile-view .activity-actions {
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.mobile-view .activity-action-button {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.mobile-view .reaction-button {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+.mobile-view .reaction-count {
+  font-size: 0.75rem !important;
+}
+
+/* Scale down avatars in posts */
+.mobile-view .avatar,
+.mobile-view .activity-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 0.75rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Mobile activity styling */
+.mobile-view .activity-user-info {
+  margin-bottom: 1rem !important;
+}
+
+.mobile-view .activity-delete-button {
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0.25rem !important;
+}
+
+.mobile-view .activity-delete-button svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+}
+
+/* Mobile follow/unfollow button - icon only */
+.mobile-view .user-action-button span {
+  display: none !important;
+}
+
+.mobile-view .user-action-button {
+  padding: 0.375rem !important;
+}
+
+.mobile-view .user-action-button svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  margin: 0 !important;
+}
+
+/* Scale down enriched text elements */
+.mobile-view .enriched-url-preview {
+  padding: 0.5rem !important;
+  margin: 0.5rem 0 !important;
+}
+
+.mobile-view .enriched-url-title {
+  font-size: 0.8125rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.mobile-view .enriched-url-description {
+  font-size: 0.6875rem !important;
+}
+
+.mobile-view .enriched-url-domain {
+  font-size: 0.625rem !important;
+}
+
 /* UserProfile Component Styles */
 
 /* Main Container */
@@ -156,5 +467,17 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 480px) {
+  .profile-page-container.mobile-view {
+    padding: 1rem;
+  }
+  
+  .profile-page-content.mobile-content {
+    width: 320px;
+    height: 680px;
   }
 }

@@ -1,7 +1,9 @@
 import { useBookmarks } from "../hooks/feeds/useBookmarks";
 import { useUser } from "../hooks/feeds/useUser";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useResponsive } from "../contexts/ResponsiveContext";
 import Activity from "../components/Activity";
+import MobileBottomNav from "../components/MobileBottomNav";
 import "./BookmarkedPosts.css";
 
 export default function BookmarksPage() {
@@ -17,6 +19,8 @@ export default function BookmarksPage() {
   } = useBookmarks();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isMobileView, toggleView } = useResponsive();
 
   const loading = clientLoading || isLoading;
   const error = userError || bookmarksError;
@@ -39,7 +43,7 @@ export default function BookmarksPage() {
     return <div className="bookmarks-error">Error loading bookmarks</div>;
   }
 
-  return (
+  const bookmarksContent = (
     <div className="feeds-container">
       <div className="bookmarks-header">
         <h1>Bookmarks</h1>
@@ -66,6 +70,32 @@ export default function BookmarksPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+
+  if (isMobileView) {
+    return (
+      <div className="bookmarks-page-container mobile-view">
+        <div className="bookmarks-page-content mobile-content">
+          {bookmarksContent}
+          <MobileBottomNav currentPath={location.pathname} />
+        </div>
+        <button 
+          className="desktop-toggle-button"
+          onClick={toggleView}
+          title="Switch to Desktop View"
+        >
+          Desktop
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bookmarks-page-container desktop-view">
+      <div className="bookmarks-page-content desktop-content">
+        {bookmarksContent}
+      </div>
     </div>
   );
 }

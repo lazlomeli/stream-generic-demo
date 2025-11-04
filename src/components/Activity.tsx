@@ -7,12 +7,16 @@ import ReactionsPanel from "./Reaction";
 import { useFeedActions } from "../hooks/feeds/useFeedActions";
 import CommentsPanel from "./Comment";
 import { useNavigate } from "react-router-dom";
+import { useResponsive } from "../contexts/ResponsiveContext";
+import { useState } from "react";
 import "./Activity.css";
 
 export default function Activity({ activity }: { activity: ActivityResponse }) {
   const { user } = useUser();
   const { handleDeleteActivity } = useFeedActions();
+  const { isMobileView } = useResponsive();
   const navigate = useNavigate();
+  const [showComments, setShowComments] = useState(false);
 
   const handleUserClick = (userId: string) => {
     navigate(`/profile/${userId}`);
@@ -33,7 +37,7 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
         )}
         <div className="activity-content">
           <div className="activity-user-info">
-            <div className="activity-user-details">
+            <div className={`activity-user-details ${isMobileView ? 'mobile' : ''}`}>
               {activity.user?.id ? (
                 <button
                   onClick={() => handleUserClick(activity.user.id)}
@@ -79,8 +83,15 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
         </div>
       </div>
 
-      <ReactionsPanel activity={activity} />
-      <CommentsPanel activity={activity} />
+      <ReactionsPanel 
+        activity={activity} 
+        onCommentsClick={() => setShowComments(!showComments)} 
+      />
+      <CommentsPanel 
+        activity={activity} 
+        showComments={showComments}
+        onToggleComments={() => setShowComments(!showComments)}
+      />
     </article>
   );
 }

@@ -17,6 +17,8 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
 
   console.log('🔑 Connecting user with API key:', apiKey ? '✅ Set' : '❌ Missing');
 
+  console.log('🔑 Connecting user with user:', user);
+
   // Get auth token from unified auth-tokens endpoint (creates/restores user if needed)
   const res = await fetch("/api/auth-tokens", {
     method: "POST",

@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeIcon from '../icons/home.svg';
 import SendIcon from '../icons/send.svg';
-import CastIcon from '../icons/cast.svg';
+import CastIcon from '../icons/stream.svg';
 import BookmarkIcon from '../icons/bookmark.svg';
 import NotificationIcon from '../icons/bell.svg';
 import TrendingIcon from '../icons/trending-up.svg';
-import ExploreIcon from '../icons/search.svg';
+// import ExploreIcon from '../icons/search.svg';
+import ForyouIcon from '../icons/foryou.svg';
 import FollowingIcon from '../icons/user-heart.svg';
 import { useNotifications } from '../hooks/feeds/useNotifications';
 import './Sidebar.css';
@@ -96,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
             className={`sidebar-button sidebar-submenu-button ${isActive('/feeds/for-you') ? 'active' : ''}`}
             title="For You"
           >
-            <img src={ExploreIcon} alt="For You" className="sidebar-icon" />
+            <img src={ForyouIcon} alt="For You" className="sidebar-icon" />
             <span className="sidebar-label">For You</span>
           </button>
         </div>

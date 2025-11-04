@@ -18,9 +18,8 @@
   width: 280px !important;
   min-width: 250px !important;
   max-width: 320px !important;
-  border-right: 1px solid #e5e7eb !important;
   flex-shrink: 0 !important;
-  background-color: #f8f9fa !important;
+  background-color: white !important;
 }
 
 /* Main chat area - positioned on the right, takes up more space */
@@ -320,7 +319,7 @@
 .chat-content.mobile-content {
   position: relative;
   width: 375px;
-  height: 790px;
+  height: 730px;
   border-radius: 40px;
   overflow: hidden;
   background: white;
@@ -347,7 +346,6 @@
   width: 120px !important;
   min-width: 120px !important;
   max-width: 120px !important;
-  background-color: #f8f9fa !important;
 }
 
 /* Mobile Channel Adjustments */
@@ -1309,9 +1307,8 @@
 
 /* ===== DESKTOP MESSAGE INPUT STYLING ===== */
 .str-chat__message-input {
-  padding: 0.75rem !important;
+  padding-top: 8px !important;
   background: white !important;
-  border-top: 1px solid #e5e7eb !important;
   border-radius: 0 !important;
 }
 
@@ -1322,7 +1319,7 @@
   background: transparent !important;
   border: none !important;
   display: flex !important;
-  align-items: flex-start !important;
+  align-items: center !important;
   justify-content: flex-start !important;
   gap: 5px;
   flex-wrap: nowrap !important;
@@ -1337,14 +1334,14 @@
   flex: none !important;
   background: #f1f3f4 !important;
   border: none !important;
-  border-radius: 22px !important;
-  padding: 0.75rem 1rem !important;
+  border-radius: 3px !important;
+  padding: 4px 8px !important;
   margin: 0 !important;
-  min-height: 44px !important;
-  max-height: 150px !important;
+  min-height: 30px !important;
   display: flex !important;
   align-items: flex-start !important;
   order: 2 !important;
+  font-size: 12px !important;
 }
 
 /* Remove border from textarea container on desktop */
@@ -1429,18 +1426,16 @@
 
 /* Desktop voice recording button */
 .voice-record-button-integrated {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  max-width: 44px !important;
-  border-radius: 22px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 3px;
   background: #6b7280 !important;
   border: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: static !important;
-  margin: 0 !important;
+  margin-right: 6px !important;
   padding: 0 !important;
   flex-shrink: 0 !important;
   order: 3 !important;
@@ -1483,14 +1478,11 @@
 
 /* Update desktop custom send button size */
 .custom-send-button {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
+  width: 32px !important;
+  height: 32px !important;
   padding: 0 !important;
-  margin: 0 0 0 0.75rem !important;
   border: none !important;
-  border-radius: 22px !important;
+  border-radius: 3px;
   background: #3b82f6 !important;
   display: flex !important;
   align-items: center !important;

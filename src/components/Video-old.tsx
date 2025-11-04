@@ -32,7 +32,7 @@ import MobileBottomNav from './MobileBottomNav'
 
 // Import SVG icons for UI elements
 import ViewersIcon from '../icons/viewers.svg'
-import MessageCircleIcon from '../icons/message-circle.svg'
+import MessageCircleIcon from '../icons/send.svg'
 import CaretIcon from '../icons/caret.svg'
 // Import SVG icons for custom controls
 import MicrophoneIcon from '../icons/microphone.svg'
