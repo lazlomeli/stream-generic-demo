@@ -1,10 +1,8 @@
 /* Composer Component Styles */
 .composer-container {
-  border-radius: 0.75rem;
-  padding: 1rem !important;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 10px;
   margin-bottom: 1rem;
-  border: 1px solid rgb(229 231 235);
+  border-bottom: 0.5px solid #adb3b8;
   background-color: white;
   position: relative;
 }
@@ -56,19 +54,25 @@
 
 .composer-media-button {
   display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: rgb(96 165 250);
+  background: transparent;
   padding: 0.5rem;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  border-radius: 3px;
+  width: 32px;
+  height: 32px;
   border: none;
   transition: all 0.2s ease;
 }
 
 .composer-media-button:hover {
-  color: rgb(147 197 253);
-  background-color: rgba(96, 165, 250, 0.1);
+  background-color: rgba(131, 131, 131, 0.1);
+}
+
+.character-count {
+  font-size: 12px !important;
 }
 
 .emoji-picker-container {
@@ -130,8 +134,8 @@
   cursor: pointer;
   background-color: rgb(37 99 235);
   color: white;
-  padding: 0.5rem 1.5rem;
-  border-radius: 9999px;
+  padding: 0.5rem 1.2rem;
+  border-radius: 3px;
   border: none;
   font-weight: 500;
   transition: background-color 0.2s ease;
@@ -162,4 +166,19 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Composer Icons */
+.composer-icon {
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
+  transition: filter 0.2s ease;
+}
+
+.composer-media-button:hover .composer-icon {
+  filter: invert(30%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.5) contrast(1);
+}
+
+/* Send icon in submit button should be white */
+.composer-submit-button .composer-icon {
+  filter: brightness(0) invert(1);
 }

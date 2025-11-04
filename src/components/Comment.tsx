@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { ActivityResponse, CommentResponse } from "@stream-io/feeds-client";
-import { Heart, TextQuote, Trash2 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { useUser } from "../hooks/feeds/useUser";
 import { useComments } from "../hooks/feeds/useComments";
 import { useToast } from "../contexts/ToastContext";
+import heartIcon from "../icons/heart.svg";
+import heartFilledIcon from "../icons/heart-filled.svg";
+import replyIcon from "../icons/reply.svg";
+import trashIcon from "../icons/trash.svg";
 import "./Comment.css";
 
 interface CommentsPanelProps {
@@ -317,12 +320,12 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
                   className={getReactionStyles(comment, "like")}
                   onClick={() => handleReactToComment(comment, "like")}
                 >
-                  <Heart
-                    className={`w-4 h-4 ${
-                      getUserReactionForComment(comment, "like")
-                        ? "fill-current"
-                        : ""
-                    }`}
+                  <img
+                    src={getUserReactionForComment(comment, "like") ? heartFilledIcon : heartIcon}
+                    alt="Like"
+                    width="14"
+                    height="14"
+                    className="comment-icon"
                   />
                 </button>
                 {(reactionCounts[comment.id]?.["like"] > 0 || (comment.latest_reactions && comment.latest_reactions.length > 0)) && (
@@ -339,7 +342,13 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
                   }
                   className="comment-reply-button"
                 >
-                  <TextQuote className="w-4 h-4" /> Reply
+                  <img
+                    src={replyIcon}
+                    alt="Reply"
+                    width="14"
+                    height="14"
+                    className="comment-icon"
+                  />
                 </button>
               ) : null}
               {comment.user?.id === user?.nickname && (
@@ -347,7 +356,13 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
                   onClick={() => handleDeleteComment(comment.id)}
                   className="comment-delete-button"
                 >
-                  <Trash2 className="w-4 h-4" /> Delete
+                  <img
+                    src={trashIcon}
+                    alt="Delete"
+                    width="14"
+                    height="14"
+                    className="comment-icon"
+                  />
                 </button>
               )}
             </div>

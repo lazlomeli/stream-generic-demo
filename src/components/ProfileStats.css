@@ -124,8 +124,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  background-color: rgb(249 250 251);
-  border-radius: 0.5rem;
+  background-color: white;
   cursor: pointer;
 }
 

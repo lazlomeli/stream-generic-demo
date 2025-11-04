@@ -1,8 +1,14 @@
 import { useUser } from "../hooks/feeds/useUser";
 import { ActivityResponse } from "@stream-io/feeds-client";
-import { Heart, Bookmark, Pin, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useResponsive } from "../contexts/ResponsiveContext";
+import heartIcon from "../icons/heart.svg";
+import heartFilledIcon from "../icons/heart-filled.svg";
+import pinIcon from "../icons/feed-pin.svg";
+import pinFilledIcon from "../icons/feed-pin-filled.svg";
+import commentIcon from "../icons/comment.svg";
+import bookmarkIcon from "../icons/bookmark.svg";
+import bookmarkFilledIcon from "../icons/bookmark-filled.svg";
 import "./Reaction.css";
 
 type Props = {
@@ -186,7 +192,11 @@ export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
           className={getReactionStyles("like")}
           title={userReactions.has("like") ? "Unlike" : "Like"}
         >
-          <Heart
+          <img
+            src={userReactions.has("like") ? heartFilledIcon : heartIcon}
+            alt="Like"
+            width="14"
+            height="14"
             className={`reaction-icon ${isMobileView ? "mobile" : ""} ${
               userReactions.has("like") ? "filled" : ""
             }`}
@@ -199,7 +209,13 @@ export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
           title="Comments" 
           className="reaction-button"
         >
-          <MessageCircle className={`reaction-icon ${isMobileView ? "mobile" : ""}`} />
+          <img
+            src={commentIcon}
+            alt="Comments"
+            width="14"
+            height="14"
+            className={`reaction-icon ${isMobileView ? "mobile" : ""}`}
+          />
           <span className="reaction-count">{activity.comment_count}</span>
         </button>
 
@@ -209,7 +225,13 @@ export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
           className={getReactionStyles("pin")}
           title={isPinned ? "Unpin" : "Pin"}
         >
-          <Pin className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isPinned ? "filled" : ""}`} />
+          <img
+            src={isPinned ? pinFilledIcon : pinIcon}
+            alt="Pin"
+            width="14"
+            height="14"
+            className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isPinned ? "filled" : ""}`}
+          />
         </button>
 
         <button
@@ -218,7 +240,11 @@ export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
           className={getReactionStyles("bookmark")}
           title={isBookmarked ? "Remove bookmark" : "Bookmark"}
         >
-          <Bookmark
+          <img
+            src={isBookmarked ? bookmarkFilledIcon : bookmarkIcon}
+            alt="Bookmark"
+            width="14"
+            height="14"
             className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isBookmarked ? "filled" : ""}`}
           />
         </button>

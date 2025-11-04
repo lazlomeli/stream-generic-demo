@@ -1,17 +1,14 @@
 /* Right Sidebar Component Styles */
 .right-sidebar {
-  width: 400px !important;
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 0.5px solid #adb3b8;
   margin: 30px !important;
-  border-radius: 1rem; /* Rounded edges */
+  border-radius: 3px;
   position: sticky;
   top: 30px;
-  height: calc(100vh - 60px); /* Full viewport height minus top/bottom margins */
-  z-index: 100; /* Below header (z-index: 200) and loading overlays (z-index: 99999) */
+  z-index: 100;
   overflow-y: auto;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
-  transition: all 0.3s ease-out; /* Smooth transitions for sliding */
+  transition: all 0.3s ease-out;
   
   /* Hide scrollbar */
   scrollbar-width: none; /* Firefox */
@@ -19,7 +16,7 @@
 }
 
 .right-sidebar-content {
-  padding: 1.5rem 1.5rem 2rem 1.5rem; /* Simplified padding */
+  /* padding: 8px 10px; */
   transition: all 0.2s ease-out; /* Smooth transitions */
 }
 
@@ -30,17 +27,13 @@
   display: none;
 }
 
-.sidebar-section {
-  margin-bottom: 2rem;
-}
-
 .section-title {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: #111827;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
+  padding: 6px 0px 5px 10px;
+  border-bottom: 0.5px solid #adb3b8;
+  width: 100%;
 }
 
 /* Trending Hashtags */
@@ -85,25 +78,23 @@
 .users-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 5px;
 }
 
 .user-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
-  background-color: #ffffff;
-  border: 1px solid #f3f4f6;
-  border-radius: 0.75rem;
+  padding: 5px 10px;
+  background-color: white;
   transition: all 0.2s ease;
 }
 
 .user-item:hover {
-  background-color: #f8fafc;
+  background-color: #f4f4f4;
   border-color: #e2e8f0;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* transform: translateY(-1px); */
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); */
 }
 
 .user-avatar {

@@ -11,6 +11,7 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  margin-left: 10px;
 }
 
 .reaction-button {
@@ -72,15 +73,44 @@
 }
 
 .reaction-icon {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 14px;
+  height: 14px;
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
+  transition: filter 0.2s ease;
 }
 
 .reaction-icon.mobile {
-  width: 1rem;
-  height: 1rem;
+  width: 14px;
+  height: 14px;
 }
 
 .reaction-icon.filled {
   fill: currentColor;
+}
+
+/* Red color for liked heart */
+.reaction-button.like.active .reaction-icon {
+  filter: invert(25%) sepia(95%) saturate(3342%) hue-rotate(343deg) brightness(92%) contrast(93%);
+}
+
+.reaction-button.like:hover .reaction-icon {
+  filter: invert(25%) sepia(95%) saturate(3342%) hue-rotate(343deg) brightness(92%) contrast(93%);
+}
+
+/* Blue color for active pin */
+.reaction-button.pin.active .reaction-icon {
+  filter: invert(36%) sepia(96%) saturate(1853%) hue-rotate(211deg) brightness(95%) contrast(91%);
+}
+
+.reaction-button.pin:hover .reaction-icon {
+  filter: invert(36%) sepia(96%) saturate(1853%) hue-rotate(211deg) brightness(95%) contrast(91%);
+}
+
+/* Blue color for active bookmark */
+.reaction-button.bookmark.active .reaction-icon {
+  filter: invert(36%) sepia(96%) saturate(1853%) hue-rotate(211deg) brightness(95%) contrast(91%);
+}
+
+.reaction-button.bookmark:hover .reaction-icon {
+  filter: invert(36%) sepia(96%) saturate(1853%) hue-rotate(211deg) brightness(95%) contrast(91%);
 }

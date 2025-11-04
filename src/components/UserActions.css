@@ -5,22 +5,25 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
+  gap: 10px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
   border: none;
+  min-width: 92px;
+  justify-content: space-around;
 }
 
 .user-action-button.following {
-  background-color: rgb(75 85 99);
-  color: white;
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  border: 0.5px solid #adb3b8;
 }
 
 .user-action-button.following:hover:not(:disabled) {
-  background-color: rgb(55 65 81);
+  background-color: rgb(232, 232, 232);
 }
 
 .user-action-button:not(.following) {

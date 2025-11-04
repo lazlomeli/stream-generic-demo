@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Image, Smile, ListTodo } from "lucide-react";
 import { useUser } from "../hooks/feeds/useUser";
 import { Avatar } from "./Avatar";
 import { useFeedActions } from "../hooks/feeds/useFeedActions";
 import EmojiPicker, { Theme } from "emoji-picker-react";
+import emojiIcon from "../icons/emoji.svg";
+import imageIcon from "../icons/image.svg";
+import pollIcon from "../icons/poll.svg";
+import sendIcon from "../icons/send-msg.svg";
 import "./Composer.css";
 
 export function Composer() {
@@ -86,7 +89,13 @@ export function Composer() {
                   className="composer-media-button"
                   title="Add emoji"
                 >
-                  <Smile className="w-5 h-5" />
+                  <img
+                    src={emojiIcon}
+                    alt="Add emoji"
+                    width="18"
+                    height="18"
+                    className="composer-icon"
+                  />
                 </button>
                 <button
                   type="button"
@@ -96,7 +105,13 @@ export function Composer() {
                   className="composer-media-button"
                   title="Add poll"
                 >
-                  <ListTodo className="w-5 h-5" />
+                  <img
+                    src={pollIcon}
+                    alt="Add poll"
+                    width="18"
+                    height="18"
+                    className="composer-icon"
+                  />
                 </button>
                 <button
                   type="button"
@@ -106,7 +121,13 @@ export function Composer() {
                   className="composer-media-button"
                   title="Add image"
                 >
-                  <Image className="w-5 h-5" />
+                  <img
+                    src={imageIcon}
+                    alt="Add image"
+                    width="18"
+                    height="18"
+                    className="composer-icon"
+                  />
                 </button>
 
                 {showEmojiPicker && (
@@ -157,8 +178,13 @@ export function Composer() {
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      <span>Post</span>
+                      <img
+                        src={sendIcon}
+                        alt="Send"
+                        width="18"
+                        height="18"
+                        className="composer-icon"
+                      />
                     </>
                   )}
                 </button>

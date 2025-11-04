@@ -9,6 +9,8 @@
   justify-content: center;
   color: white;
   font-weight: 600;
+  width: 30px !important;
+  height: 30px !important;
 }
 
 /* Size Variants */

@@ -18,11 +18,11 @@
 
 .reply-textarea {
   width: 100%;
-  border-radius: 0.5rem;
+  border-radius: 3px;
   background-color: rgb(249 250 251);
   color: rgb(17 24 39);
   padding: 0.75rem;
-  font-size: 0.875rem;
+  font-size: 12px;
   font-family: inherit;
   border: 1px solid rgb(209 213 219);
   outline: none !important;
@@ -33,7 +33,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.5rem;
 }
 
 .reply-buttons {
@@ -44,9 +43,10 @@
 .reply-submit-button {
   background-color: rgb(37 99 235);
   color: white;
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  font-size: 12px;
+  height: 25px;
+  width: 60px;
+  border-radius: 3px;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -62,18 +62,22 @@
 }
 
 .reply-cancel-button {
-  background-color: rgb(75 85 99);
-  color: white;
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: none;
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  border: 0.5px solid #adb3b8;
+  border-radius: 3px;
+  font-size: 12px;
+  height: 25px;
+  width: 60px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .reply-cancel-button:hover {
-  background-color: rgb(55 65 81);
+  background-color: rgb(234, 234, 234);
 }
 
 .reply-character-count {
@@ -123,11 +127,11 @@
 
 .comment-textarea {
   width: 100%;
-  border-radius: 0.5rem;
+  border-radius: 3px;
   background-color: rgb(249 250 251);
   color: rgb(17 24 39);
   padding: 0.75rem;
-  font-size: 0.875rem;
+  font-size: 12px;
   font-family: inherit;
   border: 1px solid rgb(209 213 219);
   outline: none !important;
@@ -138,7 +142,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.5rem;
 }
 
 .comment-buttons {
@@ -149,9 +152,10 @@
 .comment-submit-button {
   background-color: rgb(37 99 235);
   color: white;
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  font-size: 12px;
+  height: 25px;
+  width: 60px;
+  border-radius: 3px;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -167,18 +171,22 @@
 }
 
 .comment-cancel-button {
-  background-color: rgb(75 85 99);
-  color: white;
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: none;
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  border: 0.5px solid #adb3b8;
+  border-radius: 3px;
+  font-size: 12px;
+  height: 25px;
+  width: 60px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .comment-cancel-button:hover {
-  background-color: rgb(55 65 81);
+  background-color: rgb(234, 234, 234);
 }
 
 .comment-character-count {
@@ -192,15 +200,16 @@
 }
 
 .comment-placeholder-button {
-  width: 100%;
+  width: 560px;
   text-align: left;
   padding: 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 3px;
   background-color: rgb(249 250 251);
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
   color: rgb(55 65 81);
+  margin-left: 12px;
 }
 
 .comment-placeholder-button:hover {
@@ -211,14 +220,16 @@
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  margin-left: 12px;
 }
 
 .comments-title {
-  font-size: 0.875rem;
+  font-size: 12px;
   font-weight: 500;
   color: rgb(55 65 81);
   margin-bottom: 0.75rem;
+  border-top: 0.5px solid #c7c8c9;
+  padding-top: 0.75rem;
 }
 
 /* Comment Item */
@@ -254,7 +265,7 @@
 }
 
 .comment-timestamp {
-  color: rgb(75 85 99);
+  color: rgb(176, 179, 187);
   font-size: 0.75rem;
 }
 
@@ -284,10 +295,6 @@
   padding: 0;
 }
 
-.comment-reaction-button:hover {
-  transform: scale(1.1);
-}
-
 .comment-reaction-button.like {
   color: rgb(75 85 99);
 }
@@ -309,7 +316,7 @@
   cursor: pointer;
   transition: colors 0.2s ease;
   font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem;
   border-radius: 0.375rem;
   background: transparent;
   border: none;
@@ -320,15 +327,14 @@
 }
 
 .comment-reply-button:hover {
-  background-color: rgb(229 231 235);
+  color: black;
 }
 
 .comment-delete-button {
-  color: rgb(220 38 38);
   cursor: pointer;
   transition: colors 0.2s ease;
   font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem;
   border-radius: 0.375rem;
   background: transparent;
   border: none;
@@ -338,7 +344,6 @@
 }
 
 .comment-delete-button:hover {
-  color: rgb(153 27 27);
   background-color: rgb(254 226 226);
 }
 
@@ -361,7 +366,45 @@
 /* Empty State */
 .comments-empty {
   text-align: center;
-  padding: 1.5rem 0;
+  padding: 0.5rem 0 1.5rem 0;
   color: rgb(75 85 99);
   font-size: 0.875rem;
+}
+
+/* Comment Icons */
+.comment-icon {
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
+  transition: filter 0.2s ease;
+  vertical-align: middle;
+}
+
+/* Like button icon states */
+.comment-reaction-button.like .comment-icon {
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
+}
+
+.comment-reaction-button.like:hover .comment-icon {
+  filter: invert(25%) sepia(95%) saturate(3342%) hue-rotate(343deg) brightness(92%) contrast(93%);
+}
+
+.comment-reaction-button.like.active .comment-icon {
+  filter: invert(25%) sepia(95%) saturate(3342%) hue-rotate(343deg) brightness(92%) contrast(93%);
+}
+
+/* Reply button icon states */
+.comment-reply-button .comment-icon {
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
+}
+
+.comment-reply-button:hover .comment-icon {
+  filter: invert(30%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.5) contrast(1);
+}
+
+/* Delete button icon states */
+.comment-delete-button .comment-icon {
+  filter: invert(25%) sepia(95%) saturate(3342%) hue-rotate(343deg) brightness(92%) contrast(93%);
+}
+
+.comment-delete-button:hover .comment-icon {
+  filter: invert(19%) sepia(96%) saturate(4067%) hue-rotate(345deg) brightness(85%) contrast(96%);
 }
