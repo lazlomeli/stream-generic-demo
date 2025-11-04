@@ -364,34 +364,37 @@
 
 /* Follow Button */
 .follow-toggle-button {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  border: none;
+  gap: 10px;
   cursor: pointer;
+  min-width: 92px;
+  justify-content: space-around;
 }
 
 .follow-toggle-button.following {
-  background-color: rgb(229, 231, 235);
-  color: rgb(31, 41, 55);
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  border: 0.5px solid #adb3b8;
 }
 
 .follow-toggle-button.following:hover:not(:disabled) {
-  background-color: rgb(220, 38, 38);
-  color: white;
+  background-color: rgb(232, 232, 232);
 }
 
 .follow-toggle-button:not(.following) {
-  background-color: rgb(37, 99, 235);
+  background-color: rgb(37 99 235);
   color: white;
+  border: none;
 }
 
 .follow-toggle-button:not(.following):hover:not(:disabled) {
-  background-color: rgb(29, 78, 216);
+  background-color: rgb(29 78 216);
 }
 
 .follow-toggle-button:disabled {

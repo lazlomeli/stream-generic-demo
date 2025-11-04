@@ -97,11 +97,10 @@ const Feeds = ({ feedType }: FeedsProps) => {
     <div className="feeds-container">
       {feedTitle && (
         <div style={{ 
-          fontSize: '1.5rem', 
-          fontWeight: 700, 
+          fontSize: '18px', 
+          fontWeight: 600, 
           color: '#111827', 
-          marginBottom: '1.5rem',
-          padding: '0 1rem'
+          padding: '10px 10px 10px 15px'
         }}>
           {feedTitle}
         </div>

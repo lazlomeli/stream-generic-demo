@@ -59,7 +59,7 @@ export function Composer() {
     <div className={`composer-container ${isActive ? "active" : ""}`}>
       <form onSubmit={handleSubmit}>
         <div className="composer-form-container">
-          <Avatar userName={user?.name} userId={user?.nickname} size="md" />
+          <Avatar userName={user?.name} userId={user?.nickname} size="md" style={{ marginTop: "8px" }}/>
           <div className="flex-1">
             <textarea
               value={text}

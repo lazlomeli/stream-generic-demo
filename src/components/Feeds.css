@@ -89,9 +89,16 @@
   border: 0.5px solid #adb3b8;
   border-radius: 3px;
   margin: 30px;
-  z-index: 100;
+  z-index: 1;
   overflow-y: auto;
   transition: all 0.3s ease-out;
+  /* Hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.feeds-container::-webkit-scrollbar {
+  display: none; /* WebKit (Chrome, Safari) */
 }
 
 /* Mobile Feeds Container Adjustments */

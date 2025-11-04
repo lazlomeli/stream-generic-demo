@@ -99,7 +99,7 @@ body {
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 200; /* Above sidebars (z-index: 100) but below modals */
+  z-index: 1;
   height: 40px;
   display: flex;
   align-items: center;

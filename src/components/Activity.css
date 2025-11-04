@@ -2,7 +2,7 @@
 .activity-container {
   border-bottom: 0.5px solid #adb3b8;
   margin: 1rem 0;
-  padding: 0px 10px;
+  padding: 1rem 20px 10px 20px;
   transition: background-color 0.3s ease-out, border 0.3s ease-out, box-shadow 0.3s ease-out;
   background-color: transparent;
 }

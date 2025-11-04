@@ -6,6 +6,7 @@ interface AvatarProps {
   userName?: string;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const avatarColors = [
@@ -45,6 +46,7 @@ export function Avatar({
   userName,
   size = "md",
   className = "",
+  style = {},
 }: AvatarProps) {
   const { getUserInitials } = useUser();
 
@@ -73,6 +75,7 @@ export function Avatar({
   return (
     <div
       className={`avatar ${sizeClasses[size]} ${colorClass} ${className}`}
+      style={style}
       title={userName || userId || "..."}
     >
       {initials}
