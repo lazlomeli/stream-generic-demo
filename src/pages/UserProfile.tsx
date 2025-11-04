@@ -146,7 +146,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
         ) : (
           <div className="posts-list">
             {userPosts.map((post) => (
-              <Activity key={`profile-post-${post.id}`} activity={post} />
+              <Activity key={`profile-post-${post.id}`} activity={post} hideFollowButton={true} />
             ))}
           </div>
         )}

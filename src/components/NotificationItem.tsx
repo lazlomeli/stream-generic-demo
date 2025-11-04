@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "./Avatar";
 import { formatRelativeTime } from "../utils/timeUtils";
+import heartFilledIcon from "../icons/heart-filled.svg";
+import commentIcon from "../icons/comment.svg";
+import userHeartIcon from "../icons/user-heart.svg";
 import "./NotificationItem.css";
 
 interface NotificationActivity {
@@ -51,11 +54,35 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   const getNotificationIcon = () => {
     switch (notification.type) {
       case "follow":
-        return "👤";
+        return (
+          <img
+            src={userHeartIcon}
+            alt="Follow"
+            width="16"
+            height="16"
+            className="notification-icon follow-icon"
+          />
+        );
       case "reaction":
-        return "❤️";
+        return (
+          <img
+            src={heartFilledIcon}
+            alt="Like"
+            width="16"
+            height="16"
+            className="notification-icon like-icon"
+          />
+        );
       case "comment":
-        return "💬";
+        return (
+          <img
+            src={commentIcon}
+            alt="Comment"
+            width="16"
+            height="16"
+            className="notification-icon comment-icon"
+          />
+        );
       default:
         return "🔔";
     }
@@ -103,11 +130,13 @@ export function NotificationItem({ notification }: NotificationItemProps) {
           userName={notification.user?.name || notification.user?.id}
           size="md"
         />
-        <span className="notification-item-icon">{getNotificationIcon()}</span>
       </div>
 
       <div className="notification-item-content">
-        <div className="notification-item-text">{getNotificationText()}</div>
+        <div className="notification-item-text">
+          <span className="notification-item-icon-inline">{getNotificationIcon()}</span>
+          {getNotificationText()}
+        </div>
 
         {notification.type === "comment" && notification.text && (
           <div className="notification-item-preview">

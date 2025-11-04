@@ -314,9 +314,9 @@
 /* Main Container */
 .user-profile-container {
   background-color: white;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  border: 1px solid rgb(229, 231, 235);
+  border-radius: 3px;
+  padding: 2rem;
+  border: 0.5px solid #adb3b8;
   margin-top: 30px;
   width: 600px !important;
 }
@@ -375,6 +375,7 @@
   cursor: pointer;
   min-width: 92px;
   justify-content: space-around;
+  margin-right: 20px;
 }
 
 .follow-toggle-button.following {
@@ -424,14 +425,13 @@
 /* Posts Section */
 .profile-posts-section {
   border-top: 1px solid rgb(229, 231, 235);
-  padding-top: 1.5rem;
+  padding-top: 20px;
 }
 
 .posts-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: rgb(31, 41, 55);
-  margin: 0 0 0.75rem 0;
 }
 
 .posts-list {

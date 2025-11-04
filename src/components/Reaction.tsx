@@ -14,9 +14,10 @@ import "./Reaction.css";
 type Props = {
   activity: ActivityResponse;
   onCommentsClick: () => void;
+  forceBookmarked?: boolean;
 };
 
-export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
+export default function ReactionsPanel({ activity, onCommentsClick, forceBookmarked = false }: Props) {
   const [loading, setLoading] = useState(false);
   const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>(
@@ -63,8 +64,8 @@ export default function ReactionsPanel({ activity, onCommentsClick }: Props) {
     setReactionCounts(counts);
     setUserReactions(userReacts);
     setIsPinned(isPinnedByUser);
-    setIsBookmarked(isBookmarkedByUser);
-  }, [activity, user]);
+    setIsBookmarked(forceBookmarked || isBookmarkedByUser);
+  }, [activity, user, forceBookmarked]);
 
   const handleReaction = async (type: string) => {
     if (loading || !client) return;

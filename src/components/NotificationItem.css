@@ -4,8 +4,8 @@
   gap: 0.75rem;
   padding: 1rem;
   background: white;
-  border-radius: 0.5rem;
-  border: 1px solid rgb(229, 231, 235);
+  border-radius: 3px;
+  border: 0.5px solid #adb3b8;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -14,34 +14,19 @@
 .notification-item-card:hover {
   background: rgb(249, 250, 251);
   border-color: rgb(209, 213, 219);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.notification-item-card:active {
-  transform: translateY(0);
 }
 
 /* Avatar Section */
 .notification-item-avatar {
-  position: relative;
   flex-shrink: 0;
 }
 
-.notification-item-icon {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 1.25rem;
-  height: 1.25rem;
-  background: white;
-  border-radius: 50%;
-  display: flex;
+.notification-item-icon-inline {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  border: 2px solid white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin-right: 0.5rem;
+  vertical-align: middle;
 }
 
 /* Content Section */
@@ -69,11 +54,11 @@
   font-size: 0.875rem;
   color: rgb(107, 114, 128);
   padding: 0.5rem 0.75rem;
-  background: rgb(249, 250, 251);
+  background: rgb(240, 241, 241);
   border-radius: 0.375rem;
   border-left: 2px solid rgb(209, 213, 219);
   margin-top: 0.25rem;
-  font-style: italic;
+  /* font-style: italic; */
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -92,6 +77,26 @@
 .notification-item-card:focus {
   outline: 2px solid rgb(59, 130, 246);
   outline-offset: 2px;
+}
+
+/* Notification Icon Styles */
+.notification-icon {
+  display: block;
+}
+
+/* Red color for like/reaction icon */
+.notification-icon.like-icon {
+  filter: invert(25%) sepia(95%) saturate(3342%) hue-rotate(343deg) brightness(92%) contrast(93%);
+}
+
+/* Dimmed gray for follow icon */
+.notification-icon.follow-icon {
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
+}
+
+/* Dimmed gray for comment icon */
+.notification-icon.comment-icon {
+  filter: invert(47%) sepia(6%) saturate(579%) hue-rotate(181deg) brightness(95%) contrast(88%);
 }
 
 /* Mobile Responsiveness */

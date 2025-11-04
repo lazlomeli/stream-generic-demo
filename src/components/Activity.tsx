@@ -11,7 +11,13 @@ import { useResponsive } from "../contexts/ResponsiveContext";
 import { useState } from "react";
 import "./Activity.css";
 
-export default function Activity({ activity }: { activity: ActivityResponse }) {
+interface ActivityProps {
+  activity: ActivityResponse;
+  hideFollowButton?: boolean;
+  forceBookmarked?: boolean;
+}
+
+export default function Activity({ activity, hideFollowButton = false, forceBookmarked = false }: ActivityProps) {
   const { user } = useUser();
   const { handleDeleteActivity } = useFeedActions();
   const { isMobileView } = useResponsive();
@@ -62,7 +68,7 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
               )}
             </div>
             <div className="activity-actions">
-              {activity.user?.id && activity.user.id !== user?.nickname && (
+              {!hideFollowButton && activity.user?.id && activity.user.id !== user?.nickname && (
                 // Follow button
                 <UserActions targetUserId={activity.user.id} />
               )}
@@ -85,7 +91,8 @@ export default function Activity({ activity }: { activity: ActivityResponse }) {
 
       <ReactionsPanel 
         activity={activity} 
-        onCommentsClick={() => setShowComments(!showComments)} 
+        onCommentsClick={() => setShowComments(!showComments)}
+        forceBookmarked={forceBookmarked}
       />
       <CommentsPanel 
         activity={activity} 

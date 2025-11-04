@@ -65,7 +65,7 @@ export default function BookmarksPage() {
               onClick={(e) => handlePostClick(activity.id, e)}
               className="bookmarked-post-wrapper"
             >
-              <Activity activity={activity} />
+              <Activity activity={activity} forceBookmarked={true} />
             </div>
           ))}
         </div>
