@@ -18,7 +18,7 @@
   height: 100%;
   display: flex;
   justify-content: center;
-  overflow-y: auto;
+  overflow-y: visible;
   background: #f9fafb;
 }
 
@@ -86,6 +86,7 @@
 /* Feeds Container - Base Styles */
 .feeds-container {
   width: 600px;
+  max-height: calc(100vh - 60px);
   background: white;
   border: 0.5px solid #adb3b8;
   border-radius: 3px;
