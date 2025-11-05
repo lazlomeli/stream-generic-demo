@@ -84,9 +84,7 @@ function AppContent() {
                   </ProtectedRoute>
                 } />
                 <Route path="/feeds" element={
-                  <ProtectedRoute>
-                    <Feeds />
-                  </ProtectedRoute>
+                  <Navigate to="/feeds/for-you" replace />
                 } />
                 <Route path="/feeds/trending" element={
                   <ProtectedRoute>
@@ -101,6 +99,11 @@ function AppContent() {
                 <Route path="/feeds/for-you" element={
                   <ProtectedRoute>
                     <Feeds feedType="for-you" />
+                  </ProtectedRoute>
+                } />
+                <Route path="/feeds/hashtag/:hashtag" element={
+                  <ProtectedRoute>
+                    <Feeds feedType="hashtag" />
                   </ProtectedRoute>
                 } />
                 <Route path="/bookmarked" element={

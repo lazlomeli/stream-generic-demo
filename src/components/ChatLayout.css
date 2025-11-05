@@ -241,7 +241,6 @@
 /* Desktop View */
 .chat-container.desktop-view {
   height: calc(100vh - 4rem);
-  max-height: 800px;
   min-height: 600px;
   background-color: white;
   display: flex;

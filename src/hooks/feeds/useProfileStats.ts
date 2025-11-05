@@ -12,27 +12,6 @@ export interface FollowUser {
 const FOLLOWERS_QUERY_KEY = ["profile-followers"];
 const FOLLOWING_QUERY_KEY = ["profile-following"];
 
-const getUserNameFromActivities = async (
-  client: FeedsClient,
-  userId: string
-): Promise<string> => {
-  try {
-    const response = await client.queryActivities({
-      filter: {
-        user_id: userId,
-      },
-      limit: 1,
-    });
-
-    if (response.activities && response.activities.length > 0) {
-      return response.activities[0].user?.name || `User ${userId.replace("user-", "")}`;
-    }
-    return `User ${userId.replace("user-", "")}`;
-  } catch (error) {
-    return `User ${userId.replace("user-", "")}`;
-  }
-};
-
 const fetchFollowers = async (
   client: FeedsClient,
   userId: string
@@ -47,29 +26,36 @@ const fetchFollowers = async (
       limit: 50,
     });
 
+    // Extract user info directly from the response - no additional API calls needed!
+    const followers = response.follows.map((follow) => {
+      const sourceFeedId = follow.source_feed.id;
+      const followerUserId = sourceFeedId.replace("user:", "");
+      
+      // Get name from the feed's created_by user, or fall back to feed name or user ID
+      const userName = 
+        follow.source_feed.created_by?.name || 
+        follow.source_feed.name || 
+        `User ${followerUserId}`;
+      
+      const userImage = follow.source_feed.created_by?.image;
+      
+      return {
+        id: followerUserId,
+        name: userName,
+        image: userImage,
+      };
+    });
 
-    const followers = await Promise.all(
-      response.follows.map(async (follow) => {
-        const sourceFeedId = follow.source_feed.id;
-        const followerUserId = sourceFeedId.replace("user:", "");
-        const userName = await getUserNameFromActivities(client, followerUserId);
-                
-        return {
-          id: followerUserId,
-          name: userName,
-          image: undefined,
-        };
-      })
-    );
-
-    const uniqueFollowers = followers
-      .filter((follower, index, self) => 
+    // Filter out duplicates and self-follows
+    const uniqueFollowers = followers.filter(
+      (follower, index, self) => 
         index === self.findIndex(f => f.id === follower.id) && 
         follower.id !== userId
-      );
+    );
 
     return uniqueFollowers;
   } catch (error) {
+    console.error("Error fetching followers:", error);
     return [];
   }
 };
@@ -88,19 +74,25 @@ const fetchFollowing = async (
       limit: 50,
     });
 
-    const following = await Promise.all(
-      response.follows.map(async (follow) => {
-        const targetFeedId = follow.target_feed.id;
-        const followedUserId = targetFeedId.replace("user:", "");
-        const userName = await getUserNameFromActivities(client, followedUserId);
-        
-        return {
-          id: followedUserId,
-          name: userName,
-          image: undefined,
-        };
-      })
-    );
+    // Extract user info directly from the response - no additional API calls needed!
+    const following = response.follows.map((follow) => {
+      const targetFeedId = follow.target_feed.id;
+      const followedUserId = targetFeedId.replace("user:", "");
+      
+      // Get name from the feed's created_by user, or fall back to feed name or user ID
+      const userName = 
+        follow.target_feed.created_by?.name || 
+        follow.target_feed.name || 
+        `User ${followedUserId}`;
+      
+      const userImage = follow.target_feed.created_by?.image;
+      
+      return {
+        id: followedUserId,
+        name: userName,
+        image: userImage,
+      };
+    });
 
     return following.filter((user) => user.id !== userId);
   } catch (error) {
@@ -117,13 +109,6 @@ const followUser = async (
   showError: (message: string) => void
 ): Promise<void> => {
   if (!client || !sourceUserId || !targetUserId) return;
-  
-  console.log('client', client);
-  console.log('sourceUserId', sourceUserId);
-  console.log('targetUserId', targetUserId);
-  console.log('source', `timeline:${sourceUserId}`);
-  console.log('target', `user:${targetUserId}`);
-  console.log('create_notification_activity', true);
 
   try {
     await client.follow({
@@ -131,11 +116,9 @@ const followUser = async (
       target: `user:${targetUserId}`,
       create_notification_activity: true,
     });
-    console.log('555');
     showSuccess("Successfully followed user");
   } catch (error: any) {
     if (error.code === 4 && error.message?.includes('already exists')) {
-      console.log('Follow already exists (caught error)');
       showSuccess("Already following this user");
       return;
     }
@@ -154,8 +137,6 @@ const unfollowUser = async (
 ): Promise<void> => {
   if (!client || !sourceUserId || !targetUserId) return;
 
-  console.log('[unfollowUser] sourceUserId', sourceUserId);
-  console.log('[unfollowUser] targetUserId', targetUserId);
   try {
     await client.unfollow({
       source: `timeline:${sourceUserId}`,
@@ -278,4 +259,4 @@ export function useProfileStats(userId?: string) {
     isFollowingLoading: followMutation.isPending,
     isUnfollowingLoading: unfollowMutation.isPending,
   };
-} 
+}

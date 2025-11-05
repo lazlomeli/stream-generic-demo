@@ -29,6 +29,35 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
     navigate(`/profile/${userId}`);
   };
 
+  const handleHashtagClick = (hashtag: string) => {
+    navigate(`/feeds/hashtag/${hashtag.toLowerCase()}`);
+  };
+
+  const renderTextWithHashtags = (text: string) => {
+    if (!text) return text;
+    
+    const parts = text.split(/(#\w+)/g);
+    
+    return parts.map((part, index) => {
+      if (part.match(/^#\w+$/)) {
+        const hashtag = part.slice(1);
+        return (
+          <span
+            key={index}
+            className="hashtag-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHashtagClick(hashtag);
+            }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   return (
     <article className="activity-container">
       <div className="activity-header">
@@ -85,7 +114,7 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
             </div>
           </div>
           <p className="activity-text">
-            {activity.text || activity.type}
+            {renderTextWithHashtags(activity.text || activity.type)}
           </p>
         </div>
       </div>

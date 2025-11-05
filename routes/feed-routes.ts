@@ -17,6 +17,7 @@ const isAlreadyExistsError = (error: any) => {
 const initializeFeedGroupsAndViews = async (client: StreamClient) => {
   console.log('🔄 Initializing Stream feed groups and views...');
   
+  // Create popular feed group
   try {
     await client.feeds.createFeedGroup({
       id: "popular-feed-group",
@@ -43,6 +44,24 @@ const initializeFeedGroupsAndViews = async (client: StreamClient) => {
     }
   }
 
+  // Create hashtag feed group
+  try {
+    await client.feeds.createFeedGroup({
+      id: "hashtag",
+      // Optional: Add activity selectors if needed
+      // activity_selectors: [{ type: "post" }],
+    });
+    console.log('✅ Feed group "hashtag" created');
+  } catch (error) {
+    if (isAlreadyExistsError(error)) {
+      console.log('ℹ️  Feed group "hashtag" already exists');
+    } else {
+      console.error('❌ Error creating hashtag feed group:', error);
+      throw error;
+    }
+  }
+
+  // Create popular view
   try {
     await client.feeds.createFeedView({
       id: "popular-view",
@@ -77,21 +96,17 @@ const sanitizeUserId = (userId: string) => {
 router.post('/feeds-token', async (req, res) => {
   try {
     const { user_id, name } = req.body;
-
     if (!user_id) {
       return res.status(400).json({ error: "Missing user_id" });
     }
-
     const sanitizedUserId = sanitizeUserId(user_id);
     
     if (!sanitizedUserId) {
       return res.status(400).json({ error: "Invalid user_id format" });
     }
-
     // Generate token (feed groups/views already created at startup)
     const token = streamFeedsClient.generateUserToken({ user_id: sanitizedUserId });
     return res.json({ token });
-
   } catch (err) {
     console.error('Error generating feeds token:', err);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -101,23 +116,19 @@ router.post('/feeds-token', async (req, res) => {
 router.post('/stream/reset', async (req, res) => {
   try {
     const { userId } = req.body;
-
     if (!userId) {
       return res.status(400).json({
         success: false,
         error: 'userId is required',
       });
     }
-
     await resetFeeds(streamFeedsClient);
     const seedResult = await seedFeeds(streamFeedsClient, userId);
-
     res.json({
       success: true,
       message: 'Feeds reset and seeded successfully',
       data: seedResult.data,
     });
-
   } catch (error) {
     console.error('Error resetting feeds:', error);
     res.status(500).json({

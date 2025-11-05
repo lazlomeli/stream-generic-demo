@@ -2,17 +2,55 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FeedsClient } from "@stream-io/feeds-client";
 import { useToast } from "../../contexts/ToastContext";
 import { useUser } from "./useUser";
+import { extractHashtags } from "../../utils/hashtagUtils";
 
 const addActivityToFeed = async (
     client: FeedsClient,
     userId: string,
     text: string
   ): Promise<void> => {
-    const userFeed = client.feed("user", userId);
-    await userFeed.addActivity({
-      type: "post",
+    // Extract hashtags from text
+    const hashtags = extractHashtags(text);
+    const hasHashtags = hashtags && hashtags.length > 0;
+  
+    // Prepare activity data
+    const activityData = {
+      type: "post" as const,
       text,
-    });
+    };
+  
+    // Create hashtag feeds if needed
+    let hashtagFeeds: string[] = [];
+    if (hasHashtags) {
+      try {
+        const response = await client.createFeedsBatch({
+          feeds: hashtags.map((hashtag) => ({
+            feed_group_id: 'hashtag',
+            feed_id: hashtag,
+            name: hashtag,
+            visibility: 'public' as const,
+          })),
+        });
+        hashtagFeeds = response?.feeds?.map(feed => feed.feed) ?? [];
+      } catch (error) {
+        console.error('Failed to create hashtag feeds:', error);
+        // Continue without hashtag feeds if creation fails
+      }
+    }
+  
+    // Post to multiple feeds or just user feed
+    if (hashtagFeeds.length > 0) {
+      await client.addActivity({
+        ...activityData,
+        feeds: [
+          `user:${userId}`,
+          ...hashtagFeeds,
+        ],
+      });
+    } else {
+      const userFeed = client.feed("user", userId);
+      await userFeed.addActivity(activityData);
+    }
   
     // Note: We don't need to call getOrCreate here anymore since the global feed manager
     // will handle the real-time updates through subscriptions

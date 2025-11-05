@@ -2,21 +2,24 @@ import { Composer } from './Composer';
 import Activity from './Activity';
 import { useEffect, useRef } from 'react';
 import { useSearch } from '../hooks/feeds/useSearch';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation, useParams } from 'react-router-dom';
 import { usePopularActivities } from '../hooks/feeds/usePopularActivities';
 import { useFeedActivities } from '../hooks/feeds/useFeedActivities';
+import { useHashtagFeed } from '../hooks/feeds/useHashtagFeed';
 import { useResponsive } from '../contexts/ResponsiveContext';
 import MobileBottomNav from './MobileBottomNav';
 import './Feeds.css';
 
 interface FeedsProps {
-  feedType?: 'trending' | 'following' | 'for-you';
+  feedType?: 'trending' | 'following' | 'for-you' | 'hashtag';
 }
 
 const Feeds = ({ feedType }: FeedsProps) => {
+  const { hashtag } = useParams<{ hashtag: string }>();
   const { activities: globalActivities, isLoading } = useSearch();
   const { popularActivities, isLoading: isLoadingPopularActivities } = usePopularActivities();
   const { activities: followingActivities, loading: isLoadingFollowingActivities } = useFeedActivities();
+  const { activities: hashtagActivities, isLoading: isLoadingHashtag } = useHashtagFeed(feedType === 'hashtag' ? hashtag : undefined);
   const { isMobileView, toggleView } = useResponsive();
   const location = useLocation();
 
@@ -32,6 +35,8 @@ const Feeds = ({ feedType }: FeedsProps) => {
         return followingActivities;
       case 'for-you':
         return globalActivities;
+      case 'hashtag':
+        return hashtagActivities;
       default:
         return globalActivities;
     }
@@ -47,6 +52,8 @@ const Feeds = ({ feedType }: FeedsProps) => {
         return isLoadingFollowingActivities;
       case 'for-you':
         return isLoading;
+      case 'hashtag':
+        return isLoadingHashtag;
       default:
         return isLoading;
     }
@@ -86,6 +93,8 @@ const Feeds = ({ feedType }: FeedsProps) => {
         return 'Following';
       case 'for-you':
         return 'For You';
+      case 'hashtag':
+        return `Viewing #${hashtag} posts`;
       default:
         return null;
     }
