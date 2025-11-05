@@ -8,26 +8,8 @@
 
 /* Highlighted Activity Container */
 .post-highlighted .activity-container {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-  border: 2px solid #0ea5e9 !important;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
-  animation: highlightPulse 2s ease-in-out;
-}
-
-@keyframes highlightPulse {
-  0% {
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.3);
-    background-color: rgba(59, 130, 246, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(14, 165, 233, 0.1);
-    background-color: rgba(59, 130, 246, 0.15);
-  }
-  100% {
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
-    background-color: rgba(59, 130, 246, 0.15);
-  }
+  background-color: rgba(152, 191, 247, 0.15) !important;
+  /* border: 2px solid #0ea5e9 !important; */
 }
 
 .activity-header {
@@ -109,18 +91,26 @@
   gap: 0.5rem;
 }
 
-.activity-delete-button {
-  color: rgb(220 38 38);
+.activity-delete-button { 
   padding: 0.5rem;
-  border-radius: 9999px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: colors 0.2s ease;
+  transition: all 0.2s ease;
   background: transparent;
   border: none;
 }
 
+.activity-delete-button .delete-icon {
+  filter: invert(35%) sepia(89%) saturate(2427%) hue-rotate(342deg) brightness(98%) contrast(91%);
+  transition: filter 0.2s ease;
+}
+
 .activity-delete-button:hover {
-  background-color: rgb(243 244 246);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.activity-delete-button:hover .delete-icon {
+  filter: invert(19%) sepia(98%) saturate(5447%) hue-rotate(356deg) brightness(94%) contrast(92%);
 }
 
 .activity-text {

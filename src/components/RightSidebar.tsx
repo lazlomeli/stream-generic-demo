@@ -17,6 +17,7 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
   // Use the existing useSearch hook
   const {
     activities,
+    users,
     searchQuery,
     searchMode,
     isLoading,
@@ -77,9 +78,11 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
               <div className="search-results-overlay">
                 <SearchResults
                   activities={activities}
+                  users={users}
                   searchQuery={searchQuery}
                   isLoading={isLoading}
                   error={error}
+                  onClose={clearSearch}
                 />
               </div>
             )}

@@ -1,22 +1,46 @@
 import React from 'react';
 import './SearchResults.css';
-import { ActivityResponse } from '@stream-io/feeds-client';
+import { ActivityResponse, UserResponse } from '@stream-io/feeds-client';
 import Activity from './Activity';
+import { useNavigate } from 'react-router-dom';
+import { generateAvatarUrl } from '../utils/avatarUtils';
+import { UserActions } from './UserActions';
 
 interface SearchResultsProps {
   activities?: ActivityResponse[];
+  users?: UserResponse[];
   searchQuery: string;
   isLoading: boolean;
   error?: boolean;
+  onClose?: () => void;
 }
 
 export function SearchResults({
   activities = [],
+  users = [],
   searchQuery,
   isLoading,
   error,
+  onClose,
 }: SearchResultsProps) {
-  const hasResults = activities.length > 0;
+  const navigate = useNavigate();
+  const hasResults = activities.length > 0 || users.length > 0;
+
+  const handleGoToProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
+    onClose?.(); // Close the search dropdown
+  };
+
+  const handlePostClick = (activityId: string, event: React.MouseEvent<HTMLDivElement>) => {
+    // Don't navigate if clicking on interactive elements
+    const target = event.target as HTMLElement;
+    const isInteractive = target.closest('button, a, input, textarea, select');
+    
+    if (!isInteractive) {
+      navigate(`/feeds?postId=${activityId}`);
+      onClose?.(); // Close the search dropdown
+    }
+  };
 
   if (isLoading) {
     return (
@@ -85,6 +109,8 @@ export function SearchResults({
     );
   }
 
+  const totalResults = activities.length + users.length;
+
   return (
     <>
       {/* Results Header - Sticky */}
@@ -94,27 +120,70 @@ export function SearchResults({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <span className="search-results-count">
-            {activities.length} result{activities.length !== 1 ? "s" : ""} for
+            {totalResults} result{totalResults !== 1 ? "s" : ""} for
             "{searchQuery}"
           </span>
         </div>
-        <div className="search-results-badge">
-          <span className="badge">
-            {activities.length} activities
-          </span>
+        <div className="search-results-badges">
+          {users.length > 0 && (
+            <span className="badge badge-users">
+              {users.length} {users.length === 1 ? "user" : "users"}
+            </span>
+          )}
+          {activities.length > 0 && (
+            <span className="badge badge-activities">
+              {activities.length} {activities.length === 1 ? "activity" : "activities"}
+            </span>
+          )}
         </div>
       </div>
 
+      {/* Users Results */}
+      {users.length > 0 && (
+        <div className="search-results-section">
+          <h4 className="search-section-title">Users</h4>
+          <div className="search-users-list">
+            {users.map((user) => (
+              <div key={user.id} className="search-user-item" onClick={() => handleGoToProfile(user.id)}>
+                <div className="search-user-avatar">
+                  <img 
+                    src={generateAvatarUrl(user.id)} 
+                    alt={user.name}
+                    className="avatar-image"
+                  />
+                </div>
+                <div className="search-user-info">
+                  <div className="search-user-name">{user.name}</div>
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <UserActions targetUserId={user.id} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Activities Results */}
-      <div className="search-results-list">
-        {activities.map((activity) => (
-          <Activity
-            key={`search-activity-${activity.id}`}
-            activity={activity}
-            compactMode={true}
-          />
-        ))}
-      </div>
+      {activities.length > 0 && (
+        <div className="search-results-section">
+          <h4 className="search-section-title">Activities</h4>
+          <div className="search-results-list">
+            {activities.map((activity) => (
+              <div
+                key={`search-activity-${activity.id}`}
+                onClick={(e) => handlePostClick(activity.id, e)}
+                className="search-activity-wrapper"
+              >
+                <Activity
+                  activity={activity}
+                  compactMode={true}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -2,7 +2,7 @@ import { ActivityResponse } from "@stream-io/feeds-client";
 import { UserAvatar } from "./UserActions";
 import { UserActions } from "./UserActions";
 import { useUser } from "../hooks/feeds/useUser";
-import { Trash2 } from "lucide-react";
+import trashIcon from "../icons/trash.svg";
 import ReactionsPanel from "./Reaction";
 import { useFeedActions } from "../hooks/feeds/useFeedActions";
 import CommentsPanel from "./Comment";
@@ -79,7 +79,7 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
                   className="activity-delete-button"
                   title="Delete activity"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <img src={trashIcon} alt="Delete" width="18" height="18" className="delete-icon" />
                 </button>
               )}
             </div>
