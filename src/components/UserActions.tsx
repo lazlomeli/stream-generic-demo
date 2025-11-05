@@ -6,9 +6,10 @@ import { useUser } from "../hooks/feeds/useUser";
 
 interface UserActionsProps {
   targetUserId: string;
+  iconOnly?: boolean;
 }
 
-export function UserActions({ targetUserId }: UserActionsProps) {
+export function UserActions({ targetUserId, iconOnly = false }: UserActionsProps) {
   const { user } = useUser();
   const { 
     followUser, 
@@ -33,7 +34,8 @@ export function UserActions({ targetUserId }: UserActionsProps) {
         following ? unfollowUser(targetUserId) : followUser(targetUserId);
       }}
       disabled={isLoading}
-      className={`user-action-button ${following ? "following" : ""}`}
+      className={`user-action-button ${following ? "following" : ""} ${iconOnly ? "icon-only" : ""}`}
+      title={following ? "Unfollow" : "Follow"}
     >
       {isLoading ? (
         <div className="loading-spinner" />
@@ -42,7 +44,7 @@ export function UserActions({ targetUserId }: UserActionsProps) {
       ) : (
         <UserPlus className="action-icon" />
       )}
-      <span>{following ? "Unfollow" : "Follow"}</span>
+      {!iconOnly && <span>{following ? "Unfollow" : "Follow"}</span>}
     </button>
   );
 }

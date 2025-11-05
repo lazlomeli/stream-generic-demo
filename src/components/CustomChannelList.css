@@ -177,9 +177,9 @@
 
 /* Search Results */
 .search-results-container {
-  max-height: 200px;
+  /* max-height: 200px; */
   overflow-y: auto;
-  border-bottom: 1px solid #e5e7eb;
+  /* border-bottom: 1px solid #e5e7eb; */
   background-color: white;
 }
 

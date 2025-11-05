@@ -1,0 +1,145 @@
+.search-results-container {
+  width: 100%;
+}
+
+/* State Container (Loading, Error, Empty) */
+.search-state-container {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.search-state-container.large {
+  padding: 48px 16px;
+}
+
+.search-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #2563eb;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.search-state-icon {
+  width: 48px;
+  height: 48px;
+  color: #9ca3af;
+  margin: 0 auto 16px;
+}
+
+.search-state-icon.error {
+  color: #ef4444;
+}
+
+.search-state-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.search-state-text {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.search-state-text.error {
+  color: #9ca3af;
+}
+
+.search-state-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.search-state-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.search-state-hint {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* Results Header */
+.search-results-header {
+  position: sticky;
+  top: -12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  margin: -12px -12px 16px -12px;
+  background-color: white;
+  z-index: 10;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.search-results-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-results-icon {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.search-results-count {
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.search-results-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #2563eb;
+  color: white;
+}
+
+/* Results List */
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-state-container {
+    padding: 24px 12px;
+  }
+
+  .search-state-container.large {
+    padding: 36px 12px;
+  }
+
+  .search-results-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

@@ -49,7 +49,7 @@ export function useSearch() {
   const { client, user } = useUser();
   const { showError } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchMode, setSearchMode] = useState<"$q" | "$autocomplete">("$q");
+  const [searchMode, setSearchMode] = useState<"$q" | "$autocomplete">("$autocomplete");
 
   const {
     data: activities = [],

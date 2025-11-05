@@ -1,22 +1,49 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './RightSidebar.css';
 import { useFollowSuggestions } from '../hooks/feeds/useFollowSuggestions';
 import { useNavigate } from 'react-router-dom';
 import { UserActions } from './UserActions';
 import { generateAvatarUrl } from '../utils/avatarUtils';
-
+import { useSearch } from '../hooks/feeds/useSearch';
+import { SearchInput } from './SearchInput';
+import { SearchResults } from './SearchResults';
 
 interface RightSidebarProps {}
 
 const RightSidebar: React.FC<RightSidebarProps> = () => {
-
   const navigate = useNavigate();
   const { whoToFollow, isLoading: isLoadingWhoToFollow } = useFollowSuggestions();
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Use the existing useSearch hook
+  const {
+    activities,
+    searchQuery,
+    searchMode,
+    isLoading,
+    error,
+    searchActivities,
+    clearSearch,
+  } = useSearch();
 
   const handleGoToProfile = (userId: string) => {
     navigate(`/profile/${userId}`);
   };
+
+  const handleSearch = (query: string, mode?: "$q" | "$autocomplete") => {
+    searchActivities(query, mode || searchMode);
+  };
+
+  const handleClearSearch = () => {
+    clearSearch();
+  };
+
+  const handleSearchModeChange = (mode: "$q" | "$autocomplete") => {
+    if (searchQuery.trim()) {
+      searchActivities(searchQuery, mode);
+    }
+  };
+
+  const isSearchActive = searchQuery.trim().length > 0;
 
   // Fake trending hashtags data
   const trendingHashtags = [
@@ -32,20 +59,34 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
       <div className="right-sidebar-content">
 
         {/* Search Section */}
-        <div className="sidebar-section">
+        <div className="sidebar-section search-section">
           <h3 className="section-title search-title">Search</h3>
           <div className="search-container">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search..."
+            <SearchInput
+              placeholder="Search activities..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              searchMode={searchMode}
+              isLoading={isLoading}
+              onSearch={handleSearch}
+              onClear={handleClearSearch}
+              onSearchModeChange={handleSearchModeChange}
             />
+
+            {/* Search Results Overlay */}
+            {isSearchActive && (
+              <div className="search-results-overlay">
+                <SearchResults
+                  activities={activities}
+                  searchQuery={searchQuery}
+                  isLoading={isLoading}
+                  error={error}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Trending Section */}
+        {/* Trending Section - Always rendered */}
         <div className="sidebar-section">
           <h3 className="section-title">Trending</h3>
           <div className="trending-list">
@@ -58,7 +99,7 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
           </div>
         </div>
 
-        {/* Suggested for you Section */}
+        {/* Suggested for you Section - Always rendered */}
         <div className="sidebar-section">
           <h3 className="section-title">Suggested for you</h3>
           <div className="users-list">
@@ -67,25 +108,23 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
                 <div className="loading-text">Loading...</div>
               </div>
             ) : whoToFollow.length === 0 ? (
-              
-                <span className="no-suggestions-text">No new suggestions!</span>
-              
+              <span className="no-suggestions-text">No new suggestions!</span>
             ) : (
-              whoToFollow.map((user, index) => (
-                <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
-                  <div className="user-avatar">
-                    <img 
-                      src={generateAvatarUrl(user.id)} 
-                      alt={user.name as string}
-                      className="avatar-image"
-                    />
-                  </div>
-                  <div className="user-info">
-                    <div className="user-name">{user.name}</div>
-                    <UserActions targetUserId={user.id} />
-                  </div>
-                </div>
-              ))
+                  whoToFollow.map((user, index) => (
+                    <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
+                      <div className="user-avatar">
+                        <img 
+                          src={generateAvatarUrl(user.id)} 
+                          alt={user.name as string}
+                          className="avatar-image"
+                        />
+                      </div>
+                      <div className="user-info">
+                        <div className="user-name">{user.name}</div>
+                        <UserActions targetUserId={user.id} />
+                      </div>
+                    </div>
+                  ))
             )}
           </div>
         </div>

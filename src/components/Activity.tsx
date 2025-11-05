@@ -15,9 +15,10 @@ interface ActivityProps {
   activity: ActivityResponse;
   hideFollowButton?: boolean;
   forceBookmarked?: boolean;
+  compactMode?: boolean;
 }
 
-export default function Activity({ activity, hideFollowButton = false, forceBookmarked = false }: ActivityProps) {
+export default function Activity({ activity, hideFollowButton = false, forceBookmarked = false, compactMode = false }: ActivityProps) {
   const { user } = useUser();
   const { handleDeleteActivity } = useFeedActions();
   const { isMobileView } = useResponsive();
@@ -70,7 +71,7 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
             <div className="activity-actions">
               {!hideFollowButton && activity.user?.id && activity.user.id !== user?.nickname && (
                 // Follow button
-                <UserActions targetUserId={activity.user.id} />
+                <UserActions targetUserId={activity.user.id} iconOnly={compactMode} />
               )}
               {activity.user?.id === user?.nickname && (
                 <button

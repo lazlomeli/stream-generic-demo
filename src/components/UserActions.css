@@ -56,6 +56,22 @@
   height: 1rem;
 }
 
+/* Icon-only mode */
+.user-action-button.icon-only {
+  min-width: unset;
+  padding: 8px;
+  gap: 0;
+  border-radius: 3px;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+}
+
+.user-action-button.icon-only .action-icon {
+  width: 16px;
+  height: 16px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
