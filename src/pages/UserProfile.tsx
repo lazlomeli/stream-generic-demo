@@ -91,9 +91,16 @@ export function UserProfile({ onBack }: UserProfileProps) {
       {/* Profile Info */}
       <div className="profile-info">
         <div className="profile-avatar">
-          <span className="profile-avatar-text">
-            {displayUserName.charAt(0).toUpperCase()}
-          </span>
+          <img 
+            src={`https://api.dicebear.com/7.x/${(() => {
+              const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
+              const charCode = userId.charCodeAt(0);
+              const styleIndex = charCode % styles.length;
+              return styles[styleIndex];
+            })()}/svg?seed=${encodeURIComponent(userId)}`}
+            alt={displayUserName}
+            className="profile-avatar-image"
+          />
         </div>
         
         <div className="profile-details">

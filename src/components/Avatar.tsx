@@ -1,4 +1,3 @@
-import { useUser } from "../hooks/feeds/useUser";
 import "./Avatar.css";
 
 interface AvatarProps {
@@ -9,37 +8,24 @@ interface AvatarProps {
   style?: React.CSSProperties;
 }
 
-const avatarColors = [
-  "color-blue",
-  "color-green", 
-  "color-purple",
-  "color-pink",
-  "color-indigo",
-  "color-red",
-  "color-yellow",
-  "color-teal",
-  "color-orange",
-  "color-cyan",
-  "color-emerald",
-  "color-violet",
-  "color-rose",
-  "color-amber",
-  "color-lime",
-  "color-sky",
-  "color-fuchsia",
-  "color-slate",
-  "color-gray",
-  "color-zinc",
-  "color-neutral",
-  "color-stone",
-];
-
 const sizeClasses = {
   sm: "size-sm",
   md: "size-md", 
   lg: "size-lg",
   xl: "size-xl",
 };
+
+// DiceBear avatar styles for variety
+const avatarStyles = [
+  "avataaars",
+  "bottts",
+  "lorelei",
+  "adventurer",
+  "big-smile",
+  "fun-emoji",
+  "pixel-art",
+  "thumbs",
+];
 
 export function Avatar({
   userId,
@@ -48,37 +34,30 @@ export function Avatar({
   className = "",
   style = {},
 }: AvatarProps) {
-  const { getUserInitials } = useUser();
-
-  // Generate initials from userName or userId
-  const getInitials = () => {
-    if (userName) {
-      return getUserInitials(userName);
-    }
-    if (userId) {
-      return userId.charAt(0).toUpperCase();
-    }
-    return "U";
+  // Use userId or userName as seed for consistent avatar generation
+  const seed = userId || userName || "default";
+  
+  // Select a style deterministically based on the seed
+  const getAvatarStyle = () => {
+    const charCode = seed.charCodeAt(0);
+    const styleIndex = charCode % avatarStyles.length;
+    return avatarStyles[styleIndex];
   };
 
-  // Generate color based on initials
-  const getColor = () => {
-    const initials = getInitials();
-    const charCode = initials.charCodeAt(0);
-    const colorIndex = charCode % avatarColors.length;
-    return avatarColors[colorIndex];
-  };
-
-  const initials = getInitials();
-  const colorClass = getColor();
+  const avatarStyle = getAvatarStyle();
+  const avatarUrl = `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${encodeURIComponent(seed)}`;
 
   return (
     <div
-      className={`avatar ${sizeClasses[size]} ${colorClass} ${className}`}
+      className={`avatar ${sizeClasses[size]} ${className}`}
       style={style}
       title={userName || userId || "..."}
     >
-      {initials}
+      <img 
+        src={avatarUrl} 
+        alt={userName || userId || "User avatar"} 
+        className="avatar-image"
+      />
     </div>
   );
 }

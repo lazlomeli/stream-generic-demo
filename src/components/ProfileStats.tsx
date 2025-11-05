@@ -5,6 +5,7 @@ import { FollowUser } from "../hooks/feeds/useProfileStats";
 import { useUser } from "../hooks/feeds/useUser";
 import { X, UserPlus, UserMinus } from "lucide-react";
 import { User } from "@auth0/auth0-react";
+import { generateAvatarUrl } from "../utils/avatarUtils";
 import "./ProfileStats.css";
 
 interface ProfileStatsProps {
@@ -144,9 +145,11 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                         className="user-info-link"
                       >
                         <div className="user-avatar">
-                          <span className="user-avatar-text">
-                            {user.name.charAt(0).toUpperCase()}
-                          </span>
+                          <img 
+                            src={generateAvatarUrl(user.id)} 
+                            alt={user.name}
+                            className="user-avatar-image"
+                          />
                         </div>
                         <div className="user-details">
                           <p className="user-name">{user.name}</p>

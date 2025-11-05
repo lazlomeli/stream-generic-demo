@@ -243,13 +243,16 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
               <div className="user-section">
                 <div className="user-info">
                   <div className="user-avatar">
-                    {user?.picture ? (
-                      <img src={user.picture} alt={user.name || user.email || 'User'} />
-                    ) : (
-                      <span>
-                        {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                      </span>
-                    )}
+                    <img 
+                      src={user?.picture || `https://api.dicebear.com/7.x/${(() => {
+                        const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
+                        const seed = user?.nickname || user?.email || 'default';
+                        const charCode = seed.charCodeAt(0);
+                        const styleIndex = charCode % styles.length;
+                        return styles[styleIndex];
+                      })()}/svg?seed=${encodeURIComponent(user?.nickname || user?.email || 'default')}`}
+                      alt={user?.name || user?.email || 'User'} 
+                    />
                   </div>
                   <span className="user-name">
                     {user?.name || user?.email}

@@ -11,6 +11,18 @@ interface FallbackAvatarProps {
   channelName?: string
 }
 
+// DiceBear avatar styles for variety
+const avatarStyles = [
+  "avataaars",
+  "bottts",
+  "lorelei",
+  "adventurer",
+  "big-smile",
+  "fun-emoji",
+  "pixel-art",
+  "thumbs",
+];
+
 const FallbackAvatar: React.FC<FallbackAvatarProps> = ({ 
   src, 
   alt, 
@@ -85,26 +97,35 @@ const FallbackAvatar: React.FC<FallbackAvatarProps> = ({
       )
     }
     
-    // For unknown type, show # as fallback
+    // For user avatars without a valid image, generate DiceBear avatar
+    const seed = alt || 'default';
+    const charCode = seed.charCodeAt(0);
+    const styleIndex = charCode % avatarStyles.length;
+    const avatarStyle = avatarStyles[styleIndex];
+    const avatarUrl = `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${encodeURIComponent(seed)}`;
+    
     return (
       <div 
         className={`fallback-avatar ${className}`}
         style={{ 
           width: `${size}px`, 
           height: `${size}px`,
-          background: 'linear-gradient(135deg, #00a2ff 0%, #0031b6 100%)',
           borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: `${Math.max(size * 0.4, 10)}px`,
-          fontWeight: '600',
-          flexShrink: 0
+          overflow: 'hidden',
+          flexShrink: 0,
+          background: '#f0f0f0'
         }}
         title={alt}
       >
-        #
+        <img 
+          src={avatarUrl}
+          alt={alt}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
       </div>
     )
   }

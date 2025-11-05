@@ -3,6 +3,7 @@ import './RightSidebar.css';
 import { useFollowSuggestions } from '../hooks/feeds/useFollowSuggestions';
 import { useNavigate } from 'react-router-dom';
 import { UserActions } from './UserActions';
+import { generateAvatarUrl } from '../utils/avatarUtils';
 
 
 interface RightSidebarProps {}
@@ -11,9 +12,6 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
 
   const navigate = useNavigate();
   const { whoToFollow, isLoading: isLoadingWhoToFollow } = useFollowSuggestions();
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
 
   const handleGoToProfile = (userId: string) => {
     navigate(`/profile/${userId}`);
@@ -28,9 +26,7 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
           <div className="users-list">
             {isLoadingWhoToFollow ? (
               <div className="user-item">
-                <div className="user-avatar">
-                  <span className="avatar-initials">Loading...</span>
-                </div>
+                <div className="loading-text">Loading...</div>
               </div>
             ) : whoToFollow.length === 0 ? (
               
@@ -40,7 +36,11 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
               whoToFollow.map((user, index) => (
                 <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
                   <div className="user-avatar">
-                    <span className="avatar-initials">{getInitials(user.name as string)}</span>
+                    <img 
+                      src={generateAvatarUrl(user.id)} 
+                      alt={user.name as string}
+                      className="avatar-image"
+                    />
                   </div>
                   <div className="user-info">
                     <div className="user-name">{user.name}</div>

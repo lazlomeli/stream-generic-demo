@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { generateAvatarUrl } from '../utils/avatarUtils';
 import LoadingIcon from './LoadingIcon';
 import './CreateChannelModal.css';
 
@@ -235,12 +236,12 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
                     />
                     <div className="user-info">
                       <img 
-                        src={user.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDkgMTYgMTEgMTQgMTQgMTEgMTIgMTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTJDMTAuMzQzMSAxMiA5IDEzLjM0MzEgOSAxNVYxN0gxNVYxNUMxNSAxMy4zNDMxIDEzLjY1NjkgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+'} 
+                        src={user.image || generateAvatarUrl(user.id)} 
                         alt={user.name}
                         className="user-avatar"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHBhdGggZD0iTTEyIDExQzE0LjIwOTEgMTEgMTYgOS4yMDkxIDkgMTYgMTEgMTQgMTQgMTEgMTIgMTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTJDMTAuMzQzMSAxMiA5IDEzLjM0MzEgOSAxNVYxN0gxNVYxNUMxNSAxMy4zNDMxIDEzLjY1NjkgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4KPC9zdmc+';
+                          target.src = generateAvatarUrl(user.id);
                         }}
                       />
                       <span className="user-name">{user.name}</span>

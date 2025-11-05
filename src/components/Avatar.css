@@ -7,122 +7,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 600;
-  width: 30px !important;
-  height: 30px !important;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  flex-shrink: 0;
 }
 
 /* Size Variants */
 .avatar.size-sm {
   width: 2rem;
   height: 2rem;
-  font-size: 0.875rem;
 }
 
 .avatar.size-md {
   width: 2.5rem;
   height: 2.5rem;
-  font-size: 0.875rem;
 }
 
 .avatar.size-lg {
   width: 3rem;
   height: 3rem;
-  font-size: 1rem;
 }
 
 .avatar.size-xl {
   width: 4rem;
   height: 4rem;
-  font-size: 1.125rem;
 }
 
-/* Color Variants */
-.avatar.color-blue {
-  background-color: rgb(59 130 246);
-}
-
-.avatar.color-green {
-  background-color: rgb(34 197 94);
-}
-
-.avatar.color-purple {
-  background-color: rgb(168 85 247);
-}
-
-.avatar.color-pink {
-  background-color: rgb(236 72 153);
-}
-
-.avatar.color-indigo {
-  background-color: rgb(99 102 241);
-}
-
-.avatar.color-red {
-  background-color: rgb(239 68 68);
-}
-
-.avatar.color-yellow {
-  background-color: rgb(234 179 8);
-}
-
-.avatar.color-teal {
-  background-color: rgb(20 184 166);
-}
-
-.avatar.color-orange {
-  background-color: rgb(249 115 22);
-}
-
-.avatar.color-cyan {
-  background-color: rgb(6 182 212);
-}
-
-.avatar.color-emerald {
-  background-color: rgb(16 185 129);
-}
-
-.avatar.color-violet {
-  background-color: rgb(139 92 246);
-}
-
-.avatar.color-rose {
-  background-color: rgb(244 63 94);
-}
-
-.avatar.color-amber {
-  background-color: rgb(245 158 11);
-}
-
-.avatar.color-lime {
-  background-color: rgb(132 204 22);
-}
-
-.avatar.color-sky {
-  background-color: rgb(14 165 233);
-}
-
-.avatar.color-fuchsia {
-  background-color: rgb(217 70 239);
-}
-
-.avatar.color-slate {
-  background-color: rgb(100 116 139);
-}
-
-.avatar.color-gray {
-  background-color: rgb(107 114 128);
-}
-
-.avatar.color-zinc {
-  background-color: rgb(113 113 122);
-}
-
-.avatar.color-neutral {
-  background-color: rgb(115 115 115);
-}
-
-.avatar.color-stone {
-  background-color: rgb(120 113 108);
+/* Avatar Image */
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
