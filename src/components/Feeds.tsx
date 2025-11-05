@@ -107,14 +107,20 @@ const Feeds = ({ feedType }: FeedsProps) => {
       )}
       <Composer />
       <div>
-        {activities.map((activity) => (
-          <div 
-            key={`feed-${activity.id}`}
-            ref={(el) => { postRefs.current[activity.id] = el; }}
-          >
-            <Activity activity={activity} />
+        {activities.length === 0 ? (
+          <div className="empty-feed-state">
+            No posts yet
           </div>
-        ))}
+        ) : (
+          activities.map((activity) => (
+            <div 
+              key={`feed-${activity.id}`}
+              ref={(el) => { postRefs.current[activity.id] = el; }}
+            >
+              <Activity activity={activity} />
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

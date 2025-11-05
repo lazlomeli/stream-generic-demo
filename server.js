@@ -31,224 +31,212 @@ const streamChatClient = new StreamChat(
 const streamFeedsClient = new StreamClient(
   process.env.STREAM_API_KEY,
   process.env.STREAM_API_SECRET
-)
-
-const chatRoutes = initializeChatRoutes(streamChatClient, streamFeedsClient);
-app.use('/api', chatRoutes);
-
-const feedRoutes = initializeFeedRoutes(streamFeedsClient);
-app.use('/api', feedRoutes);
-
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    environment: 'local-development'
-  });
-});
+);
 
 const sanitizeUserId = (userId) => {
   return userId.replace(/[^a-zA-Z0-9@_-]/g, '');
 }
 
-
-app.post("/api/auth-tokens", async (req, res) => {
+// Initialize server with async setup
+const startServer = async () => {
   try {
-    const { type, userId, userProfile } = req.body;
+    console.log('🚀 Starting server...\n');
 
-    if (!userId || !type) {
-      return res.status(400).json({ error: 'userId and type are required' });
-    }
+    // Initialize routes (feed routes will create feed groups/views)
+    const chatRoutes = initializeChatRoutes(streamChatClient, streamFeedsClient);
+    app.use('/api', chatRoutes);
 
-    if (!['feed', 'chat', 'video'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "feed", "chat", or "video"' });
-    }
+    const feedRoutes = await initializeFeedRoutes(streamFeedsClient);
+    app.use('/api', feedRoutes);
 
-    const apiKey = process.env.STREAM_API_KEY;
-    const apiSecret = process.env.STREAM_API_SECRET;
-
-    if (!apiKey || !apiSecret) {
-      return res.status(500).json({ error: 'Server configuration error' });
-    }
-
-    if (type === 'feed') {
-      if (userProfile) {
-        try {
-          await streamFeedsClient.upsertUsers([
-            {
-              id: sanitizeUserId(userId),
-              name: userProfile.name,
-              image: userProfile.image,
-            },
-          ]);
-        } catch (profileError) {
-          console.error('Error updating feed user profile:', profileError);
-        }
-      }
-
-      try {
-        await streamFeedsClient.feeds.createFeedGroup({
-          id: "popular-feed-group",
-          activity_selectors: [{ type: "popular" }],
-          ranking: {
-            type: "expression",
-            score: "popularity * external.weight + comment_count * external.comment_weight + external.base_score",
-            defaults: {
-              external: {
-                weight: 1.5,          
-                comment_weight: 2.0,  
-                base_score: 10,       
-              },
-            },
-          },
-        });
-      } catch (feedGroupError) {
-        console.error('Error creating feed group:', feedGroupError);
-      }
-
-      try {
-        await streamFeedsClient.feeds.createFeedView({
-          id: "popular-view",
-          activity_selectors: [{ type: "popular" }],
-        });
-      } catch (feedViewError) {
-        console.error('Error creating feed view:', feedViewError);
-      }
-      
-      const token = jwt.sign(
-        {
-          user_id: userId,
-        },
-        apiSecret,
-        {
-          algorithm: 'HS256',
-          expiresIn: '24h',
-        }
-      );
-
-      return res.status(200).json({
-        token,
-        apiKey,
-        userId,
+    app.get('/health', (req, res) => {
+      res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        environment: 'local-development'
       });
-    }
+    });
 
-    if (type === 'chat') {
-      if (userProfile) {
-        try {
-          await StreamChat.getInstance(apiKey, apiSecret).upsertUser({
-            id: sanitizeUserId(userId),
-            name: userProfile.name,
-            image: userProfile.image
-          });
-        } catch (profileError) {
-          console.error('Error updating chat user profile:', profileError);
-        }
-      }
-
-      const streamToken = StreamChat.getInstance(apiKey, apiSecret).createToken(userId);
-
-      return res.status(200).json({
-        token: streamToken,
-        apiKey: apiKey,
-        userId: userId
-      });
-    }
-
-    if (type === 'video') {
-      const sanitizedUserId = sanitizeUserId(userId);
-
+    app.post("/api/auth-tokens", async (req, res) => {
       try {
-        await streamFeedsClient.upsertUsers([{
-          id: sanitizedUserId,
-          name: userProfile?.name || `User_${sanitizedUserId}`,
-          image: userProfile?.image,
-          role: 'admin',
-        }]);
-      } catch (upsertError) {
-        console.error('Error upserting video user:', upsertError);
-      }
-      
-      const callId = req.body.callId;
-      if (callId) {
-        try {
-          const call = streamFeedsClient.video.call('default', callId);
+        const { type, userId, userProfile } = req.body;
+
+        if (!userId || !type) {
+          return res.status(400).json({ error: 'userId and type are required' });
+        }
+
+        if (!['feed', 'chat', 'video'].includes(type)) {
+          return res.status(400).json({ error: 'type must be "feed", "chat", or "video"' });
+        }
+
+        const apiKey = process.env.STREAM_API_KEY;
+        const apiSecret = process.env.STREAM_API_SECRET;
+
+        if (!apiKey || !apiSecret) {
+          return res.status(500).json({ error: 'Server configuration error' });
+        }
+
+        if (type === 'feed') {
+          if (userProfile) {
+            try {
+              await streamFeedsClient.upsertUsers([
+                {
+                  id: sanitizeUserId(userId),
+                  name: userProfile.name,
+                  image: userProfile.image,
+                },
+              ]);
+            } catch (profileError) {
+              console.error('Error updating feed user profile:', profileError);
+            }
+          }
+
+          // ✅ REMOVED: Feed group/view creation (now happens at server startup)
           
-          await call.updateCallMembers({
-            update_members: [
-              { 
-                user_id: sanitizedUserId,
-                role: 'admin'
-              }
-            ]
+          const token = jwt.sign(
+            {
+              user_id: userId,
+            },
+            apiSecret,
+            {
+              algorithm: 'HS256',
+              expiresIn: '24h',
+            }
+          );
+
+          return res.status(200).json({
+            token,
+            apiKey,
+            userId,
           });
-        } catch (error) {
-          console.error('Error updating call members:', error);
         }
+
+        if (type === 'chat') {
+          if (userProfile) {
+            try {
+              await StreamChat.getInstance(apiKey, apiSecret).upsertUser({
+                id: sanitizeUserId(userId),
+                name: userProfile.name,
+                image: userProfile.image
+              });
+            } catch (profileError) {
+              console.error('Error updating chat user profile:', profileError);
+            }
+          }
+
+          const streamToken = StreamChat.getInstance(apiKey, apiSecret).createToken(userId);
+
+          return res.status(200).json({
+            token: streamToken,
+            apiKey: apiKey,
+            userId: userId
+          });
+        }
+
+        if (type === 'video') {
+          const sanitizedUserId = sanitizeUserId(userId);
+
+          try {
+            await streamFeedsClient.upsertUsers([{
+              id: sanitizedUserId,
+              name: userProfile?.name || `User_${sanitizedUserId}`,
+              image: userProfile?.image,
+              role: 'admin',
+            }]);
+          } catch (upsertError) {
+            console.error('Error upserting video user:', upsertError);
+          }
+          
+          const callId = req.body.callId;
+          if (callId) {
+            try {
+              const call = streamFeedsClient.video.call('default', callId);
+              
+              await call.updateCallMembers({
+                update_members: [
+                  { 
+                    user_id: sanitizedUserId,
+                    role: 'admin'
+                  }
+                ]
+              });
+            } catch (error) {
+              console.error('Error updating call members:', error);
+            }
+          }
+          
+          const now = Math.floor(Date.now() / 1000);
+          const tokenPayload = {
+            user_id: sanitizedUserId,
+            iss: 'stream-video',
+            exp: now + (24 * 60 * 60),
+            iat: now,
+            nbf: now,
+            jti: `video_${sanitizedUserId}_${now}_${Math.random().toString(36).substring(2, 9)}`,
+            capabilities: [
+              'join-call',
+              'send-audio', 
+              'send-video',
+              'mute-users',
+              'remove-call-member',
+              'update-call-settings',
+              'end-call',
+              'create-call',
+              'update-call-permissions',
+              'create-livestream',
+              'join-livestream',
+              'end-livestream',
+              'update-livestream-settings',
+              'livestream-admin',
+              'pin-for-everyone',
+              'screenshare',
+              'send-reaction',
+              'manage-call-settings',
+              'call-admin',
+              'super-admin'
+            ],
+            call_cids: ['*'],
+            role: 'admin',
+            call_role: 'admin',
+            livestream_role: 'admin'
+          };
+          
+          const videoToken = jwt.sign(tokenPayload, apiSecret, {
+            algorithm: 'HS256'
+          });
+          
+          return res.status(200).json({
+            token: videoToken,
+            apiKey: apiKey,
+            userId: sanitizedUserId
+          });
+        }
+
+      } catch (error) {
+        res.status(500).json({ 
+          error: 'Failed to generate token',
+          details: error instanceof Error ? error.message : String(error)
+        });
       }
-      
-      const now = Math.floor(Date.now() / 1000);
-      const tokenPayload = {
-        user_id: sanitizedUserId,
-        iss: 'stream-video',
-        exp: now + (24 * 60 * 60),
-        iat: now,
-        nbf: now,
-        jti: `video_${sanitizedUserId}_${now}_${Math.random().toString(36).substr(2, 9)}`,
-        capabilities: [
-          'join-call',
-          'send-audio', 
-          'send-video',
-          'mute-users',
-          'remove-call-member',
-          'update-call-settings',
-          'end-call',
-          'create-call',
-          'update-call-permissions',
-          'create-livestream',
-          'join-livestream',
-          'end-livestream',
-          'update-livestream-settings',
-          'livestream-admin',
-          'pin-for-everyone',
-          'screenshare',
-          'send-reaction',
-          'manage-call-settings',
-          'call-admin',
-          'super-admin'
-        ],
-        call_cids: ['*'],
-        role: 'admin',
-        call_role: 'admin',
-        livestream_role: 'admin'
-      };
-      
-      const videoToken = jwt.sign(tokenPayload, apiSecret, {
-        algorithm: 'HS256'
-      });
-      
-      return res.status(200).json({
-        token: videoToken,
-        apiKey: apiKey,
-        userId: sanitizedUserId
-      });
-    }
+    });
+
+    app.use(express.static(path.join(__dirname, 'dist')));
+
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    });
+
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on http://localhost:${PORT}\n`);
+    });
 
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Failed to generate token',
-      details: error instanceof Error ? error.message : String(error)
-    });
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
-});
+};
 
-app.use(express.static(path.join(__dirname, 'dist')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
-app.listen(PORT, async () => {
-});
+// Start the server
+startServer();
 
 export default app;

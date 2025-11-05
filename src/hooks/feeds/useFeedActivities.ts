@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Feed, ActivityResponse } from "@stream-io/feeds-client";
 import { useUser } from "./useUser";
@@ -21,6 +21,7 @@ export function useFeedActivities() {
   const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   const userId = user?.nickname || "";
+
   const [timelineFeed, setTimelineFeed] = useState<Feed | null>(null);
   const [userFeed, setUserFeed] = useState<Feed | null>(null);
   const [timelineActivities, setTimelineActivities] = useState<
@@ -29,18 +30,12 @@ export function useFeedActivities() {
   const [userActivities, setUserActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedType, setFeedType] = useState<"timeline" | "user">("timeline");
-  const feedTypeRef = useRef(feedType);
-
-  // Update ref when feedType changes
-  useEffect(() => {
-    feedTypeRef.current = feedType;
-  }, [feedType]);
 
   // Get current activities based on feed type
   const activities =
     feedType === "timeline" ? timelineActivities : userActivities;
 
-  // Initialize feeds
+  // Initialize feeds ONCE - following the official react-sample-app pattern
   useEffect(() => {
     if (!client || !userId) return;
 
@@ -51,52 +46,30 @@ export function useFeedActivities() {
       try {
         setLoading(true);
 
-        // Initialize feeds
-        // - timeline: Aggregates activities from people you follow (NOT yourself)
-        // - user: Your own posts
+        // Create feed instances
         const timeline = client.feed("timeline", userId);
         const user = client.feed("user", userId);
 
-        // Initialize feeds sequentially to avoid concurrent getOrCreate calls
-        await timeline.getOrCreate({ watch: true });
-        await user.getOrCreate({ watch: true });
+        // Check if feeds already have activities (already initialized)
+        const timelineState = timeline.state.getLatestValue();
+        const userState = user.state.getLatestValue();
+        
+        const timelineAlreadyInitialized = typeof timelineState.activities !== 'undefined';
+        const userAlreadyInitialized = typeof userState.activities !== 'undefined';
 
-        // CLEANUP: Remove self-follow if it exists (from old code)
-        // console.log('🔍 Checking for self-follow relationship...');
-        // try {
-        //   const follows = await client.queryFollows({
-        //     filter: {
-        //       source_feed: timeline.feed,
-        //       target_feed: { $in: [user.feed] },
-        //     },
-        //   });
-          
-        //   if (follows.follows.length > 0) {
-        //     console.log('❌ Found self-follow! Removing it...', follows.follows);
-        //     await client.unfollow({
-        //       source: timeline.feed,
-        //       target: user.feed,
-        //     });
-        //     console.log('✅ Self-follow removed successfully!');
-            
-        //     await timeline.getOrCreate();
-        //   } else {
-        //     console.log('✅ No self-follow found - timeline is clean!');
-        //   }
-        // } catch (err) {
-        //   console.error('Error checking/removing self-follow:', err);
-        // }
+        // Only call getOrCreate if the feed hasn't been initialized yet
+        if (!timelineAlreadyInitialized) {
+          await timeline.getOrCreate({ watch: true });
+        }
+        
+        if (!userAlreadyInitialized) {
+          await user.getOrCreate({ watch: true });
+        }
 
-        // console.log('📊 Timeline feed info:', {
-        //   feed: timeline.feed,
-        //   userId,
-        // });
-
-        // Set up subscriptions for both feeds
+        // Set up subscriptions to listen for real-time updates
         timelineUnsubscribe = timeline.state.subscribe((state) => {
           console.log('📥 Timeline activities update:', state.activities?.length);
           setTimelineActivities(state.activities || []);
-          // Update React Query cache when real-time updates come in
           queryClient.setQueryData(
             FEED_QUERY_KEYS.timeline(userId),
             state.activities || []
@@ -106,25 +79,22 @@ export function useFeedActivities() {
         userUnsubscribe = user.state.subscribe((state) => {
           console.log('📥 User activities update:', state.activities?.length);
           setUserActivities(state.activities || []);
-          // Update React Query cache when real-time updates come in
           queryClient.setQueryData(
             FEED_QUERY_KEYS.user(userId),
             state.activities || []
           );
         });
 
-        // Set initial activities from current state
-        const timelineState = timeline.state.getLatestValue();
-        setTimelineActivities(timelineState.activities || []);
+        // Get latest state after potential getOrCreate calls
+        const latestTimelineState = timeline.state.getLatestValue();
+        const latestUserState = user.state.getLatestValue();
 
-        const userState = user.state.getLatestValue();
-        setUserActivities(userState.activities || []);
+        setTimelineActivities(latestTimelineState.activities || []);
+        setUserActivities(latestUserState.activities || []);
 
-        // Log activities with actors for debugging
         console.log('👤 Your user ID:', userId);
-        console.log('📝 Timeline activities actors:', 
-          timelineState.activities?.map(a => a.user.id) || []
-        );
+        console.log('📝 Timeline activities:', latestTimelineState.activities?.length);
+        console.log('📝 User activities:', latestUserState.activities?.length);
 
         setTimelineFeed(timeline);
         setUserFeed(user);
@@ -139,8 +109,8 @@ export function useFeedActivities() {
     initFeeds();
 
     return () => {
-      // Only unsubscribe from state updates, don't close the feeds
-      // This allows the feeds to continue running in the background
+      // Only unsubscribe from state updates
+      // Don't stop watching - feeds should stay active
       timelineUnsubscribe?.();
       userUnsubscribe?.();
     };
@@ -148,60 +118,33 @@ export function useFeedActivities() {
 
   // Handle feed type switching
   const switchFeedType = useCallback(
-    async (type: "timeline" | "user") => {
-      if (!client || type === feedType) return;
-
-      try {
-        setLoading(true);
-        setFeedType(type);
-      } catch (err) {
-        console.error("Error switching feed type:", err);
-        showError("failed to switch feed type");
-      } finally {
-        setLoading(false);
-      }
+    (type: "timeline" | "user") => {
+      if (type === feedType) return;
+      setFeedType(type);
     },
-    [client, feedType, showError]
+    [feedType]
   );
 
-  // Manual refetch functions that work with existing feeds
-  const refetchTimeline = useCallback(async () => {
+  // For pagination - use getNextPage()
+  const loadMoreTimeline = useCallback(async () => {
     if (!timelineFeed) return;
     try {
-      await timelineFeed.getOrCreate();
-      showSuccess("Timeline refreshed successfully!");
+      await timelineFeed.getNextPage();
     } catch (error) {
-      console.error("Error refetching timeline:", error);
-      showError("Failed to refresh timeline");
+      console.error("Error loading more timeline activities:", error);
+      showError("Failed to load more activities");
     }
-  }, [timelineFeed, showSuccess, showError]);
+  }, [timelineFeed, showError]);
 
-  const refetchUser = useCallback(async () => {
+  const loadMoreUser = useCallback(async () => {
     if (!userFeed) return;
     try {
-      await userFeed.getOrCreate();
-      showSuccess("User feed refreshed successfully!");
+      await userFeed.getNextPage();
     } catch (error) {
-      console.error("Error refetching user feed:", error);
-      showError("Failed to refresh user feed");
+      console.error("Error loading more user activities:", error);
+      showError("Failed to load more activities");
     }
-  }, [userFeed, showSuccess, showError]);
-
-  const refetchAllFeeds = useCallback(async () => {
-    try {
-      // Refetch feeds sequentially to avoid concurrent getOrCreate calls
-      if (timelineFeed) {
-        await timelineFeed.getOrCreate();
-      }
-      if (userFeed) {
-        await userFeed.getOrCreate();
-      }
-      showSuccess("All feeds refreshed successfully!");
-    } catch (error) {
-      console.error("Error refetching feeds:", error);
-      showError("Failed to refresh feeds");
-    }
-  }, [timelineFeed, userFeed, showSuccess, showError]);
+  }, [userFeed, showError]);
 
   return {
     timelineFeed,
@@ -210,9 +153,7 @@ export function useFeedActivities() {
     feedType,
     loading,
     switchFeedType,
-    // React Query refetch functions
-    refetchTimeline,
-    refetchUser,
-    refetchAllFeeds,
+    loadMoreTimeline,
+    loadMoreUser,
   };
 }

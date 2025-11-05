@@ -67,6 +67,17 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
     setIsBookmarked(forceBookmarked || isBookmarkedByUser);
   }, [activity, user, forceBookmarked]);
 
+  const ensureNotificationFeedExists = async (userId: string) => {
+    if (!client) return;
+    
+    try {
+      const notificationFeed = client.feed('notification', userId);
+      await notificationFeed.getOrCreate({ watch: false });
+    } catch (err) {
+      console.warn('Could not create notification feed for user:', userId, err);
+    }
+  };
+
   const handleReaction = async (type: string) => {
     if (loading || !client) return;
 
@@ -88,7 +99,13 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
           [type]: Math.max(0, (prev[type] || 0) - 1),
         }));
       } else {
-        await client.addReaction({ // TODO: .addActivityReaction ?
+        const activityOwnerId = activity.user?.id;
+
+        if (activityOwnerId) {
+          await ensureNotificationFeedExists(activityOwnerId);
+        }
+        
+        await client.addActivityReaction({
           activity_id: activity.id,
           type,
           create_notification_activity: true,

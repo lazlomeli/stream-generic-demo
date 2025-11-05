@@ -8,7 +8,7 @@
 
 /* Desktop View */
 .profile-page-container.desktop-view {
-  height: calc(100vh - 4rem);
+  /* height: calc(100vh - 4rem); */
   background-color: white;
   display: flex;
 }
