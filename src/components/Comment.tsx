@@ -113,6 +113,16 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
     setShowCommentInput(false);
   }, []);
 
+  // Automatically open comment input when showComments becomes true
+  useEffect(() => {
+    if (showComments) {
+      setShowCommentInput(true);
+    } else {
+      setShowCommentInput(false);
+      setNewComment("");
+    }
+  }, [showComments]);
+
   useEffect(() => {
     const reactions: Record<string, Set<string>> = {};
     const counts: Record<string, Record<string, number>> = {};

@@ -7,12 +7,14 @@ import { generateAvatarUrl } from '../utils/avatarUtils';
 import { useSearch } from '../hooks/feeds/useSearch';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
+import { useTrendingHashtags } from '../hooks/feeds/useTrendingHashtags';
 
 interface RightSidebarProps {}
 
 const RightSidebar: React.FC<RightSidebarProps> = () => {
   const navigate = useNavigate();
   const { whoToFollow, isLoading: isLoadingWhoToFollow } = useFollowSuggestions();
+  const { hashtags: trendingHashtags, isLoading: isLoadingHashtags } = useTrendingHashtags(5);
   
   // Use the existing useSearch hook
   const {
@@ -46,14 +48,9 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
 
   const isSearchActive = searchQuery.trim().length > 0;
 
-  // Fake trending hashtags data
-  const trendingHashtags = [
-    { hashtag: '#basketball', postCount: '1.3k' },
-    { hashtag: '#technology', postCount: '2.1k' },
-    { hashtag: '#travel', postCount: '987' },
-    { hashtag: '#photography', postCount: '1.5k' },
-    { hashtag: '#coding', postCount: '3.2k' },
-  ];
+  const handleHashtagClick = (hashtag: string) => {
+    navigate(`/feeds/hashtag/${hashtag}`);
+  };
 
   return (
     <aside className="right-sidebar">
@@ -93,12 +90,22 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
         <div className="sidebar-section">
           <h3 className="section-title">Trending</h3>
           <div className="trending-list">
-            {trendingHashtags.map((item, index) => (
-              <div key={index} className="trending-item">
-                <span className="hashtag">{item.hashtag}</span>
-                <span className="post-count">{item.postCount} posts</span>
-              </div>
-            ))}
+            {isLoadingHashtags ? (
+              <div className="trending-loading">Loading...</div>
+            ) : trendingHashtags.length === 0 ? (
+              <div className="trending-empty">No hashtags yet</div>
+            ) : (
+              trendingHashtags.map((item, index) => (
+                <div 
+                  key={index} 
+                  className="trending-item"
+                  onClick={() => handleHashtagClick(item.hashtag)}
+                >
+                  <span className="hashtag">#{item.hashtag}</span>
+                  <span className="post-count">{item.count} {item.count === 1 ? 'post' : 'posts'}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

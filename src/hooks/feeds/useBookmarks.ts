@@ -18,7 +18,17 @@ const fetchBookmarkedActivities = async (
   try {
     const bookmarks = await client.queryBookmarks();
 
-    return bookmarks.bookmarks.map((bookmark) => bookmark.activity) || [];
+    const activities = bookmarks.bookmarks.map((bookmark) => bookmark.activity) || [];
+    
+    // Deduplicate activities by ID
+    const uniqueActivitiesMap = new Map<string, ActivityResponse>();
+    activities.forEach((activity) => {
+      if (activity?.id && !uniqueActivitiesMap.has(activity.id)) {
+        uniqueActivitiesMap.set(activity.id, activity);
+      }
+    });
+    
+    return Array.from(uniqueActivitiesMap.values());
   } catch (error) {
     console.error("Error fetching bookmarked activities:", error);
     toast.error("Error fetching bookmarks");

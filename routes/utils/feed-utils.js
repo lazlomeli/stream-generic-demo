@@ -1,5 +1,14 @@
 import { generateSampleUsers } from './sample-users.js';
 
+// Extract hashtags from text (same logic as frontend)
+function extractHashtags(text) {
+  if (!text) return [];
+  const regex = /#(\w+)/g;
+  const matches = text.matchAll(regex);
+  const hashtags = [...matches].map(match => match[1].toLowerCase());
+  return [...new Set(hashtags)]; // Remove duplicates
+}
+
 export async function resetFeeds(client) {
   try {
     let totalActivitiesDeleted = 0;
@@ -7,13 +16,11 @@ export async function resetFeeds(client) {
     try {
       let hasMoreActivities = true;
       let activitiesNextCursor = undefined;
-
       while (hasMoreActivities) {
         const activitiesResponse = await client.feeds.queryActivities({
           limit: 100,
           next: activitiesNextCursor,
         });
-
         const activityIds = activitiesResponse.activities.map(a => a.id);
         
         if (activityIds.length > 0) {
@@ -23,7 +30,6 @@ export async function resetFeeds(client) {
           });
           totalActivitiesDeleted += activityIds.length;
         }
-
         activitiesNextCursor = activitiesResponse.next;
         hasMoreActivities = !!activitiesNextCursor && activityIds.length > 0;
       }
@@ -40,13 +46,11 @@ export async function resetFeeds(client) {
     try {
       let hasMoreFollows = true;
       let followsNextCursor = undefined;
-
       while (hasMoreFollows) {
         const followsResponse = await client.feeds.queryFollows({
           limit: 100,
           next: followsNextCursor,
         });
-
         for (const follow of followsResponse.follows) {
           try {
             await client.feeds.unfollow({
@@ -57,7 +61,6 @@ export async function resetFeeds(client) {
           } catch (error) {
           }
         }
-
         followsNextCursor = followsResponse.next;
         hasMoreFollows = !!followsNextCursor && followsResponse.follows.length > 0;
       }
@@ -94,16 +97,20 @@ async function ensureFeedGroupsExist(client) {
         enabled: true,
       },
     },
+    {
+      id: 'hashtag',
+    },
   ];
 
   for (const feedGroup of feedGroupsToCreate) {
     try {
       await client.feeds.createFeedGroup(feedGroup);
+      console.log(`✅ Created feed group: ${feedGroup.id}`);
     } catch (error) {
       if (error.code === 4 || error.message?.includes('already exists')) {
-        console.error('Feed group already exists:', error);
+        console.log(`ℹ️ Feed group already exists: ${feedGroup.id}`);
       } else {
-        console.error('Error creating feed group:', error);
+        console.error(`❌ Error creating feed group ${feedGroup.id}:`, error);
       }
     }
   }
@@ -127,31 +134,62 @@ export async function seedFeeds(client, currentUserId) {
 
     const createdActivities = [];
     const activityTexts = [
-      '🌟 Just joined the platform! Excited to share my journey.',
-      '📸 Beautiful sunset today at the beach!',
-      '💡 Learning something new every day keeps the mind sharp.',
-      '🎉 Celebrating small wins today!',
-      '🚀 Working on an exciting new project!',
+      '🌟 Just joined the platform! Excited to share my journey. #newbeginnings #introduction',
+      '📸 Beautiful sunset today at the beach! #photography #nature #sunset',
+      '💡 Learning something new every day keeps the mind sharp. #learning #growth #technology',
+      '🎉 Celebrating small wins today! #motivation #success #productivity',
+      '🚀 Working on an exciting new project! #coding #development #innovation',
     ];
 
     for (let i = 0; i < sampleUsers.length; i++) {
       const user = sampleUsers[i];
       const userFeed = `user:${user.id}`;
+      const text = activityTexts[i] || `Post from ${user.name}`;
       
       try {
+        // Extract hashtags from the text
+        const hashtags = extractHashtags(text);
+        const feeds = [userFeed];
+        
+        // Create hashtag feeds using getOrCreate for each hashtag
+        if (hashtags.length > 0) {
+          console.log(`📝 Creating activity with hashtags:`, hashtags);
+          
+          for (const hashtag of hashtags) {
+            try {
+              const hashtagFeed = client.feeds.feed('hashtag', hashtag);
+              // Use getOrCreate with user_id to create the hashtag feed
+              const feedResponse = await hashtagFeed.getOrCreate({
+                user_id: user.id,
+                visibility: 'public',
+                name: hashtag,
+              });
+              feeds.push(feedResponse.feed.feed);
+              console.log(`✅ Created/verified hashtag feed: ${hashtag} -> ${feedResponse.feed.feed}`);
+            } catch (hashtagError) {
+              console.error(`❌ Error creating hashtag feed ${hashtag}:`, hashtagError);
+            }
+          }
+        }
+        
+        console.log(`📤 Adding activity to feeds:`, feeds);
+        
+        // Add activity to user feed and hashtag feeds
         const activityResponse = await client.feeds.addActivity({
           user_id: user.id,
           type: 'post',
-          feeds: [userFeed],
-          text: activityTexts[i] || `Post from ${user.name}`,
+          feeds: feeds,
+          text: text,
         });
         
+        console.log(`✅ Created activity ${activityResponse.activity.id} with ${hashtags.length} hashtags`);
         createdActivities.push(activityResponse.activity);
       } catch (error) {
-        console.error('Error adding reaction:', error);
+        console.error('❌ Error adding activity:', error);
       }
     }
 
+    // Add some likes
     for (let i = 0; i < Math.min(3, createdActivities.length); i++) {
       const activity = createdActivities[i];
       try {
@@ -164,6 +202,7 @@ export async function seedFeeds(client, currentUserId) {
       }
     }
 
+    // Add some comments
     for (let i = 0; i < Math.min(2, createdActivities.length); i++) {
       const activity = createdActivities[i];
       try {

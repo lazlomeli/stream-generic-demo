@@ -19,6 +19,7 @@
   display: flex;
   justify-content: center;
   overflow-y: auto;
+  background-color: #f9fafb;
 }
 
 /* Mobile View */
@@ -384,6 +385,7 @@
   min-width: 92px;
   justify-content: space-around;
   margin-right: 20px;
+  font-family: 'Geist Mono', sans-serif;
 }
 
 .follow-toggle-button.following {

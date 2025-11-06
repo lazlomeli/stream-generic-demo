@@ -37,16 +37,16 @@ export function NotificationItem({ notification }: NotificationItemProps) {
     } else if (notification.type === "reaction") {
       const targetId = notification.notification_context?.target?.id;
       if (targetId) {
-        navigate(`/feeds?postId=${targetId}`);
+        navigate(`/feeds/for-you?postId=${targetId}`);
       } else {
-        navigate("/feeds");
+        navigate("/feeds/for-you");
       }
     } else if (notification.type === "comment") {
       const targetId = notification.notification_context?.target?.id;
       if (targetId) {
-        navigate(`/feeds?postId=${targetId}`);
+        navigate(`/feeds/for-you?postId=${targetId}`);
       } else {
-        navigate("/feeds");
+        navigate("/feeds/for-you");
       }
     }
   };

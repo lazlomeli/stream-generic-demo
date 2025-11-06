@@ -83,6 +83,7 @@
 .activity-timestamp {
   font-size: 12px;
   color: rgb(176, 179, 187);
+  font-family: 'Geist Mono', sans-serif;
 }
 
 .activity-actions {

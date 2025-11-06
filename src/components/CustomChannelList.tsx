@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useChatContext, ChannelList as StreamChannelList } from 'stream-chat-react';
+import type { Channel } from 'stream-chat';
 import CreateChannelModal from './CreateChannelModal';
 import CustomChannelPreview from './CustomChannelPreview';
 import usersGroupIcon from '../icons/users-group.svg';
@@ -17,6 +18,7 @@ interface CustomChannelListProps {
 const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   const { filters, sort, options } = props;
   const { client, setActiveChannel } = useChatContext();
+
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showCreateDMModal, setShowCreateDMModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -26,6 +28,36 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
     name: string;
     image?: string;
   }>>([]);
+
+  // Client-side filter function for search
+  const channelRenderFilterFn = useCallback((channels: Channel[]) => {
+    if (!searchQuery.trim()) {
+      return channels;
+    }
+    
+    const query = searchQuery.trim().toLowerCase();
+    
+    return channels.filter((channel) => {
+      // Search by channel name
+      // @ts-ignore
+      const channelName = channel.data?.name?.toLowerCase();
+      if (channelName?.includes(query)) {
+        return true;
+      }
+      
+      // For DMs without a name, search by member names
+      if (!channelName && channel.state.members) {
+        const memberNames = Object.values(channel.state.members)
+          .filter((member) => member.user?.id !== client.userID)
+          .map((member) => member.user?.name?.toLowerCase() || member.user?.id?.toLowerCase())
+          .filter(Boolean);
+        
+        return memberNames.some((name) => name?.includes(query));
+      }
+      
+      return false;
+    });
+  }, [searchQuery, client.userID]);
 
   const fetchUsers = useCallback(async () => {
     if (availableUsers.length > 0) {
@@ -43,7 +75,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
         { id: 1 },
         { limit: 50 }
       );
-
       const userList = users.users
         .filter(user => {
           if (user.id === client.userID) {
@@ -57,7 +88,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           name: user.name || user.id,
           image: user.image
         }));
-
       setAvailableUsers(userList);
       return userList;
     } catch (error) {
@@ -89,7 +119,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
   const handleChannelCreated = useCallback(async (channelId: string) => {
     setShowCreateGroupModal(false);
     setShowCreateDMModal(false);
-
     try {
       const newChannel = client.channel('messaging', channelId);
       await newChannel.watch();
@@ -190,6 +219,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           sort={sort}
           options={options}
           Preview={CustomChannelPreview}
+          channelRenderFilterFn={channelRenderFilterFn}
         />
       </div>
 

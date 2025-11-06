@@ -58,6 +58,8 @@ export function useHashtagFeed(
         // Normalize hashtag (lowercase, trim)
         const normalizedHashtag = hashtag.toLowerCase().trim();
         
+        console.log('📱 Loading hashtag feed for:', normalizedHashtag);
+        
         if (!normalizedHashtag) {
           throw new Error('Invalid hashtag');
         }
@@ -75,6 +77,13 @@ export function useHashtagFeed(
 
         setFeed(hashtagFeed);
 
+        // Get initial state
+        const initialState = hashtagFeed.state.getLatestValue();
+        console.log('📱 Initial hashtag feed state:', {
+          activitiesCount: initialState.activities?.length,
+          activities: initialState.activities,
+        });
+
         // Subscribe to state changes for real-time updates
         unsubscribe = hashtagFeed.state.subscribeWithSelector(
           (state) => ({ 
@@ -83,6 +92,7 @@ export function useHashtagFeed(
           }),
           (state) => {
             if (mounted) {
+              console.log('📱 Hashtag feed activities updated:', state.activities?.length);
               setActivities(state.activities || []);
               setHasMore(!!state.next);
             }

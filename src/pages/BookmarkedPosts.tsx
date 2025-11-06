@@ -31,7 +31,7 @@ export default function BookmarksPage() {
     const isInteractive = target.closest('button, a, input, textarea, select');
     
     if (!isInteractive) {
-      navigate(`/feeds?postId=${activityId}`);
+      navigate(`/feeds/for-you?postId=${activityId}`);
     }
   };
 

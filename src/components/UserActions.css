@@ -14,6 +14,7 @@
   border: none;
   min-width: 92px;
   justify-content: space-around;
+  font-family: 'Geist Mono', sans-serif;
 }
 
 .user-action-button.following {

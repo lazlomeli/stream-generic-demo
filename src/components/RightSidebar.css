@@ -97,6 +97,14 @@
   padding: 5px 10px;
 }
 
+.trending-loading,
+.trending-empty {
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 1rem;
+}
+
 .trending-item {
   display: flex;
   justify-content: space-between;
@@ -122,6 +130,7 @@
   font-size: 0.75rem;
   color: #6b7280;
   font-weight: 500;
+  font-family: 'Geist Mono', sans-serif;
 }
 
 /* Suggested Users */

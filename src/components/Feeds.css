@@ -323,6 +323,22 @@
   font-size: 0.625rem !important;
 }
 
+/* Highlighted Post Animation */
+.post-highlighted {
+  animation: highlightPulse 2s ease-in-out;
+  border-left: 4px solid #2563eb !important;
+  background-color: #eff6ff !important;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    background-color: white;
+  }
+  50% {
+    background-color: #eff6ff;
+  }
+}
+
 /* Empty Feed State */
 .empty-feed-state {
   display: flex;

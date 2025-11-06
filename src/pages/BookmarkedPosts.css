@@ -9,7 +9,7 @@
 /* Desktop View */
 .bookmarks-page-container.desktop-view {
   height: calc(100vh - 4rem);
-  background-color: white;
+  background-color: #f9fafb;
   display: flex;
 }
 
