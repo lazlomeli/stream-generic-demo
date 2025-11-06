@@ -31,7 +31,6 @@ export function useNotifications() {
 
   useEffect(() => {
     const unsubscribe = subscribeToGlobalFeed(() => {
-      console.log('🔔 Global feed changed, syncing local state');
       if (globalFeed && !feed) {
         setFeed(globalFeed);
         forceUpdate({});

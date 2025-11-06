@@ -15,10 +15,6 @@ const USER_QUERY_KEY = ["user"];
 const connectUser = async (user: User, showError: (message: string) => void): Promise<FeedsClient> => {
   const apiKey = import.meta.env.VITE_STREAM_API_KEY!;
 
-  console.log('🔑 Connecting user with API key:', apiKey ? '✅ Set' : '❌ Missing');
-
-  console.log('🔑 Connecting user with user:', user);
-
   // Get auth token from unified auth-tokens endpoint (creates/restores user if needed)
   const res = await fetch("/api/auth-tokens", {
     method: "POST",
@@ -45,7 +41,6 @@ const connectUser = async (user: User, showError: (message: string) => void): Pr
   
   try {
     await client.connectUser({ id: user.nickname! }, token);
-    console.log('✅ Successfully connected to Stream Feeds');
   } catch (error) {
     console.error('❌ WebSocket connection error:', error);
     // Don't throw here - let the client be returned even if WS fails initially

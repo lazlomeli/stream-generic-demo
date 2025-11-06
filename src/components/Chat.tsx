@@ -93,8 +93,6 @@ const Chat: React.FC<ChatProps> = () => {
     }
     
     try {
-      console.log('📱 Mobile: Fetching available users, current user:', clientRef.current.userID);
-      
       const users = await clientRef.current.queryUsers(
         {},
         { id: 1 },

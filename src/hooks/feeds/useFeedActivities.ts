@@ -68,7 +68,6 @@ export function useFeedActivities() {
 
         // Set up subscriptions to listen for real-time updates
         timelineUnsubscribe = timeline.state.subscribe((state) => {
-          console.log('📥 Timeline activities update:', state.activities?.length);
           setTimelineActivities(state.activities || []);
           queryClient.setQueryData(
             FEED_QUERY_KEYS.timeline(userId),
@@ -77,7 +76,6 @@ export function useFeedActivities() {
         });
 
         userUnsubscribe = user.state.subscribe((state) => {
-          console.log('📥 User activities update:', state.activities?.length);
           setUserActivities(state.activities || []);
           queryClient.setQueryData(
             FEED_QUERY_KEYS.user(userId),
@@ -91,10 +89,6 @@ export function useFeedActivities() {
 
         setTimelineActivities(latestTimelineState.activities || []);
         setUserActivities(latestUserState.activities || []);
-
-        console.log('👤 Your user ID:', userId);
-        console.log('📝 Timeline activities:', latestTimelineState.activities?.length);
-        console.log('📝 User activities:', latestUserState.activities?.length);
 
         setTimelineFeed(timeline);
         setUserFeed(user);
