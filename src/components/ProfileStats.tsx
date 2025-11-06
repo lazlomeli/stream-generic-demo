@@ -1,29 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useProfileStats } from "../hooks/feeds/useProfileStats";
-import { FollowUser } from "../hooks/feeds/useProfileStats";
 import { useUser } from "../hooks/feeds/useUser";
-import { X, UserPlus, UserMinus } from "lucide-react";
+import { X } from "lucide-react";
 import { User } from "@auth0/auth0-react";
 import { generateAvatarUrl } from "../utils/avatarUtils";
+import { UserActions } from "./UserActions";
 import "./ProfileStats.css";
 
 interface ProfileStatsProps {
   user: User;
-  isOwnProfile?: boolean;
-}
-
-interface FollowersModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  users: FollowUser[];
-  isLoading: boolean;
-  onFollow?: (userId: string) => void;
-  onUnfollow?: (userId: string) => void;
-  isFollowing?: (userId: string) => boolean;
-  isFollowLoading?: boolean;
-  isUnfollowLoading?: boolean;
   isOwnProfile?: boolean;
 }
 
@@ -37,11 +23,6 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
     followers,
     following,
     isLoading,
-    followUser,
-    unfollowUser,
-    isFollowing,
-    isFollowingLoading,
-    isUnfollowingLoading,
   } = profileStats;
 
   const filteredFollowers = isOwnProfile 
@@ -143,6 +124,7 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                       <Link
                         to={`/profile/${user.id}`}
                         className="user-info-link"
+                        onClick={handleCloseModal}
                       >
                         <div className="user-avatar">
                           <img 
@@ -157,27 +139,9 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                         </div>
                       </Link>
                       {user.id !== currentUser?.nickname && (
-                        <button
-                          onClick={() => {
-                            if (isFollowing(user.id)) {
-                              unfollowUser(user.id);
-                            } else {
-                              followUser(user.id);
-                            }
-                          }}
-                          disabled={isFollowingLoading || isUnfollowingLoading}
-                          className={`follow-button ${
-                            isFollowing(user.id)
-                              ? "following"
-                              : ""
-                          }`}
-                        >
-                          {isFollowing(user.id) ? (
-                            <UserMinus className="h-4 w-4" />
-                          ) : (
-                            <UserPlus className="h-4 w-4" />
-                          )}
-                        </button>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <UserActions targetUserId={user.id} />
+                        </div>
                       )}
                     </div>
                   ))}

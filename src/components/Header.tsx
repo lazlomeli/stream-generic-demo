@@ -82,6 +82,12 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
     navigate('/login')
   }
 
+  const handleProfileClick = () => {
+    if (user?.nickname) {
+      navigate(`/profile/${user.nickname}`)
+    }
+  }
+
   const handleResetClick = () => {
     setShowResetConfirm(true)
     // Prevent body scroll when modal is open
@@ -241,7 +247,19 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
           <div className="header-right">
             {isAuthenticated && (
               <div className="user-section">
-                <div className="user-info">
+                <div 
+                  className="user-info" 
+                  onClick={handleProfileClick}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleProfileClick()
+                    }
+                  }}
+                  title="View your profile"
+                >
                   <div className="user-avatar">
                     <img 
                       src={user?.picture || `https://api.dicebear.com/7.x/${(() => {

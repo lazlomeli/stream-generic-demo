@@ -83,6 +83,24 @@
   flex-direction: column;
 }
 
+/* Feeds Wrapper - Contains Composer and Feeds */
+.feeds-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 600px;
+  margin: 30px;
+}
+
+/* Composer Container - Top Section */
+.feeds-wrapper .composer-container {
+  background: white;
+  border: 0.5px solid #adb3b8;
+  border-radius: 3px;
+  padding: 10px;
+  position: static;
+}
+
 /* Feeds Container - Base Styles */
 .feeds-container {
   width: 600px;
@@ -99,27 +117,130 @@
   -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 
+/* Feeds Container inside wrapper - 100% width */
+.feeds-wrapper .feeds-container {
+  width: 100%;
+  margin: 0;
+}
+
 .feeds-container::-webkit-scrollbar {
   display: none; /* WebKit (Chrome, Safari) */
 }
 
-/* Mobile Feeds Container Adjustments */
-.mobile-view .feeds-container {
+/* Feed Tabs - Twitter Style */
+.feed-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: 5px;
+}
+
+.feed-tab {
+  flex: 1;
+  position: relative;
+  background: none;
+  border: none;
+  padding: 16px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: #536471;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  outline: none;
+}
+
+.feed-tab:hover {
+  background-color: rgba(15, 20, 25, 0.03);
+}
+
+.feed-tab:active {
+  background-color: rgba(15, 20, 25, 0.05);
+}
+
+.feed-tab.active {
+  color: #0f1419;
+  font-weight: 700;
+}
+
+.feed-tab-label {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+
+.feed-tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 60%;
+  max-width: 80px;
+  height: 4px;
+  background-color: rgb(37 99 235);
+}
+
+/* Hashtag Header (when viewing hashtag feeds) */
+.hashtag-header {
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Mobile Feeds Wrapper Adjustments */
+.mobile-view .feeds-wrapper {
   width: 100%;
   height: calc(100% - 60px); /* Account for bottom nav */
   margin: 0;
-  border: none;
-  border-radius: 40px 40px 0 0;
+  gap: 12px;
   overflow-y: auto;
-  box-shadow: none;
   padding: 1rem;
   /* Hide scrollbar */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 
-.mobile-view .feeds-container::-webkit-scrollbar {
+.mobile-view .feeds-wrapper::-webkit-scrollbar {
   display: none; /* WebKit */
+}
+
+.mobile-view .feeds-wrapper .composer-container {
+  border: none;
+  border-bottom: 0.5px solid #e5e7eb;
+  border-radius: 0;
+}
+
+/* Mobile Feeds Container Adjustments */
+.mobile-view .feeds-container {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  overflow-y: visible;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Mobile Feed Tabs */
+.mobile-view .feed-tabs {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mobile-view .feed-tab {
+  padding: 12px 8px;
+  font-size: 13px;
+}
+
+.mobile-view .feed-tab-indicator {
+  width: 50px;
+  height: 3px;
 }
 
 /* Mobile Bottom Nav positioning */

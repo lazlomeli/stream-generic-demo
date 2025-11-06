@@ -1,12 +1,7 @@
 /* Composer Component Styles */
 .composer-container {
-  padding: 10px;
-  margin-bottom: 1rem;
-  border-bottom: 0.5px solid #adb3b8;
+  padding: 20px 10px 10px 10px !important;
   background-color: white;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .composer-container.active {

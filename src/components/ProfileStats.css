@@ -218,39 +218,6 @@
   color: rgb(31 41 55);
 }
 
-/* Follow Button */
-.follow-button {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  border: none;
-  cursor: pointer;
-}
-
-.follow-button.following {
-  background-color: rgb(107 114 128);
-  color: white;
-}
-
-.follow-button.following:hover {
-  background-color: rgb(220 38 38);
-}
-
-.follow-button:not(.following) {
-  background-color: rgb(37 99 235);
-  color: white;
-}
-
-.follow-button:not(.following):hover {
-  background-color: rgb(29 78 216);
-}
-
-.follow-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 @keyframes spin {
   to {

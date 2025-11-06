@@ -2,7 +2,7 @@ import { Composer } from './Composer';
 import Activity from './Activity';
 import { useEffect, useRef } from 'react';
 import { useSearch } from '../hooks/feeds/useSearch';
-import { useSearchParams, useLocation, useParams } from 'react-router-dom';
+import { useSearchParams, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { usePopularActivities } from '../hooks/feeds/usePopularActivities';
 import { useFeedActivities } from '../hooks/feeds/useFeedActivities';
 import { useHashtagFeed } from '../hooks/feeds/useHashtagFeed';
@@ -22,6 +22,7 @@ const Feeds = ({ feedType }: FeedsProps) => {
   const { activities: hashtagActivities, isLoading: isLoadingHashtag } = useHashtagFeed(feedType === 'hashtag' ? hashtag : undefined);
   const { isMobileView, toggleView } = useResponsive();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Debug logging
   useEffect(() => {
@@ -114,34 +115,57 @@ const Feeds = ({ feedType }: FeedsProps) => {
 
   const feedTitle = getFeedTitle();
 
+  const tabs = [
+    { id: 'for-you', label: 'For You', path: '/feeds/for-you' },
+    { id: 'following', label: 'Following', path: '/feeds/following' },
+    { id: 'trending', label: 'Trending', path: '/feeds/trending' },
+  ];
+
   const feedsContent = (
-    <div className="feeds-container">
-      {feedTitle && (
-        <div style={{ 
-          fontSize: '18px', 
-          fontWeight: 600, 
-          color: '#111827', 
-          padding: '10px 10px 10px 15px'
-        }}>
-          {feedTitle}
-        </div>
-      )}
-      <Composer />
-      <div>
-        {activities.length === 0 ? (
-          <div className="empty-feed-state">
-            No posts yet
+    <div className="feeds-wrapper">
+        <Composer />   
+      <div className="feeds-container">
+        {feedType === 'hashtag' ? (
+          <div className="hashtag-header">
+            <div style={{ 
+              fontSize: '18px', 
+              fontWeight: 600, 
+              color: '#111827', 
+              padding: '10px 10px 10px 15px'
+            }}>
+              {feedTitle}
+            </div>
           </div>
         ) : (
-          activities.map((activity) => (
-            <div 
-              key={`feed-${activity.id}`}
-              ref={(el) => { postRefs.current[activity.id] = el; }}
-            >
-              <Activity activity={activity} />
-            </div>
-          ))
+          <div className="feed-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={`feed-tab ${feedType === tab.id ? 'active' : ''}`}
+                onClick={() => navigate(tab.path)}
+              >
+                <span className="feed-tab-label">{tab.label}</span>
+                {feedType === tab.id && <div className="feed-tab-indicator" />}
+              </button>
+            ))}
+          </div>
         )}
+        <div>
+          {activities.length === 0 ? (
+            <div className="empty-feed-state">
+              No posts yet
+            </div>
+          ) : (
+            activities.map((activity) => (
+              <div 
+                key={`feed-${activity.id}`}
+                ref={(el) => { postRefs.current[activity.id] = el; }}
+              >
+                <Activity activity={activity} />
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
