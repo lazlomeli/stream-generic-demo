@@ -13,6 +13,9 @@ interface NotificationActivity {
     id: string;
     name: string;
     custom?: any;
+    data?: any;
+    profile?: any;
+    image?: string;
   };
   created_at?: Date | string;
   updated_at?: Date | string;
@@ -30,6 +33,11 @@ interface NotificationItemProps {
 
 export function NotificationItem({ notification }: NotificationItemProps) {
   const navigate = useNavigate();
+  
+  // Extract user image from various possible locations
+  const userImage = notification.user?.data?.image || 
+                   notification.user?.profile?.image || 
+                   notification.user?.image;
 
   const handleNotificationClick = () => {
     if (notification.type === "follow") {
@@ -128,6 +136,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         <Avatar
           userId={notification.user?.id}
           userName={notification.user?.name || notification.user?.id}
+          userImage={userImage}
           size="md"
         />
       </div>

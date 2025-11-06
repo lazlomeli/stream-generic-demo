@@ -51,9 +51,11 @@ export function UserActions({ targetUserId, iconOnly = false }: UserActionsProps
 
 export function UserAvatar({
   userId,
+  userImage,
   size = "md",
 }: {
   userId: string;
+  userImage?: string;
   size?: "sm" | "md" | "lg";
 }) {
   const storedUser = localStorage.getItem("user");
@@ -69,5 +71,5 @@ export function UserAvatar({
     }
   }
 
-  return <Avatar userId={userId} userName={userName} size={size} />;
+  return <Avatar userId={userId} userName={userName} userImage={userImage} size={size} />;
 }

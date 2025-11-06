@@ -20,6 +20,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
   const location = useLocation();
   const { isMobileView, toggleView } = useResponsive();
   const [realUserName, setRealUserName] = useState('');
+  const [userImage, setUserImage] = useState<string | undefined>();
   const [userPosts, setUserPosts] = useState<ActivityResponse[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   
@@ -55,10 +56,15 @@ export function UserProfile({ onBack }: UserProfileProps) {
 
           if (response.activities && response.activities.length > 0) {
             const realName = response.activities[0].user?.name || `User ${userId.replace("user-", "")}`;
+            const profileImage = (response.activities[0].user as any)?.data?.image || 
+                                (response.activities[0].user as any)?.profile?.image || 
+                                (response.activities[0].user as any)?.image;
             setRealUserName(realName);
+            setUserImage(profileImage);
             setUserPosts(response.activities.filter(activity => activity.type === "post"));
           } else {
             setRealUserName(`User ${userId.replace("user-", "")}`);
+            setUserImage(undefined);
             setUserPosts([]);
           }
         } catch (error) {
@@ -92,7 +98,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
       <div className="profile-info">
         <div className="profile-avatar">
           <img 
-            src={`https://api.dicebear.com/7.x/${(() => {
+            src={userImage || `https://api.dicebear.com/7.x/${(() => {
               const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
               const charCode = userId.charCodeAt(0);
               const styleIndex = charCode % styles.length;
@@ -100,6 +106,13 @@ export function UserProfile({ onBack }: UserProfileProps) {
             })()}/svg?seed=${encodeURIComponent(userId)}`}
             alt={displayUserName}
             className="profile-avatar-image"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
+              const charCode = userId.charCodeAt(0);
+              const styleIndex = charCode % styles.length;
+              target.src = `https://api.dicebear.com/7.x/${styles[styleIndex]}/svg?seed=${encodeURIComponent(userId)}`;
+            }}
           />
         </div>
         

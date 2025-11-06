@@ -147,9 +147,13 @@ export function SearchResults({
               <div key={user.id} className="search-user-item" onClick={() => handleGoToProfile(user.id)}>
                 <div className="search-user-avatar">
                   <img 
-                    src={generateAvatarUrl(user.id)} 
+                    src={(user as any).data?.image || (user as any).profile?.image || (user as any).image || generateAvatarUrl(user.id)} 
                     alt={user.name}
                     className="avatar-image"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = generateAvatarUrl(user.id);
+                    }}
                   />
                 </div>
                 <div className="search-user-info">

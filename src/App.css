@@ -69,6 +69,13 @@ body {
   padding: 0;
 }
 
+/* Left Sidebar Column - Contains Menu and Profile */
+.left-sidebar-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* Responsive layout adjustments */
 @media (max-width: 1200px) {
   .app-main.with-sidebars {
@@ -83,10 +90,20 @@ body {
   }
 }
 
+@media (max-width: 768px) {
+  .left-sidebar-column {
+    gap: 0.5rem;
+  }
+}
+
 @media (max-width: 640px) {
   .app-main.with-sidebars {
     margin-left: 0; /* No sidebars on mobile */
     margin-right: 0;
+  }
+  
+  .left-sidebar-column {
+    display: none;
   }
 }
 
@@ -109,8 +126,8 @@ body {
 
 .header-container {
   width: 100%;
-  /* padding: 0 1rem; */
 }
+
 
 @media (min-width: 640px) {
   .header-container {

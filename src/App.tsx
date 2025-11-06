@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
+import UserProfileSidebar from './components/UserProfileSidebar'
 import RightSidebar from './components/RightSidebar'
 import LoadingSpinner from './components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -62,7 +63,12 @@ function AppContent() {
         <div className={`app ${shouldHideHeader ? 'fullscreen-mode' : ''} ${isMobileView ? 'mobile-app' : ''}`}>
           {isAuthenticated && !shouldHideHeader && <Header showNavigation={!showSidebars && !isVideoPage && !isCallPage} />}
           <main className={`app-main ${showSidebars ? 'with-sidebars' : ''} ${shouldHideHeader ? 'fullscreen' : ''} ${isMobileView ? 'mobile-main' : ''}`}>
-          {showSidebars && <Sidebar />}
+          {showSidebars && (
+            <div className="left-sidebar-column">
+              <Sidebar />
+              <UserProfileSidebar />
+            </div>
+          )}
               <Routes>
                 <Route path="/" element={
                   isAuthenticated ? <Navigate to="/feeds" replace /> : <Login />

@@ -128,9 +128,13 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
                       >
                         <div className="user-avatar">
                           <img 
-                            src={generateAvatarUrl(user.id)} 
+                            src={user.image || generateAvatarUrl(user.id)} 
                             alt={user.name}
                             className="user-avatar-image"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = generateAvatarUrl(user.id);
+                            }}
                           />
                         </div>
                         <div className="user-details">

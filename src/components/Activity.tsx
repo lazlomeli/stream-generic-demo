@@ -24,6 +24,11 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
   const { isMobileView } = useResponsive();
   const navigate = useNavigate();
   const [showComments, setShowComments] = useState(false);
+  
+  // Extract user image from activity data
+  const activityUserImage = (activity.user as any)?.data?.image || 
+                           (activity.user as any)?.profile?.image || 
+                           (activity.user as any)?.image;
 
   const handleUserClick = (userId: string) => {
     navigate(`/profile/${userId}`);
@@ -66,10 +71,10 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
             onClick={() => {handleUserClick(activity.user.id); console.log('activity.user.id', activity.user.id)}}
             className="activity-user-avatar"
           >
-            <UserAvatar userId={activity.user?.name || "..."} />
+            <UserAvatar userId={activity.user?.name || "..."} userImage={activityUserImage} />
           </div>
         ) : (
-          <UserAvatar userId={activity.user?.name || "..."} />
+          <UserAvatar userId={activity.user?.name || "..."} userImage={activityUserImage} />
         )}
         <div className="activity-content">
           <div className="activity-user-info">

@@ -305,11 +305,16 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
   }) => {
     const indentClass =
       level > 0 ? `ml-${Math.min(level * 8, 32)} reply` : "overflow-hidden";
+    
+    // Extract comment user image
+    const commentUserImage = (comment.user as any)?.data?.image || 
+                            (comment.user as any)?.profile?.image || 
+                            (comment.user as any)?.image;
 
     return (
       <div className={`${indentClass}`}>
         <div className="comment-item-wrapper">
-          <Avatar userName={comment.user.name} size="sm" />
+          <Avatar userName={comment.user.name} userImage={commentUserImage} size="sm" />
           <div className="comment-item-content">
             <div className="comment-header">
               <span className="comment-author">
