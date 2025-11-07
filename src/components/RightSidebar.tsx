@@ -123,8 +123,8 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
                   whoToFollow.slice(0,4).map((user, index) => {
                     const userImage = (user as any).data?.image || (user as any).profile?.image || (user as any).image;
                     return (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '10px' }}>
-                        <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
+                      <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '10px' }}>
+                        <div className="user-item" onClick={() => handleGoToProfile(user.id)}>
                           <div className="user-avatar">
                             <img 
                               src={userImage || generateAvatarUrl(user.id)} 
