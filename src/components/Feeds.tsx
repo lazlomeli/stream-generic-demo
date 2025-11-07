@@ -107,7 +107,7 @@ const Feeds = ({ feedType }: FeedsProps) => {
       case 'for-you':
         return 'For You';
       case 'hashtag':
-        return `Viewing #${hashtag} posts`;
+        return `#${hashtag} posts`;
       default:
         return null;
     }
@@ -133,7 +133,7 @@ const Feeds = ({ feedType }: FeedsProps) => {
               color: '#111827', 
               padding: '10px 10px 10px 15px'
             }}>
-              {feedTitle}
+              <span style={{ color: '#2563eb' }}>#{hashtag}</span> posts
             </div>
           </div>
         ) : (

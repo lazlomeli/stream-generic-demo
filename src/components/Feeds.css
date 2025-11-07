@@ -90,7 +90,7 @@
   gap: 20px;
   width: 600px;
   margin: 30px;
-  height: calc(100vh - 120px);
+  /* height: calc(100vh - 120px); */
   max-height: calc(100vh - 120px);
 }
 
@@ -126,7 +126,7 @@
   width: 100%;
   margin: 0;
   flex: 1;
-  min-height: 0;
+  min-height: 455px;
   overflow-y: auto;
 }
 

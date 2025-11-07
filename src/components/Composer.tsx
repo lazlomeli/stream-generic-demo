@@ -13,7 +13,7 @@ export function Composer() {
   const [text, setText] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const maxLength = 280; // Twitter-like character limit
+  const maxLength = 280;
   const { user } = useUser();
   const { handlePost, posting } = useFeedActions();
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -136,7 +136,7 @@ export function Composer() {
                     className="emoji-picker-container"
                   >
                     <EmojiPicker
-                      theme={Theme.DARK}
+                      theme={Theme.LIGHT}
                       onEmojiClick={handleEmojiClick}
                     />
                   </div>

@@ -95,7 +95,7 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
             ) : trendingHashtags.length === 0 ? (
               <div className="trending-empty">No hashtags yet</div>
             ) : (
-              trendingHashtags.map((item, index) => (
+              trendingHashtags.slice(0, 3).map((item, index) => (
                 <div 
                   key={index} 
                   className="trending-item"
@@ -120,7 +120,7 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
             ) : whoToFollow.length === 0 ? (
               <span className="no-suggestions-text">No new suggestions!</span>
             ) : (
-                  whoToFollow.map((user, index) => {
+                  whoToFollow.slice(0,4).map((user, index) => {
                     const userImage = (user as any).data?.image || (user as any).profile?.image || (user as any).image;
                     return (
                       <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
