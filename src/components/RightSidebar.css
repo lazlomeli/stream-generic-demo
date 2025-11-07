@@ -166,7 +166,8 @@
 }
 
 .user-item:hover {
-  background-color: #f4f4f4;
+  background: linear-gradient(90deg, #f4f4f4 70%, #ffffff 100%);
+  
 }
 
 .user-avatar {

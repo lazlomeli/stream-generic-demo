@@ -123,22 +123,24 @@ const RightSidebar: React.FC<RightSidebarProps> = () => {
                   whoToFollow.slice(0,4).map((user, index) => {
                     const userImage = (user as any).data?.image || (user as any).profile?.image || (user as any).image;
                     return (
-                      <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
-                        <div className="user-avatar">
-                          <img 
-                            src={userImage || generateAvatarUrl(user.id)} 
-                            alt={user.name as string}
-                            className="avatar-image"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = generateAvatarUrl(user.id);
-                            }}
-                          />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '10px' }}>
+                        <div key={index} className="user-item" onClick={() => handleGoToProfile(user.id)}>
+                          <div className="user-avatar">
+                            <img 
+                              src={userImage || generateAvatarUrl(user.id)} 
+                              alt={user.name as string}
+                              className="avatar-image"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = generateAvatarUrl(user.id);
+                              }}
+                            />
+                          </div>
+                          {/* <div className="user-info"> */}
+                            <div className="user-name">{user.name}</div>
+                          {/* </div> */}
                         </div>
-                        <div className="user-info">
-                          <div className="user-name">{user.name}</div>
-                          <UserActions targetUserId={user.id} />
-                        </div>
+                        <UserActions targetUserId={user.id} />
                       </div>
                     );
                   })
