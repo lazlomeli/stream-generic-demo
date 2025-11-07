@@ -4,20 +4,46 @@ import { useToast } from "../../contexts/ToastContext";
 import { useUser } from "./useUser";
 import { extractHashtags } from "../../utils/hashtagUtils";
 
+interface PollData {
+  name: string;
+  options: { text: string }[];
+}
+
+interface AttachmentData {
+  url: string;
+  type: "image" | "video";
+}
+
 const addActivityToFeed = async (
     client: FeedsClient,
     userId: string,
-    text: string
+    text: string,
+    poll?: PollData | null,
+    attachment?: AttachmentData | null
   ): Promise<void> => {
     // Extract hashtags from text
     const hashtags = extractHashtags(text);
     const hasHashtags = hashtags && hashtags.length > 0;
   
     // Prepare activity data
-    const activityData = {
+    const activityData: any = {
       type: "post" as const,
       text,
     };
+
+    // Create and attach poll if present
+    if (poll) {
+      const pollResponse = await client.createPoll({
+        name: poll.name,
+        options: poll.options,
+      });
+      activityData.poll_id = pollResponse.poll.id;
+    }
+
+    // Add attachment as custom data if present
+    if (attachment) {
+      activityData.attachments = [attachment];
+    }
   
     // Create hashtag feeds if needed
     let hashtagFeeds: string[] = [];
@@ -71,16 +97,16 @@ const addActivityToFeed = async (
     const queryClient = useQueryClient();
     const userId = user?.nickname || "";
   
-    // Mutation for creating a post
-    const createPostMutation = useMutation({
-      mutationFn: async (text: string) => {
-        if (!client || !userId) {
-          console.log('client', client);
-          console.log('userId', userId);
-          throw new Error("Client or user not available");
-        }
-        return await addActivityToFeed(client, userId, text);
-      },
+  // Mutation for creating a post
+  const createPostMutation = useMutation({
+    mutationFn: async ({ text, poll, attachment }: { text: string; poll?: PollData | null; attachment?: AttachmentData | null }) => {
+      if (!client || !userId) {
+        console.log('client', client);
+        console.log('userId', userId);
+        throw new Error("Client or user not available");
+      }
+      return await addActivityToFeed(client, userId, text, poll, attachment);
+    },
       onSuccess: () => {
         // Invalidate all activity queries to trigger refetches
         queryClient.invalidateQueries({
@@ -147,9 +173,9 @@ const addActivityToFeed = async (
       },
     });
   
-    const handlePost = async (text: string) => {
-      createPostMutation.mutate(text);
-    };
+  const handlePost = async (text: string, poll?: PollData | null, attachment?: AttachmentData | null) => {
+    createPostMutation.mutate({ text, poll, attachment });
+  };
   
     const handleDeleteActivity = async (activityId: string) => {
       deletePostMutation.mutate(activityId);

@@ -6,6 +6,7 @@ import trashIcon from "../icons/trash.svg";
 import ReactionsPanel from "./Reaction";
 import { useFeedActions } from "../hooks/feeds/useFeedActions";
 import CommentsPanel from "./Comment";
+import { Poll } from "./Poll";
 import { useNavigate } from "react-router-dom";
 import { useResponsive } from "../contexts/ResponsiveContext";
 import { useState } from "react";
@@ -121,6 +122,28 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
           <p className="activity-text">
             {renderTextWithHashtags(activity.text || activity.type)}
           </p>
+
+          {/* Render Poll if present */}
+          {activity.poll && <Poll activity={activity} />}
+
+          {/* Render Attachment if present */}
+          {(activity as any).attachment && (
+            <div className="activity-attachment">
+              {(activity as any).attachment.type === "image" ? (
+                <img 
+                  src={(activity as any).attachment.url} 
+                  alt="Activity attachment" 
+                  className="activity-attachment-image"
+                />
+              ) : (
+                <video 
+                  src={(activity as any).attachment.url} 
+                  controls 
+                  className="activity-attachment-video"
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
 
