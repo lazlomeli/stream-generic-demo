@@ -113,8 +113,6 @@ const Feeds = ({ feedType }: FeedsProps) => {
     }
   };
 
-  const feedTitle = getFeedTitle();
-
   const tabs = [
     { id: 'for-you', label: 'For You', path: '/feeds/for-you' },
     { id: 'following', label: 'Following', path: '/feeds/following' },

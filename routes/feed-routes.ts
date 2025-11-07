@@ -22,6 +22,7 @@ const initializeFeedGroupsAndViews = async (client: StreamClient) => {
     await client.feeds.createFeedGroup({
       id: "popular-feed-group",
       activity_selectors: [{ type: "popular" }],
+      activity_processors: [{ type: "og_metadata_enrichment"}],
       ranking: {
         type: "expression",
         score: "popularity * external.weight + comment_count * external.comment_weight + external.base_score",
@@ -48,8 +49,6 @@ const initializeFeedGroupsAndViews = async (client: StreamClient) => {
   try {
     await client.feeds.createFeedGroup({
       id: "hashtag",
-      // Optional: Add activity selectors if needed
-      // activity_selectors: [{ type: "post" }],
     });
     console.log('✅ Feed group "hashtag" created');
   } catch (error) {
@@ -95,7 +94,7 @@ const sanitizeUserId = (userId: string) => {
 
 router.post('/feeds-token', async (req, res) => {
   try {
-    const { user_id, name } = req.body;
+    const { user_id } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: "Missing user_id" });
     }
