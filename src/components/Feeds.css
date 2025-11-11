@@ -457,8 +457,7 @@
 
 /* Highlighted Post Animation */
 .post-highlighted {
-  animation: highlightPulse 2s ease-in-out;
-  border-left: 4px solid #2563eb !important;
+  animation: highlightPulse 6s ease-in-out;
   background-color: #eff6ff !important;
 }
 

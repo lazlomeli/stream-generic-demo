@@ -184,7 +184,7 @@ export function Composer() {
             {poll && (
               <div className="composer-poll-preview">
                 <div className="composer-poll-header">
-                  <span className="composer-poll-title">📊 Poll</span>
+                  <span className="composer-poll-title" />
                   <button
                     type="button"
                     onClick={handleRemovePoll}
@@ -209,7 +209,7 @@ export function Composer() {
               <div className="composer-attachment-preview">
                 <div className="composer-attachment-header">
                   <span className="composer-attachment-title">
-                    {attachment.type === "image" ? "🖼️ Image" : "🎥 Video"}
+                    {attachment.type === "image" ? "Image" : "Video"}
                   </span>
                   <button
                     type="button"

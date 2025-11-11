@@ -188,6 +188,9 @@
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  margin-bottom: 15px;
+  max-width: 505px;
+  max-height: 300px;
 }
 
 .composer-poll-header {
@@ -247,6 +250,9 @@
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  margin-bottom: 15px;
+  max-width: 505px;
+  max-height: 300px;
 }
 
 .composer-attachment-header {
@@ -270,7 +276,7 @@
 .composer-attachment-image,
 .composer-attachment-video {
   width: 100%;
-  max-height: 300px;
+  max-height: 225px;
   object-fit: cover;
   display: block;
 }
