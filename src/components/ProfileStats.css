@@ -77,13 +77,6 @@
   color: rgb(31 41 55);
 }
 
-/* Modal Content */
-.modal-content {
-  padding: 1rem;
-  overflow-y: auto;
-  max-height: 60vh;
-}
-
 .modal-loading {
   text-align: center;
   padding: 2rem 0;

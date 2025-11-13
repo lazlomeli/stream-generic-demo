@@ -208,9 +208,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
             </div>
           )}
 
-          <div className="form-group">
-            <label style={{ fontSize: 'small' }} className='form-group-label'>{isDM ? 'Select User to Message *' : 'Add Members *'}</label>
-            
+          <div className="form-group"> 
             <div className="user-search-container">
               <input
                 type="text"

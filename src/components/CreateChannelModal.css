@@ -16,14 +16,16 @@
 
 .create-channel-modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 3px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 500px;
   display: flex;
   flex-direction: column;
   animation: modalSlideIn 0.3s ease-out;
-  overflow: hidden; /* No scrollbar on modal itself */
+  overflow: hidden;
+  /* No scrollbar on modal itself */
+  font-family: 'Geist Mono', sans-serif;
 }
 
 @keyframes modalSlideIn {
@@ -31,6 +33,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -79,9 +82,12 @@
 }
 
 .modal-content {
-  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  min-height: 450px;
+  padding: 0.5rem 1.5rem;
   flex: 1;
-  overflow-y: auto; /* Content scrolls, not the modal */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -107,7 +113,8 @@
 }
 
 .form-group {
-  margin-bottom: 1rem; /* Reduced from 1.5rem to make sections smaller */
+  margin-bottom: 1rem;
+  /* Reduced from 1.5rem to make sections smaller */
 }
 
 /* Last form group (user selection) should take remaining space */
@@ -115,19 +122,24 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Allow shrinking */
+  min-height: 0;
+  /* Allow shrinking */
 }
 
 .form-input {
+  margin-top: 7px;
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #d1d5db !important; /* Ensure border is visible */
+  border: 1px solid #d1d5db !important;
+  /* Ensure border is visible */
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: border-color 0.2s ease;
   box-sizing: border-box;
-  background-color: white !important; /* Ensure white background */
-  color: #374151 !important; /* Ensure black text */
+  background-color: white !important;
+  /* Ensure white background */
+  color: #374151 !important;
+  /* Ensure black text */
 }
 
 .form-input:focus {
@@ -221,14 +233,15 @@
 
 /* User search input */
 .user-search-container {
-  margin-bottom: 0.5rem; /* Reduced spacing */
+  margin-bottom: 1rem;
+  /* Reduced spacing */
 }
 
 .user-search-input {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  border-radius: 3px;
   font-size: 0.875rem;
   transition: border-color 0.2s ease;
   box-sizing: border-box;
@@ -249,17 +262,21 @@
 .users-selection {
   display: flex;
   flex-direction: column;
-  flex: 1; /* Take remaining space in form group */
-  min-height: 220px; /* Minimum height */
-  max-height: none; /* Remove max-height constraint */
+  flex: 1;
+  /* Take remaining space in form group */
+  min-height: 220px;
+  /* Minimum height */
+  max-height: none;
+  /* Remove max-height constraint */
   overflow-y: auto;
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 3px;
   padding: 0.5rem;
   background-color: #f9fafb;
   /* Hide scrollbar but keep scroll functionality */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  max-height: 250px !important;
 }
 
 .users-selection::-webkit-scrollbar {
@@ -274,8 +291,10 @@
   border-radius: 0.375rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  min-height: 3rem; /* Ensure consistent height */
-  flex-wrap: nowrap !important; /* Prevent wrapping */
+  min-height: 3rem;
+  /* Ensure consistent height */
+  flex-wrap: nowrap !important;
+  /* Prevent wrapping */
 }
 
 .user-checkbox:hover {
@@ -288,7 +307,8 @@
   accent-color: #3b82f6 !important;
   margin: 0 !important;
   flex-shrink: 0 !important;
-  order: 1 !important; /* Ensure checkbox comes first */
+  order: 1 !important;
+  /* Ensure checkbox comes first */
 }
 
 .user-checkbox input[type="checkbox"],
@@ -305,9 +325,12 @@
   align-items: center;
   gap: 0.75rem;
   flex: 1;
-  order: 2; /* Ensure user info comes after checkbox */
-  min-width: 0; /* Allow flex items to shrink below content size */
-  overflow: hidden; /* Prevent content from overflowing */
+  order: 2;
+  /* Ensure user info comes after checkbox */
+  min-width: 0;
+  /* Allow flex items to shrink below content size */
+  overflow: hidden;
+  /* Prevent content from overflowing */
 }
 
 /* No users found message */
@@ -330,15 +353,20 @@
   font-size: 0.875rem;
   color: #374151;
   font-weight: 500;
-  white-space: nowrap; /* Prevent text wrapping */
-  overflow: hidden; /* Hide overflowing text */
-  text-overflow: ellipsis; /* Show ellipsis for truncated text */
-  flex: 1; /* Take remaining space */
-  min-width: 0; /* Allow shrinking below content size */
+  white-space: nowrap;
+  /* Prevent text wrapping */
+  overflow: hidden;
+  /* Hide overflowing text */
+  text-overflow: ellipsis;
+  /* Show ellipsis for truncated text */
+  flex: 1;
+  /* Take remaining space */
+  min-width: 0;
+  /* Allow shrinking below content size */
 }
 
 .help-text {
-  margin-top: 0.5rem;
+  margin-top: 1rem;
   font-size: 0.75rem;
   color: #6b7280;
 }
@@ -349,15 +377,20 @@
   justify-content: flex-end;
   padding: 1rem;
   border-top: 1px solid #e5e7eb;
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0;
+  /* Don't shrink */
 }
 
 .modal-cancel-button {
-  padding: 0.75rem 1.5rem;
+  font-family: 'Geist Mono', sans-serif;
+  font-size: 12px !important;
+  padding: 0rem 2rem;
+  max-height: 30px;
+  min-width: 120px;
   border: 1px solid #d1d5db;
+  border-radius: 3px;
   background-color: white;
   color: #374151;
-  border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -375,11 +408,15 @@
 }
 
 .modal-submit-button {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  padding: 0.3rem 1rem;
+  background: linear-gradient(170deg, #0066ff 50%, #014ac0 75%);
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 3px;
+  font-family: 'Geist Mono', sans-serif;
+  font-size: 12px !important;
+  max-height: 40px;
+  min-width: 120px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -390,8 +427,7 @@
 }
 
 .modal-submit-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-  transform: translateY(-1px);
+  background: linear-gradient(170deg, #0048b3 50%, #00296a 75%);
 }
 
 .modal-submit-button:disabled {
@@ -405,83 +441,89 @@
   .create-channel-modal {
     margin: 0.5rem;
     max-width: none;
-    max-height: 650px; /* Enforced 600px max height */
+    max-height: 650px;
+    /* Enforced 600px max height */
   }
 
   /* Make DM modal smaller since it has less content */
   .create-channel-modal.dm-modal {
-    max-height: 500px; /* Smaller max height for DM */
-    min-height: 400px; /* Ensure minimum usable height */
+    max-height: 500px;
+    /* Smaller max height for DM */
+    min-height: 400px;
+    /* Ensure minimum usable height */
   }
-  
+
   /* Reduce header padding and make title smaller */
   .modal-header {
-    padding: 0.75rem 1rem 0.5rem; /* Reduced padding */
+    padding: 0.75rem 1rem 0.5rem;
+    /* Reduced padding */
   }
-  
+
   .modal-header h3 {
-    font-size: 1.1rem !important; /* Smaller title */
+    font-size: 1.1rem !important;
+    /* Smaller title */
     font-weight: 600;
   }
-  
-  .modal-content {
-    padding: 0.75rem 1rem; /* Reduced padding */
-    overflow-y: auto;
-  }
-  
+
   .modal-actions {
     flex-direction: column;
-    padding: 0.75rem 1rem; /* Consistent padding */
+    padding: 0.75rem 1rem;
+    /* Consistent padding */
     margin-top: 0 !important;
-    gap: 0.5rem; /* Reduced gap */
+    gap: 0.5rem;
+    /* Reduced gap */
   }
-  
+
   .modal-cancel-button,
   .modal-submit-button {
     width: 100%;
     justify-content: center;
-    padding: 0.6rem !important; /* Smaller buttons */
+    padding: 0.6rem !important;
+    /* Smaller buttons */
     font-size: 0.9rem;
   }
 
   /* Make form groups more compact */
   .form-group {
-    margin-bottom: 0.5rem; /* Reduced spacing */
-  }
-  
-  .form-group label {
-    font-size: small !important; /* Smaller labels */
-    margin-bottom: 0.25rem;
-    color: black !important
+    margin-bottom: 0.5rem;
+    /* Reduced spacing */
   }
 
-  /* User search more compact */
-  .user-search-container {
-    margin-bottom: 0.4rem; /* Reduced spacing */
+  .form-group label {
+    font-size: small !important;
+    /* Smaller labels */
+    margin-bottom: 0.25rem;
+    color: black !important
   }
 
   /* Make users selection area fit within constraints */
   .users-selection {
     flex: 1;
-    max-height: 160px; /* Constrain height to fit in modal */
-    min-height: 100px; /* Minimum usability */
+    max-height: 160px;
+    /* Constrain height to fit in modal */
+    min-height: 100px;
+    /* Minimum usability */
     overflow-y: auto;
   }
 
   /* Make user items more compact */
   .user-checkbox {
-    padding: 0.4rem 0.5rem !important; /* Reduced padding */
-    margin-bottom: 0.2rem; /* Reduced margin */
+    padding: 0.4rem 0.5rem !important;
+    /* Reduced padding */
+    margin-bottom: 0.2rem;
+    /* Reduced margin */
   }
 
   .user-avatar {
-    width: 1.75rem !important; /* Smaller avatars */
+    width: 1.75rem !important;
+    /* Smaller avatars */
     height: 1.75rem !important;
     flex-shrink: 0 !important;
   }
 
   .user-name {
-    font-size: 0.8rem !important; /* Smaller font */
+    font-size: 0.8rem !important;
+    /* Smaller font */
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -491,7 +533,8 @@
 
   /* Make checkboxes smaller */
   .user-checkbox-input {
-    width: 0.9rem !important; /* Smaller checkboxes */
+    width: 0.9rem !important;
+    /* Smaller checkboxes */
     height: 0.9rem !important;
     flex-shrink: 0 !important;
     margin-right: 0.4rem !important;
@@ -505,23 +548,21 @@
   }
 
   .user-info {
-    gap: 0.4rem !important; /* Reduced gap */
+    gap: 0.4rem !important;
+    /* Reduced gap */
     flex: 1 !important;
     min-width: 0 !important;
     overflow: hidden !important;
   }
-  
-  /* Make help text smaller */
-  .help-text {
-    font-size: 0.75rem !important; /* Smaller help text */
-    margin-top: 0.25rem;
-  }
-  
+
   /* Make error/success messages more compact */
   .error-message,
   .success-message {
-    padding: 0.5rem !important; /* Reduced padding */
-    font-size: 0.8rem !important; /* Smaller text */
-    margin-bottom: 0.5rem !important; /* Reduced margin */
+    padding: 0.5rem !important;
+    /* Reduced padding */
+    font-size: 0.8rem !important;
+    /* Smaller text */
+    margin-bottom: 0.5rem !important;
+    /* Reduced margin */
   }
 }
