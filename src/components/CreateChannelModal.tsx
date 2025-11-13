@@ -169,7 +169,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     <div className="create-channel-modal-overlay" onClick={handleClose}>
       <div className={`create-channel-modal ${isDM ? 'dm-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>{isDM ? 'Start Direct Message' : 'Create New Channel'}</h3>
+          <h3>{isDM ? 'Start Direct Message' : 'Create Group Channel'}</h3>
           <button 
             className="modal-close-button"
             onClick={handleClose}

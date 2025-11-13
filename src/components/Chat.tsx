@@ -8,6 +8,7 @@ import {
   MessageList,
   Thread,
   Window,
+  Streami18n,
 } from 'stream-chat-react'
 import CustomMessageInput from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
@@ -45,6 +46,9 @@ const Chat: React.FC<ChatProps> = () => {
   const [mobileViewState, setMobileViewState] = useState<'channelList' | 'chat'>('channelList');
   const [selectedMobileChannel, setSelectedMobileChannel] = useState<StreamChannel | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const streami18n = new Streami18n();
+  streami18n.setLanguage('en');
   
   const [availableUsers, setAvailableUsers] = useState<Array<{
     id: string;
@@ -334,6 +338,7 @@ const Chat: React.FC<ChatProps> = () => {
     <div className={`chat-container desktop-view`}>
       <div className={`chat-content desktop-content`}>
         <ChatComponent
+          i18nInstance={streami18n}
           client={client}
           theme="str-chat__theme-light"
           key={`chat-${client.userID || "disconnected"}`}
