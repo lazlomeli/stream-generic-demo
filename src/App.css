@@ -356,7 +356,7 @@ body {
 
 .reset-confirmation-dialog {
   background: white;
-  border-radius: 1rem;
+  border-radius: 3px;
   padding: 2rem;
   max-width: 500px;
   width: calc(100% - 2rem);
@@ -502,7 +502,7 @@ body {
 
 .reset-loading-dialog {
   background: white;
-  border-radius: 1.5rem;
+  border-radius: 3px;
   padding: 3rem 2rem;
   max-width: 500px;
   width: calc(100% - 2rem);

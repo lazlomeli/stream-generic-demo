@@ -494,3 +494,98 @@
     height: 680px;
   }
 }
+
+/* Pinned posts section */
+.pinned-posts-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.pinned-posts-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.regular-posts-header {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+}
+
+.pin-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #3b82f6;
+}
+
+/* Post with pin button container */
+.post-with-pin-button {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.pin-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.pin-button:hover:not(:disabled) {
+  background: white;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.pin-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pin-button.pinned {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.pin-button.pinned:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.pin-icon-outline {
+  width: 1rem;
+  height: 1rem;
+  color: #6b7280;
+}
+
+.pin-button:hover:not(:disabled) .pin-icon-outline {
+  color: #3b82f6;
+}
+
+.pin-icon-filled {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}

@@ -17,9 +17,18 @@ interface ActivityProps {
   hideFollowButton?: boolean;
   forceBookmarked?: boolean;
   compactMode?: boolean;
+  isPinned?: boolean;
+  onPinStateChange?: () => void;
 }
 
-export default function Activity({ activity, hideFollowButton = false, forceBookmarked = false, compactMode = false }: ActivityProps) {
+export default function Activity({ 
+  activity, 
+  hideFollowButton = false, 
+  forceBookmarked = false, 
+  compactMode = false,
+  isPinned,
+  onPinStateChange
+}: ActivityProps) {
   const { user } = useUser();
   const { handleDeleteActivity } = useFeedActions();
   const { isMobileView } = useResponsive();
@@ -151,6 +160,8 @@ export default function Activity({ activity, hideFollowButton = false, forceBook
         activity={activity} 
         onCommentsClick={() => setShowComments(!showComments)}
         forceBookmarked={forceBookmarked}
+        isPinned={isPinned}
+        onPinStateChange={onPinStateChange}
       />
       <CommentsPanel 
         activity={activity} 

@@ -15,18 +15,25 @@ type Props = {
   activity: ActivityResponse;
   onCommentsClick: () => void;
   forceBookmarked?: boolean;
+  isPinned?: boolean;
+  onPinStateChange?: () => void;
 };
 
-export default function ReactionsPanel({ activity, onCommentsClick, forceBookmarked = false }: Props) {
+export default function ReactionsPanel({ 
+  activity, 
+  onCommentsClick, 
+  forceBookmarked = false,
+  isPinned: isPinnedProp,
+  onPinStateChange
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
-  const [reactionCounts, setReactionCounts] = useState<Record<string, number>>(
-    {}
-  );
+  const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({});
   const [isPinned, setIsPinned] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const { user, client } = useUser();
   const { isMobileView } = useResponsive();
+
   useEffect(() => {
     if (!user) return;
 
@@ -47,25 +54,18 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
       });
     }
 
-    const pinnedActivities = (activity as unknown as Record<string, unknown>)
-      .pinned_activities;
-    const isPinnedByUser = Array.isArray(pinnedActivities)
-      ? pinnedActivities.some(
-          (pinned: Record<string, unknown>) =>
-            (pinned.user as Record<string, unknown>)?.id === user.nickname
-        )
-      : false;
-
-    const ownBookmarks = (activity as unknown as Record<string, unknown>)
-      .own_bookmarks;
-    const isBookmarkedByUser =
-      Array.isArray(ownBookmarks) && ownBookmarks.length > 0;
+    const ownBookmarks = (activity as unknown as Record<string, unknown>).own_bookmarks;
+    const isBookmarkedByUser = Array.isArray(ownBookmarks) && ownBookmarks.length > 0;
 
     setReactionCounts(counts);
     setUserReactions(userReacts);
-    setIsPinned(isPinnedByUser);
     setIsBookmarked(forceBookmarked || isBookmarkedByUser);
-  }, [activity, user, forceBookmarked]);
+    
+    // Use the prop if provided, otherwise default to false
+    if (isPinnedProp !== undefined) {
+      setIsPinned(isPinnedProp);
+    }
+  }, [activity, user, forceBookmarked, isPinnedProp]);
 
   const ensureNotificationFeedExists = async (userId: string) => {
     if (!client) return;
@@ -83,7 +83,6 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
 
     try {
       setLoading(true);
-
       if (userReactions.has(type)) {
         await client.deleteActivityReaction({
           activity_id: activity.id,
@@ -100,7 +99,6 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
         }));
       } else {
         const activityOwnerId = activity.user?.id;
-
         if (activityOwnerId) {
           await ensureNotificationFeedExists(activityOwnerId);
         }
@@ -128,7 +126,6 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
 
     try {
       setLoading(true);
-
       if (isPinned) {
         await client.unpinActivity({
           feed_group_id: "user",
@@ -144,6 +141,11 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
         });
         setIsPinned(true);
       }
+      
+      // Notify parent component that pin state changed
+      if (onPinStateChange) {
+        onPinStateChange();
+      }
     } catch (err) {
       console.error("Failed to handle pin", err);
     } finally {
@@ -156,16 +158,13 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
 
     try {
       setLoading(true);
-
       if (isBookmarked) {
-        const bookmarks =
-          (activity as unknown as Record<string, unknown>).own_bookmarks || [];
+        const bookmarks = (activity as unknown as Record<string, unknown>).own_bookmarks || [];
         if (Array.isArray(bookmarks) && bookmarks.length > 0) {
           const firstBookmark = bookmarks[0] as Record<string, unknown>;
           await client.deleteBookmark({
             activity_id: activity.id,
-            folder_id: (firstBookmark.folder as Record<string, unknown>)
-              ?.id as string,
+            folder_id: (firstBookmark.folder as Record<string, unknown>)?.id as string,
           });
         }
         setIsBookmarked(false);
@@ -200,6 +199,9 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
   const reactionCount = (type: string) => {
     return reactionCounts[type] || 0;
   };
+
+  // Only show pin button if viewing own profile
+  const showPinButton = activity.user?.id === user?.nickname;
 
   return (
     <div className="reactions-container">
@@ -237,20 +239,22 @@ export default function ReactionsPanel({ activity, onCommentsClick, forceBookmar
           <span className="reaction-count">{activity.comment_count}</span>
         </button>
 
-        <button
-          disabled={loading}
-          onClick={handlePin}
-          className={getReactionStyles("pin")}
-          title={isPinned ? "Unpin" : "Pin"}
-        >
-          <img
-            src={isPinned ? pinFilledIcon : pinIcon}
-            alt="Pin"
-            width="14"
-            height="14"
-            className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isPinned ? "filled" : ""}`}
-          />
-        </button>
+        {showPinButton && (
+          <button
+            disabled={loading}
+            onClick={handlePin}
+            className={getReactionStyles("pin")}
+            title={isPinned ? "Unpin" : "Pin"}
+          >
+            <img
+              src={isPinned ? pinFilledIcon : pinIcon}
+              alt="Pin"
+              width="14"
+              height="14"
+              className={`reaction-icon ${isMobileView ? "mobile" : ""} ${isPinned ? "filled" : ""}`}
+            />
+          </button>
+        )}
 
         <button
           disabled={loading}

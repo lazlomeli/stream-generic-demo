@@ -24,18 +24,6 @@ const Feeds = ({ feedType }: FeedsProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Debug logging
-  useEffect(() => {
-    if (feedType === 'hashtag') {
-      console.log('🔍 Hashtag Feed Debug:', {
-        feedType,
-        hashtag,
-        activitiesCount: hashtagActivities.length,
-        isLoading: isLoadingHashtag,
-      });
-    }
-  }, [feedType, hashtag, hashtagActivities, isLoadingHashtag]);
-
   const [searchParams, setSearchParams] = useSearchParams();
   const highlightedPostId = searchParams.get('postId');
   const postRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
