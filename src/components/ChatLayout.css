@@ -1658,15 +1658,14 @@
 }
 
 .mobile-view .create-channel-modal {
-  max-width: 320px !important;
-  max-height: 650px !important;
-  margin: 2rem 1rem !important;
-  width: calc(100% - 2rem) !important;
+  width: 375px !important;
+  height: 730px !important;
+  border-radius: 40px !important;
 }
 
-.mobile-view .modal-header,
-.mobile-view .modal-content {
+.mobile-view .modal-header {
   padding: 1rem !important;
+  margin-left: 20px !important;
 }
 
 .mobile-view .modal-actions {
@@ -1683,7 +1682,8 @@
 }
 
 .mobile-view .users-selection {
-  max-height: 150px !important;
+  /* max-height: 150px !important; */
+  max-height: 350px !important;
 }
 
 /* ===== GLOBAL CUSTOM MESSAGE INPUT FIX ===== */

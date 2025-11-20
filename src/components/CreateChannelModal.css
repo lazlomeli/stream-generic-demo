@@ -11,7 +11,17 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+}
+
+.mobile-view .create-channel-modal-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: 40px;
+  overflow: hidden;
+  padding: 0 !important;
 }
 
 .create-channel-modal {
