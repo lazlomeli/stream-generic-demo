@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3680bc 0%, #133d5f 100%);
+  background: linear-gradient(135deg, #2d2d2d 0%, #000000 100%);
   padding: 2rem;
   box-sizing: border-box;
   position: relative;
@@ -43,8 +43,8 @@
   height: 30px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
   padding: 5px 10px 5px 10px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -207,8 +207,7 @@
   height: calc(100% - 60px); /* Account for bottom nav */
   max-height: calc(100% - 60px);
   margin: 0;
-  gap: 12px;
-  padding: 1rem;
+  gap: 0px;
   overflow-y: visible;
 }
 
@@ -230,7 +229,7 @@
   border-radius: 0;
   overflow-y: auto;
   box-shadow: none;
-  padding: 0;
+  padding: 0px 20px !important;
   /* Hide scrollbar */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
@@ -243,6 +242,7 @@
 /* Mobile Feed Tabs */
 .mobile-view .feed-tabs {
   border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 10px !important;
 }
 
 .mobile-view .feed-tab {
@@ -268,8 +268,7 @@
 
 /* Scale down composer in mobile */
 .mobile-view .composer-container {
-  padding: 0.75rem !important;
-  margin-bottom: 0.75rem;
+  padding: 30px 20px 10px 10px !important;
 }
 
 .mobile-view .composer-media-button {
@@ -286,20 +285,16 @@
 }
 
 .mobile-view .composer-submit-button {
-  width: 28px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px !important;
   height: 28px !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
+  border-radius: 3px !important;
 }
 
 .mobile-view .composer-submit-button span {
   display: none !important;
-}
-
-.mobile-view .composer-submit-button svg {
-  width: 1.6rem !important;
-  height: 1rem !important;
-  margin: 0 !important;
 }
 
 .mobile-view .composer-textarea {
@@ -315,7 +310,9 @@
 
 /* Scale down activities in mobile */
 .mobile-view .activity-container {
-  padding: 0.75rem;
+  padding: 0rem !important;
+  padding-top: 10px !important;
+  padding-bottom: 15px !important;
   margin-bottom: 0.75rem;
 }
 
@@ -347,12 +344,6 @@
 .mobile-view .smart-image-container {
   max-height: 200px !important;
   margin: 0.5rem 0 !important;
-}
-
-/* Scale down reactions and actions */
-.mobile-view .activity-actions {
-  gap: 0.75rem;
-  padding: 0.5rem 0;
 }
 
 .mobile-view .activity-action-button {
@@ -411,21 +402,6 @@
 .mobile-view .activity-delete-button svg {
   width: 0.875rem !important;
   height: 0.875rem !important;
-}
-
-/* Mobile follow/unfollow button - icon only */
-.mobile-view .user-action-button span {
-  display: none !important;
-}
-
-.mobile-view .user-action-button {
-  padding: 0.375rem !important;
-}
-
-.mobile-view .user-action-button svg {
-  width: 1.6rem !important;
-  height: 0.875rem !important;
-  margin: 0 !important;
 }
 
 /* Scale down user actions dropdown */

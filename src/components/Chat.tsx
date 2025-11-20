@@ -298,6 +298,7 @@ const Chat: React.FC<ChatProps> = () => {
           <ChatComponent
             client={client}
             theme="str-chat__theme-light"
+            i18nInstance={streami18n}
             key={`chat-${client.userID || "disconnected"}`}
           >
             {mobileViewState === 'channelList' ? (

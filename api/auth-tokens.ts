@@ -51,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         await streamFeedsClient.feeds.createFeedGroup({
           id: "popular-feed-group",
-          activity_selectors: [{ type: "popular" }],
+          activity_selectors: [{ type: "popular", cutoff_time: new Date(Date.now() + 31536000000) }], // 1 year from creation time
           ranking: {
             type: "expression",
             score: "popularity * external.weight + comment_count * external.comment_weight + external.base_score",

@@ -217,12 +217,12 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
       <div className="mobile-channel-header">
         <h2>Chats</h2>
         <div className="mobile-channel-actions">
-          <button onClick={handleCreateGroupClick} className="create-channel-btn" title="New Group Chat">
+          {/* <button onClick={handleCreateGroupClick} className="create-channel-btn" title="New Group Chat">
             <img src={UsersGroupIcon} alt="Group" />
           </button>
           <button onClick={handleCreateDMClick} className="create-channel-btn create-dm-btn" title="New Direct Message">
             <img src={SendIcon} alt="DM" />
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -234,6 +234,13 @@ const MobileChannelList: React.FC<MobileChannelListProps> = ({
           onChange={(e) => setSearchQuery(e.target.value)}
           className="mobile-search-input"
         />
+
+          <button onClick={handleCreateGroupClick} className="create-channel-btn create-group-btn" title="New Group Chat">
+            <img src={UsersGroupIcon} alt="Group" />
+          </button>
+          <button onClick={handleCreateDMClick} className="create-channel-btn create-dm-btn" title="New Direct Message">
+            <img src={SendIcon} alt="DM" />
+          </button>
       </div>
 
       <div className="mobile-channel-list-container">

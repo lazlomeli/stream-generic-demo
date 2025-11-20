@@ -21,7 +21,7 @@ const initializeFeedGroupsAndViews = async (client: StreamClient) => {
   try {
     await client.feeds.createFeedGroup({
       id: "popular-feed-group",
-      activity_selectors: [{ type: "popular" }],
+      activity_selectors: [{ type: "popular", cutoff_time: new Date(Date.now() + 31536000000) }], // 1 year from creation time
       activity_processors: [{ type: "og_metadata_enrichment"}],
       ranking: {
         type: "expression",
@@ -49,6 +49,7 @@ const initializeFeedGroupsAndViews = async (client: StreamClient) => {
   try {
     await client.feeds.createFeedGroup({
       id: "hashtag",
+      activity_selectors: [{ cutoff_time: new Date(Date.now() + 31536000000) }], // 1 year from creation time
     });
     console.log('✅ Feed group "hashtag" created');
   } catch (error) {

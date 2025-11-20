@@ -204,7 +204,7 @@ export default function ReactionsPanel({
   const showPinButton = activity.user?.id === user?.nickname;
 
   return (
-    <div className="reactions-container">
+    <div className={`reactions-container ${isMobileView ? "mobile" : ""}`}>
       <div className="reactions-buttons">
         <button
           disabled={loading}

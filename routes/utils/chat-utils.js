@@ -103,9 +103,9 @@ export async function seedChat(client, currentUserId) {
 
     const dmChannels = [];
     for (const sampleUser of sampleUsers) {
-      const dmChannelId = `dm_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      const dmChannelId = `dm_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const dmChannel = client.channel('messaging', dmChannelId, {
-        name: undefined,
+        name: sampleUser.name,
         created_by_id: currentUserId,
         members: [currentUserId, sampleUser.id],
         isDM: true,

@@ -112,7 +112,7 @@ export default function Activity({
                 </span>
               )}
             </div>
-            <div className="activity-actions">
+            <div className={`activity-actions ${isMobileView ? 'mobile' : ''}`}>
               {!hideFollowButton && activity.user?.id && activity.user.id !== user?.nickname && (
                 // Follow button
                 <UserActions targetUserId={activity.user.id} iconOnly={compactMode} />

@@ -3,6 +3,7 @@ import { Avatar } from "./Avatar";
 import "./UserActions.css";
 import { useProfileStats } from "../hooks/feeds/useProfileStats";
 import { useUser } from "../hooks/feeds/useUser";
+import { useResponsive } from "../contexts/ResponsiveContext";
 
 interface UserActionsProps {
   targetUserId: string;
@@ -11,6 +12,7 @@ interface UserActionsProps {
 
 export function UserActions({ targetUserId, iconOnly = false }: UserActionsProps) {
   const { user } = useUser();
+  const { isMobileView } = useResponsive();
   const { 
     followUser, 
     unfollowUser, 
@@ -34,7 +36,7 @@ export function UserActions({ targetUserId, iconOnly = false }: UserActionsProps
         following ? unfollowUser(targetUserId) : followUser(targetUserId);
       }}
       disabled={isLoading}
-      className={`user-action-button ${following ? "following" : ""} ${iconOnly ? "icon-only" : ""}`}
+      className={`user-action-button ${following ? "following" : ""} ${iconOnly ? "icon-only" : ""} ${isMobileView ? "mobile" : ""}`}
       title={following ? "Unfollow" : "Follow"}
     >
       {isLoading ? (

@@ -1,12 +1,11 @@
 import { generateSampleUsers } from './sample-users.js';
 
-// Extract hashtags from text (same logic as frontend)
 function extractHashtags(text) {
   if (!text) return [];
   const regex = /#(\w+)/g;
   const matches = text.matchAll(regex);
   const hashtags = [...matches].map(match => match[1].toLowerCase());
-  return [...new Set(hashtags)]; // Remove duplicates
+  return [...new Set(hashtags)];
 }
 
 export async function resetFeeds(client) {
@@ -81,17 +80,17 @@ async function ensureFeedGroupsExist(client) {
   const feedGroupsToCreate = [
     {
       id: 'user',
-      activity_selectors: [{ type: 'following' }],
+      activity_selectors: [{ type: 'following', cutoff_time: new Date(Date.now() + 31536000000) }], // 1 year from creation time
       ranking: { type: 'recency' },
     },
     {
       id: 'timeline',
-      activity_selectors: [{ type: 'following' }],
+      activity_selectors: [{ type: 'following', cutoff_time: new Date(Date.now() + 31536000000) }], 
       ranking: { type: 'recency' },
     },
     {
       id: 'notification',
-      activity_selectors: [{ type: 'following' }],
+      activity_selectors: [{ type: 'following', cutoff_time: new Date(Date.now() + 31536000000) }], 
       ranking: { type: 'recency' },
       notification: {
         enabled: true,
@@ -99,6 +98,7 @@ async function ensureFeedGroupsExist(client) {
     },
     {
       id: 'hashtag',
+      activity_selectors: [{ cutoff_time: new Date(Date.now() + 31536000000) }], 
     },
   ];
 

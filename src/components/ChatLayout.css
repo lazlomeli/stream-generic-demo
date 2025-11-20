@@ -259,7 +259,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3680bc 0%, #133d5f 100%);
+  background: linear-gradient(135deg, #2d2d2d 0%, #000000 100%);
   padding: 2rem;
   box-sizing: border-box;
   position: relative;
@@ -273,8 +273,8 @@
   height: 30px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
   padding: 5px 10px 5px 10px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -485,7 +485,7 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: #111827;
-  margin: 0;
+  margin-left: 10px;
 }
 
 .mobile-channel-actions {
@@ -494,12 +494,12 @@
 }
 
 .create-channel-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: #3b82f6;
-  color: white;
-  border: none;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 1px solid #d8dadd;
+  border-radius: 3px;
+  background: #ffffff;
+  color: #000000 !important;
   font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
@@ -510,36 +510,31 @@
 }
 
 .create-channel-btn:hover {
-  background: #2563eb;
-  transform: scale(1.05);
-}
-
-.create-dm-btn {
-  background: #10b981 !important;
+  background: #e5e7eb;
 }
 
 .create-dm-btn:hover {
-  background: #059669 !important;
-  transform: scale(1.05);
+  background: #e5e7eb !important;
 }
 
 .create-channel-btn img {
   width: 1rem;
   height: 1rem;
-  filter: brightness(0) invert(1); /* Make icons white */
 }
 
 /* Mobile Search */
 .mobile-search-container {
+  display: flex;
+  gap: 7px;
   padding: 0 1rem 1rem;
   background: white;
 }
 
 .mobile-search-input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   border: 1px solid #e5e7eb;
-  border-radius: 1.5rem;
+  border-radius: 3px;
   font-size: 0.875rem;
   background: #f9fafb;
   outline: none;
@@ -547,9 +542,8 @@
 }
 
 .mobile-search-input:focus {
-  border-color: #3b82f6;
   background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(136, 182, 255, 0.1);
 }
 
 /* Mobile Channel List Container */
@@ -820,7 +814,7 @@
 }
 
 .mobile-back-btn:hover {
-  background: #eff6ff;
+  background: #e5e7eb;
 }
 
 .mobile-chat-info {
@@ -983,7 +977,6 @@
 .mobile-view .str-chat__message-input {
   padding: 0.5rem !important;
   background: white !important;
-  border-top: 1px solid #e5e7eb !important;
   border-radius: 0 !important;
 }
 
@@ -1104,6 +1097,10 @@
 
 .mobile-view .str-chat__message-input .str-chat__input-icons button:hover {
   background: #e5e7eb !important;
+}
+
+.str-chat__attachment-selector {
+  z-index: 0 !important;
 }
 
 /* Specific fix for attachment selector menu button */
@@ -1503,11 +1500,6 @@
   filter: brightness(0) invert(1) !important;
 }
 
-/* ===== ATTACHMENT SELECTOR MODAL Z-INDEX FIX ===== */
-.str-chat__attachment-selector {
-  z-index: 1000 !important;
-}
-
 .str-chat__attachment-selector__list {
   z-index: 1000 !important;
   position: relative !important;
@@ -1687,6 +1679,7 @@
 .mobile-view .modal-submit-button {
   width: 100% !important;
   justify-content: center !important;
+  min-height: 25px;
 }
 
 .mobile-view .users-selection {
@@ -1721,13 +1714,14 @@
     height: 680px;
   }
   
-  .mobile-channel-header h2 {
-    font-size: 1.25rem;
-  }
-  
   .create-channel-btn {
     width: 2rem;
     height: 2rem;
     font-size: 1rem;
   }
+}
+
+.str-chat__modal__inner, .str-chat-react__modal__inner {
+  max-height: 600px !important;
+  min-width: 400px !important;
 }

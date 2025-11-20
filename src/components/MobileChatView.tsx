@@ -8,6 +8,7 @@ import PinnedMessages from './PinnedMessages'
 import VoiceMessageHandler from './VoiceMessageHandler'
 import PhoneIcon from '../icons/call.svg'
 import VideoIcon from '../icons/video.svg'
+import BackIcon from '../icons/arrow-left.svg'
 
 interface MobileChatViewProps {
   channel: StreamChannel
@@ -47,7 +48,7 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
     <div className="mobile-chat-view">
       <div className="mobile-chat-header">
         <button onClick={onBack} className="mobile-back-btn" title="Back to chats">
-          ←
+          <img src={BackIcon} alt="Back" width="18" height="18" />
         </button>
         <div className="mobile-chat-info">
           <h3>{channelName}</h3>
