@@ -74,7 +74,7 @@ export default function Activity({
   };
 
   return (
-    <article className="activity-container">
+    <article className={`activity-container ${isPinned ? 'pinned' : ''}`}>
       <div className="activity-header">
         {activity.user?.id ? (
           <div 

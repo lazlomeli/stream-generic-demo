@@ -6,6 +6,18 @@
   background-color: transparent;
 }
 
+.mobile-view .activity-container.pinned {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.activity-container.pinned {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 /* Highlighted Activity Container */
 .post-highlighted .activity-container {
   background-color: rgba(152, 191, 247, 0.15) !important;

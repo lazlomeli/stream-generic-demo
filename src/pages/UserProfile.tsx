@@ -9,6 +9,7 @@ import { useResponsive } from "../contexts/ResponsiveContext";
 import Activity from "../components/Activity";
 import MobileBottomNav from "../components/MobileBottomNav";
 import { generateBannerImage, generateUserBio, generateAvatarUrl } from "../utils/avatarUtils";
+import PinIcon from "../icons/feed-pin.svg";
 import "./UserProfile.css";
 
 interface UserProfileProps {
@@ -193,7 +194,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
 
       {/* User Posts Section */}
       <div className="profile-posts-section">
-        <h3 className="posts-title">Posts</h3>
         
         {loadingPosts ? (
           <div className="posts-loading">Loading posts...</div>
@@ -207,7 +207,8 @@ export function UserProfile({ onBack }: UserProfileProps) {
             {pinnedPosts.length > 0 && (
               <div className="pinned-posts-section">
                 <h4 className="pinned-posts-header">
-                  <Pin className="pin-icon" />
+                  {/* <Pin className="pin-icon" style={{ color: 'red' }} /> */}
+                  <img src={PinIcon} alt="Pin" className="pin-icon" style={{ width: '12px', height: '12px' }} />
                   Pinned Posts
                 </h4>
                 {pinnedPosts.map((post) => (
@@ -225,7 +226,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
             {/* Regular Posts Section */}
             {unpinnedPosts.length > 0 && (
               <div className="regular-posts-section">
-                {pinnedPosts.length > 0 && <h4 className="regular-posts-header">Other Posts</h4>}
                 {unpinnedPosts.map((post) => (
                   <Activity 
                     key={`profile-post-${post.id}`} 
