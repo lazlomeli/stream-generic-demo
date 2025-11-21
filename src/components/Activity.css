@@ -24,10 +24,6 @@
   transition: opacity 0.2s ease;
 }
 
-.activity-user-avatar:hover {
-  opacity: 0.8;
-}
-
 .activity-content {
   flex: 1;
 }

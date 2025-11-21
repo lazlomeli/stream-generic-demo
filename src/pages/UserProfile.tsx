@@ -1,13 +1,14 @@
 import { useUser } from "../hooks/feeds/useUser";
 import { useProfileStats } from "../hooks/feeds/useProfileStats";
 import { ProfileStats } from "../components/ProfileStats";
-import { UserPlus, UserMinus, Pin } from "lucide-react";
+import { UserPlus, UserMinus, Pin, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ActivityResponse, ActivityPinResponse } from "@stream-io/feeds-client";
 import { useParams, useLocation } from "react-router-dom";
 import { useResponsive } from "../contexts/ResponsiveContext";
 import Activity from "../components/Activity";
 import MobileBottomNav from "../components/MobileBottomNav";
+import { generateBannerImage, generateUserBio, generateAvatarUrl } from "../utils/avatarUtils";
 import "./UserProfile.css";
 
 interface UserProfileProps {
@@ -69,6 +70,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
           });
 
           if (response.activities && response.activities.length > 0) {
+            console.log("response.activities", response.activities);
             const realName = response.activities[0].user?.name || `User ${userId.replace("user-", "")}`;
             const profileImage = (response.activities[0].user as any)?.data?.image || 
                                 (response.activities[0].user as any)?.profile?.image || 
@@ -126,24 +128,22 @@ export function UserProfile({ onBack }: UserProfileProps) {
 
   const profileContent = (
     <div className="user-profile-container">
+      {/* Profile Banner */}
+      <div 
+        className="profile-banner"
+        style={{ backgroundImage: `url(${generateBannerImage(userId)})` }}
+      />
+
       {/* Profile Info */}
       <div className="profile-info">
         <div className="profile-avatar">
           <img 
-            src={userImage || `https://api.dicebear.com/7.x/${(() => {
-              const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
-              const charCode = userId.charCodeAt(0);
-              const styleIndex = charCode % styles.length;
-              return styles[styleIndex];
-            })()}/svg?seed=${encodeURIComponent(userId)}`}
+            src={userImage || generateAvatarUrl(userId)}
             alt={displayUserName}
             className="profile-avatar-image"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
-              const charCode = userId.charCodeAt(0);
-              const styleIndex = charCode % styles.length;
-              target.src = `https://api.dicebear.com/7.x/${styles[styleIndex]}/svg?seed=${encodeURIComponent(userId)}`;
+              target.src = generateAvatarUrl(userId);
             }}
           />
         </div>
@@ -175,6 +175,15 @@ export function UserProfile({ onBack }: UserProfileProps) {
             )}
           </button>
         )}
+      </div>
+
+      {/* Bio and Metadata */}
+      <div className="profile-metadata">
+        <p className="profile-bio">{generateUserBio(userId)}</p>
+        <div className="profile-join-date">
+          <Calendar className="calendar-icon" />
+          <span style={{ fontSize: '11px !important' }}>Joined Nov 2025</span>
+        </div>
       </div>
 
       {/* Stats */}
