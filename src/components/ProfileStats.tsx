@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useProfileStats } from "../hooks/feeds/useProfileStats";
 import { useUser } from "../hooks/feeds/useUser";
+import { useResponsive } from "../contexts/ResponsiveContext";
 import { X } from "lucide-react";
 import { User } from "@auth0/auth0-react";
 import { generateAvatarUrl } from "../utils/avatarUtils";
@@ -17,6 +19,7 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"followers" | "following">("followers");
   const { user: currentUser } = useUser();
+  const { isMobileView } = useResponsive();
 
   const profileStats = useProfileStats(user.id);
   const {
@@ -50,28 +53,8 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
     return activeTab === "followers" ? "Followers" : "Following";
   };
 
-  return (
-    <>
-      <div className="profile-stats-container">
-        <button
-          onClick={() => handleOpenModal("followers")}
-          className="stat-button"
-        >
-          <div className="stat-number">{filteredFollowers.length}</div>
-          <div className="stat-label">Followers</div>
-        </button>
-
-        <button
-          onClick={() => handleOpenModal("following")}
-          className="stat-button"
-        >
-          <div className="stat-number">{filteredFollowing.length}</div>
-          <div className="stat-label">Following</div>
-        </button>
-      </div>
-
-      {showModal && (
-        <div className="modal-overlay">
+  const modalContent = showModal ? (
+    <div className={`modal-overlay ${isMobileView ? 'mobile-view' : ''}`}>
           <div className="modal-container">
             <div className="modal-tabs-header">
               <div className="modal-tabs">
@@ -154,7 +137,29 @@ export function ProfileStats({ user, isOwnProfile = false }: ProfileStatsProps) 
             </div>
           </div>
         </div>
-      )}
+  ) : null;
+
+  return (
+    <>
+      <div className="profile-stats-container">
+        <button
+          onClick={() => handleOpenModal("followers")}
+          className="stat-button"
+        >
+          <div className="stat-number">{filteredFollowers.length}</div>
+          <div className="stat-label">Followers</div>
+        </button>
+
+        <button
+          onClick={() => handleOpenModal("following")}
+          className="stat-button"
+        >
+          <div className="stat-number">{filteredFollowing.length}</div>
+          <div className="stat-label">Following</div>
+        </button>
+      </div>
+
+      {modalContent && createPortal(modalContent, document.body)}
     </>
   );
 } 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useNavigate } from 'react-router-dom'
 import SendIcon from '../icons/send.svg'
@@ -157,242 +158,246 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
   }
 
 
-  return (
-    <header className="header">
-      <div className="header-container">
-        <div className="header-content">
-          
-          {/* Left side - Logo and conditionally Navigation icons */}
-          <div className="header-left">
-            {/* Stream Logo - always visible */}
-            <button
-              onClick={handleHomeClick}
-              className="header-logo"
-              title="Home"
-            >
-              <img src={StreamLogo} alt="Stream Logo" />
-            </button>
+  // Reset Confirmation Dialogs (rendered via portal)
+  const resetConfirmDialog = showResetConfirm ? (
+    <div 
+      className="reset-confirmation-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleResetCancel()
+        }
+      }}
+    >
+      <div className="reset-confirmation-dialog">
+          <h3>Reset App</h3>
+          <p>
+            This will permanently delete all existing data and create fresh sample data:
+            <br />
+            • Clear all chat channels and messages
+            <br />
+            • Clear all activity feed posts
+            <br />
+            • Clear all user data and follows
+            <br />
+            • Create sample users, channels, and posts
+            <br />
+            <br />
+            <strong>This action cannot be undone.</strong>
+          </p>
+        <div className="reset-confirmation-buttons">
+          <button
+            onClick={handleResetCancel}
+            className="reset-cancel-button"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleFirstConfirm}
+            className="reset-confirm-button"
+            disabled={isResetting}
+          >
+            Yes, Reset & Seed App
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
-            {/* Navigation icons - only when showNavigation is true */}
-            {showNavigation && (
-              <div className="header-icons">
-                {/* Feeds icon - only when authenticated */}
-                {isAuthenticated && (
-                  <button
-                    onClick={handleFeedsClick}
-                    className="header-nav-button"
-                    title="Activity Feeds"
-                  >
-                    <img src={HomeIcon} alt="Feeds" />
-                  </button>
-                )}
-                {/* Chat icon - only when authenticated */}
-                {isAuthenticated && (
-                  <button
-                    onClick={handleChatClick}
-                    className="header-nav-button"
-                    title="Stream Chat"
-                  >
-                    <img src={SendIcon} alt="Chat" />
-                </button>
-                )}
+  const finalConfirmDialog = showFinalConfirm ? (
+    <div 
+      className="reset-confirmation-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleFinalCancel()
+        }
+      }}
+    >
+      <div className="reset-confirmation-dialog">
+        <h3>Are you sure?</h3>
+        <p>
+          This action will permanently delete all your data and cannot be undone.
+          <br />
+          <br />
+          <strong>Do you really want to proceed with the reset?</strong>
+        </p>
+        <div className="reset-confirmation-buttons">
+          <button
+            onClick={handleFinalCancel}
+            className="reset-cancel-button"
+          >
+            No
+          </button>
+          <button
+            onClick={handleFinalConfirm}
+            className="reset-confirm-button"
+            disabled={isResetting}
+          >
+            {isResetting ? 'Resetting...' : 'Yes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
-                {isAuthenticated && (
-                  <button
-                    onClick={handleVideoClick}
-                    className="header-nav-button"
-                    title="Livestream"
-                  >
-                    <img src={CastIcon} alt="Livestream" />
-                  </button>
-                )}
-                
-                {isAuthenticated && (
-                  <button
-                    onClick={handleBookmarkedClick}
-                    className="header-nav-button"
-                    title="Bookmarked Posts"
-                  >
-                    <img src={BookmarkIcon} alt="Bookmarked Posts" />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          
-          {/* Center - Responsive Toggle Button and Reset */}
-          <div className="header-center">
-            <button
-              onClick={toggleView}
-              className="responsive-toggle-button"
-              title={isMobileView ? 'Switch to Desktop View' : 'Switch to Mobile View'}
-            >
-              <span>{isMobileView ? 'Desktop' : 'Mobile'}</span>
-            </button>
-            
-            {/* Reset Button */}
-            {isAuthenticated && (
-              <button
-                onClick={handleResetClick}
-                className="header-nav-button reset-button"
-                title="Reset App (Clear all data and create fresh sample data)"
-                disabled={isResetting}
-              >
-                <img src={ResetIcon} alt="Reset App" />
-              </button>
-            )}
-          </div>
-          
-          {/* Right side - User info and logout */}
-          <div className="header-right">
-            {isAuthenticated && (
-              <div className="user-section">
-                <div 
-                  className="user-info" 
-                  onClick={handleProfileClick}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      handleProfileClick()
-                    }
-                  }}
-                  title="View your profile"
-                >
-                  <div className="user-avatar">
-                    <img 
-                      src={user?.picture || `https://api.dicebear.com/7.x/${(() => {
-                        const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
-                        const seed = user?.nickname || user?.email || 'default';
-                        const charCode = seed.charCodeAt(0);
-                        const styleIndex = charCode % styles.length;
-                        return styles[styleIndex];
-                      })()}/svg?seed=${encodeURIComponent(user?.nickname || user?.email || 'default')}`}
-                      alt={user?.name || user?.email || 'User'} 
-                    />
-                  </div>
-                  <span className="user-name">
-                    {user?.name || user?.email}
-                  </span>
-                </div>
-                {/* Notification Bell - in header right */}
-                {/* <NotificationBell className="header-nav-button" /> */}
-                
-                <button
-                  onClick={handleLogout}
-                  className="header-logout-button"
-                  title="Sign out"
-                >
-                  <img src={LogoutIcon} alt="Sign out" />
-                </button>
-              </div>
-            )}
+  const resetLoadingOverlay = isResetting ? (
+    <div className="reset-loading-overlay">
+      <div className="reset-loading-dialog">
+        <div className="reset-loading-spinner">
+          <div className="spinner"></div>
+        </div>
+        <h3>Resetting & seeding app...</h3>
+        <p>Please wait while we clear all data and create fresh sample content.</p>
+        <div className="reset-loading-progress">
+          <div className="progress-bar">
+            <div className="progress-bar-fill"></div>
           </div>
         </div>
       </div>
-      
-      {/* Reset Confirmation Dialog */}
-      {showResetConfirm && (
-        <div 
-          className="reset-confirmation-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleResetCancel()
-            }
-          }}
-        >
-          <div className="reset-confirmation-dialog">
-              <h3>Reset App</h3>
-              <p>
-                This will permanently delete all existing data and create fresh sample data:
-                <br />
-                • Clear all chat channels and messages
-                <br />
-                • Clear all activity feed posts
-                <br />
-                • Clear all user data and follows
-                <br />
-                • Create sample users, channels, and posts
-                <br />
-                <br />
-                <strong>This action cannot be undone.</strong>
-              </p>
-            <div className="reset-confirmation-buttons">
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <header className="header">
+        <div className="header-container">
+          <div className="header-content">
+            
+            {/* Left side - Logo and conditionally Navigation icons */}
+            <div className="header-left">
+              {/* Stream Logo - always visible */}
               <button
-                onClick={handleResetCancel}
-                className="reset-cancel-button"
+                onClick={handleHomeClick}
+                className="header-logo"
+                title="Home"
               >
-                Cancel
+                <img src={StreamLogo} alt="Stream Logo" />
               </button>
+
+              {/* Navigation icons - only when showNavigation is true */}
+              {showNavigation && (
+                <div className="header-icons">
+                  {/* Feeds icon - only when authenticated */}
+                  {isAuthenticated && (
+                    <button
+                      onClick={handleFeedsClick}
+                      className="header-nav-button"
+                      title="Activity Feeds"
+                    >
+                      <img src={HomeIcon} alt="Feeds" />
+                    </button>
+                  )}
+                  {/* Chat icon - only when authenticated */}
+                  {isAuthenticated && (
+                    <button
+                      onClick={handleChatClick}
+                      className="header-nav-button"
+                      title="Stream Chat"
+                    >
+                      <img src={SendIcon} alt="Chat" />
+                  </button>
+                  )}
+
+                  {isAuthenticated && (
+                    <button
+                      onClick={handleVideoClick}
+                      className="header-nav-button"
+                      title="Livestream"
+                    >
+                      <img src={CastIcon} alt="Livestream" />
+                    </button>
+                  )}
+                  
+                  {isAuthenticated && (
+                    <button
+                      onClick={handleBookmarkedClick}
+                      className="header-nav-button"
+                      title="Bookmarked Posts"
+                    >
+                      <img src={BookmarkIcon} alt="Bookmarked Posts" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Center - Responsive Toggle Button and Reset */}
+            <div className="header-center">
               <button
-                onClick={handleFirstConfirm}
-                className="reset-confirm-button"
-                disabled={isResetting}
+                onClick={toggleView}
+                className="responsive-toggle-button"
+                title={isMobileView ? 'Switch to Desktop View' : 'Switch to Mobile View'}
               >
-                Yes, Reset & Seed App
+                <span>{isMobileView ? 'Desktop' : 'Mobile'}</span>
               </button>
+              
+              {/* Reset Button */}
+              {isAuthenticated && (
+                <button
+                  onClick={handleResetClick}
+                  className="header-nav-button reset-button"
+                  title="Reset App (Clear all data and create fresh sample data)"
+                  disabled={isResetting}
+                >
+                  <img src={ResetIcon} alt="Reset App" />
+                </button>
+              )}
+            </div>
+            
+            {/* Right side - User info and logout */}
+            <div className="header-right">
+              {isAuthenticated && (
+                <div className="user-section">
+                  <div 
+                    className="user-info" 
+                    onClick={handleProfileClick}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleProfileClick()
+                      }
+                    }}
+                    title="View your profile"
+                  >
+                    <div className="user-avatar">
+                      <img 
+                        src={user?.picture || `https://api.dicebear.com/7.x/${(() => {
+                          const styles = ["avataaars", "bottts", "lorelei", "adventurer", "big-smile", "fun-emoji", "pixel-art", "thumbs"];
+                          const seed = user?.nickname || user?.email || 'default';
+                          const charCode = seed.charCodeAt(0);
+                          const styleIndex = charCode % styles.length;
+                          return styles[styleIndex];
+                        })()}/svg?seed=${encodeURIComponent(user?.nickname || user?.email || 'default')}`}
+                        alt={user?.name || user?.email || 'User'} 
+                      />
+                    </div>
+                    <span className="user-name">
+                      {user?.name || user?.email}
+                    </span>
+                  </div>
+                  {/* Notification Bell - in header right */}
+                  {/* <NotificationBell className="header-nav-button" /> */}
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="header-logout-button"
+                    title="Sign out"
+                  >
+                    <img src={LogoutIcon} alt="Sign out" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* Final Confirmation Dialog */}
-      {showFinalConfirm && (
-        <div 
-          className="reset-confirmation-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleFinalCancel()
-            }
-          }}
-        >
-          <div className="reset-confirmation-dialog">
-            <h3>Are you sure?</h3>
-            <p>
-              This action will permanently delete all your data and cannot be undone.
-              <br />
-              <br />
-              <strong>Do you really want to proceed with the reset?</strong>
-            </p>
-            <div className="reset-confirmation-buttons">
-              <button
-                onClick={handleFinalCancel}
-                className="reset-cancel-button"
-              >
-                No
-              </button>
-              <button
-                onClick={handleFinalConfirm}
-                className="reset-confirm-button"
-                disabled={isResetting}
-              >
-                {isResetting ? 'Resetting...' : 'Yes'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Loading Overlay */}
-      {isResetting && (
-        <div className="reset-loading-overlay">
-          <div className="reset-loading-dialog">
-            <div className="reset-loading-spinner">
-              <div className="spinner"></div>
-            </div>
-            <h3>Resetting & seeding app...</h3>
-            <p>Please wait while we clear all data and create fresh sample content.</p>
-            <div className="reset-loading-progress">
-              <div className="progress-bar">
-                <div className="progress-bar-fill"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </header>
+      {/* Render reset dialogs via portal */}
+      {resetConfirmDialog && createPortal(resetConfirmDialog, document.body)}
+      {finalConfirmDialog && createPortal(finalConfirmDialog, document.body)}
+      {resetLoadingOverlay && createPortal(resetLoadingOverlay, document.body)}
+    </>
   )
 }
 

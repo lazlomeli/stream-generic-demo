@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { generateAvatarUrl } from "../utils/avatarUtils";
 import "./Avatar.css";
 
 interface AvatarProps {
@@ -17,18 +18,6 @@ const sizeClasses = {
   xl: "size-xl",
 };
 
-// DiceBear avatar styles for variety
-const avatarStyles = [
-  "avataaars",
-  "bottts",
-  "lorelei",
-  "adventurer",
-  "big-smile",
-  "fun-emoji",
-  "pixel-art",
-  "thumbs",
-];
-
 export function Avatar({
   userId,
   userName,
@@ -42,15 +31,8 @@ export function Avatar({
   // Use userId or userName as seed for consistent avatar generation
   const seed = userId || userName || "default";
   
-  // Select a style deterministically based on the seed
-  const getAvatarStyle = () => {
-    const charCode = seed.charCodeAt(0);
-    const styleIndex = charCode % avatarStyles.length;
-    return avatarStyles[styleIndex];
-  };
-
-  const avatarStyle = getAvatarStyle();
-  const fallbackUrl = `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${encodeURIComponent(seed)}`;
+  // Generate AI-based fallback avatar URL
+  const fallbackUrl = generateAvatarUrl(seed);
   
   // Use actual user image if available and not errored, otherwise use fallback
   const avatarUrl = (userImage && !imageError) ? userImage : fallbackUrl;

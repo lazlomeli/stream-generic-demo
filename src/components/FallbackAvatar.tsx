@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import usersGroupIcon from '../icons/users-group.svg'
 import sendIcon from '../icons/send.svg'
+import { generateAvatarUrl } from '../utils/avatarUtils'
 
 interface FallbackAvatarProps {
   src?: string
@@ -10,18 +11,6 @@ interface FallbackAvatarProps {
   channelType?: 'group' | 'dm'
   channelName?: string
 }
-
-// DiceBear avatar styles for variety
-const avatarStyles = [
-  "avataaars",
-  "bottts",
-  "lorelei",
-  "adventurer",
-  "big-smile",
-  "fun-emoji",
-  "pixel-art",
-  "thumbs",
-];
 
 const FallbackAvatar: React.FC<FallbackAvatarProps> = ({ 
   src, 
@@ -97,12 +86,9 @@ const FallbackAvatar: React.FC<FallbackAvatarProps> = ({
       )
     }
     
-    // For user avatars without a valid image, generate DiceBear avatar
+    // For user avatars without a valid image, generate AI-based avatar
     const seed = alt || 'default';
-    const charCode = seed.charCodeAt(0);
-    const styleIndex = charCode % avatarStyles.length;
-    const avatarStyle = avatarStyles[styleIndex];
-    const avatarUrl = `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${encodeURIComponent(seed)}`;
+    const avatarUrl = generateAvatarUrl(seed);
     
     return (
       <div 
@@ -123,7 +109,8 @@ const FallbackAvatar: React.FC<FallbackAvatarProps> = ({
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover'
+            objectFit: 'cover',
+            objectPosition: 'center'
           }}
         />
       </div>
