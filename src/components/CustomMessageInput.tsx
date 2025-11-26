@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { MessageInput, useMessageInputContext, useChannelStateContext } from 'stream-chat-react';
+import { Channel, MessageInput, useChannelStateContext } from 'stream-chat-react';
+import type { SendButtonProps } from 'stream-chat-react';
 import { useResponsive } from '../contexts/ResponsiveContext';
 import './VoiceRecording.css';
 import MicrophoneIcon from '../icons/microphone.svg';
@@ -10,6 +11,27 @@ import SendMsgIcon from '../icons/send-msg.svg';
 import CustomAttachment1 from '../assets/custom-attachment-1.png';
 import CustomAttachment2 from '../assets/custom-attachment-2.png';
 
+// Custom Send Button - receives sendMessage prop automatically
+const CustomSendButton: React.FC<SendButtonProps> = ({ sendMessage, ...rest }) => {
+  const { isMobileView } = useResponsive();
+  
+  return (
+    <button
+      className="custom-send-button"
+      onClick={sendMessage}
+      title={isMobileView ? undefined : "Send message"}
+      type="button"
+      {...rest}
+    >
+      <img 
+        src={SendMsgIcon} 
+        alt="Send" 
+        width={16} 
+        height={16}
+      />
+    </button>
+  );
+};
 
 const CustomMessageInput: React.FC = (props) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -20,17 +42,13 @@ const CustomMessageInput: React.FC = (props) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
   const { channel } = useChannelStateContext();
   const { isMobileView } = useResponsive();
-  
-  const messageInputContext = useMessageInputContext();
 
   const getOrUploadImageToStream = useCallback(async (attachmentNumber: 1 | 2) => {
     if (uploadedImageUrls[attachmentNumber]) {
       return uploadedImageUrls[attachmentNumber]!;
     }
-
     try {
       const imageUrl = attachmentNumber === 1 ? CustomAttachment1 : CustomAttachment2;
       const filename = `custom-attachment-${attachmentNumber}.png`;
@@ -55,7 +73,6 @@ const CustomMessageInput: React.FC = (props) => {
     try {
       const attachmentToSend = lastAttachmentSent === 1 ? 2 : 1;
       const filename = `custom-attachment-${attachmentToSend}.png`;
-
       if (channel) {
         const streamImageUrl = await getOrUploadImageToStream(attachmentToSend);
         
@@ -70,7 +87,6 @@ const CustomMessageInput: React.FC = (props) => {
             },
           ],
         });
-
         setLastAttachmentSent(attachmentToSend);
       } else {
         console.error('Channel not available for sending custom attachment');
@@ -87,8 +103,8 @@ const CustomMessageInput: React.FC = (props) => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-
       const chunks: Blob[] = [];
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data);
@@ -108,7 +124,6 @@ const CustomMessageInput: React.FC = (props) => {
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('Unable to access microphone. Please check permissions.');
@@ -129,7 +144,6 @@ const CustomMessageInput: React.FC = (props) => {
 
   const sendVoiceMessage = useCallback(async () => {
     if (!audioBlob) return;
-
     try {
       const event = new CustomEvent('voiceMessageReady', {
         detail: {
@@ -139,7 +153,6 @@ const CustomMessageInput: React.FC = (props) => {
         }
       });
       window.dispatchEvent(event);
-
       setAudioBlob(null);
       setRecordingTime(0);
     } catch (error) {
@@ -162,12 +175,6 @@ const CustomMessageInput: React.FC = (props) => {
       setRecordingTime(0);
     }
   }, [isRecording]);
-
-  const handleSendMessage = useCallback(() => {
-    if (messageInputContext?.handleSubmit) {
-      messageInputContext.handleSubmit();
-    }
-  }, [messageInputContext]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -215,20 +222,6 @@ const CustomMessageInput: React.FC = (props) => {
             />
           </button>
         )}
-
-        <button
-          className="custom-send-button"
-          onClick={handleSendMessage}
-          title="Send message"
-          type="button"
-        >
-          <img 
-            src={SendMsgIcon} 
-            alt="Send" 
-            width={16} 
-            height={16}
-          />
-        </button>
       </div>
       
       {(isRecording || audioBlob) && (
@@ -245,7 +238,6 @@ const CustomMessageInput: React.FC = (props) => {
               </button>
             </div>
           )}
-
           {audioBlob && !isRecording && (
             <div className="voice-preview-controls-integrated">
               <div className="voice-preview-info-integrated">
@@ -270,9 +262,14 @@ const CustomMessageInput: React.FC = (props) => {
           )}
         </div>
       )}
-
     </div>
   );
 };
 
-export default CustomMessageInput;
+export { CustomSendButton, CustomMessageInput };
+
+
+// Then in your Channel component, pass the custom SendButton:
+// <Channel channel={channel} SendButton={CustomSendButton}>
+//   <CustomMessageInput />
+// </Channel>

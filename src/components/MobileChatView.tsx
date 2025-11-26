@@ -3,7 +3,7 @@ import { Channel, Window, MessageList, Thread } from 'stream-chat-react'
 import { Channel as StreamChannel } from 'stream-chat'
 import { useNavigate } from 'react-router-dom'
 import CustomAttachment from './CustomAttachment'
-import CustomMessageInput from './CustomMessageInput'
+import { CustomMessageInput, CustomSendButton } from './CustomMessageInput'
 import PinnedMessages from './PinnedMessages'
 import VoiceMessageHandler from './VoiceMessageHandler'
 import PhoneIcon from '../icons/call.svg'
@@ -76,7 +76,7 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
         </div>
       </div>
 
-      <Channel channel={channel} Attachment={CustomAttachment}>
+      <Channel channel={channel} Attachment={CustomAttachment} SendButton={CustomSendButton}>
         <Window>
           <div className="mobile-message-area">
             <PinnedMessages />
