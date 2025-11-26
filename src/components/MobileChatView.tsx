@@ -1,11 +1,11 @@
 import React from 'react'
-import { Channel, Window, MessageList, Thread } from 'stream-chat-react'
+import { Channel, Window, MessageList, Thread, useChatContext } from 'stream-chat-react'
 import { Channel as StreamChannel } from 'stream-chat'
 import { useNavigate } from 'react-router-dom'
-import CustomAttachment from './CustomAttachment'
+// import CustomAttachment from './CustomAttachment'
 import { CustomMessageInput, CustomSendButton } from './CustomMessageInput'
 import PinnedMessages from './PinnedMessages'
-import VoiceMessageHandler from './VoiceMessageHandler'
+import FallbackAvatar from './FallbackAvatar'
 import PhoneIcon from '../icons/call.svg'
 import VideoIcon from '../icons/video.svg'
 import BackIcon from '../icons/arrow-left.svg'
@@ -17,12 +17,26 @@ interface MobileChatViewProps {
 
 const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
   const navigate = useNavigate()
+  const { client } = useChatContext()
 
-  const channelName = (channel.data as any)?.name || 
-                     channel.data?.id ||
-                     (channel.data?.member_count && channel.data.member_count > 2 
-                       ? `Group Chat (${channel.data.member_count} members)`
-                       : 'Chat')
+  // @ts-ignore
+  const isDM = channel.data?.isDM === true
+  const channelType = isDM ? 'dm' : 'group'
+
+  let channelName: string
+  let channelImage: string | undefined = undefined
+  
+  if (isDM) {
+    const members = channel.state?.members || {}
+    const otherUser = Object.values(members).find(member => 
+      member.user?.id !== client.userID
+    )
+    
+    channelName = otherUser?.user?.name || otherUser?.user?.id || 'Direct Message'
+    channelImage = otherUser?.user?.image
+  } else {
+    channelName = (channel.data as any)?.name || 'Channel'
+  }
 
   const handleAudioCall = () => {
     if (!channel || !channel.id) return;
@@ -51,10 +65,19 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
           <img src={BackIcon} alt="Back" width="18" height="18" />
         </button>
         <div className="mobile-chat-info">
-          <h3>{channelName}</h3>
-          <span className="mobile-chat-status">
-            {channel.data?.member_count ? `${channel.data.member_count} members` : 'Online'}
-          </span>
+          <FallbackAvatar
+            src={channelImage}
+            alt={channelName}
+            size={36}
+            channelType={channelType}
+            channelName={channelName}
+          />
+          <div className="mobile-chat-info-text">
+            <h3>{channelName}</h3>
+            <span className="mobile-chat-status">
+              {channel.data?.member_count ? `${channel.data.member_count} members` : 'Online'}
+            </span>
+          </div>
         </div>
         <div className="mobile-chat-actions">
           <div className="mobile-call-buttons">
@@ -76,7 +99,7 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
         </div>
       </div>
 
-      <Channel channel={channel} Attachment={CustomAttachment} SendButton={CustomSendButton}>
+      <Channel channel={channel} SendButton={CustomSendButton}>
         <Window>
           <div className="mobile-message-area">
             <PinnedMessages />
@@ -85,7 +108,6 @@ const MobileChatView: React.FC<MobileChatViewProps> = ({ channel, onBack }) => {
           <CustomMessageInput />
         </Window>
         <Thread />
-        <VoiceMessageHandler />
       </Channel>
     </div>
   )

@@ -11,7 +11,7 @@ import {
   Streami18n,
 } from 'stream-chat-react'
 import { CustomMessageInput, CustomSendButton } from './CustomMessageInput'
-import CustomAttachment from './CustomAttachment'
+// import CustomAttachment from './CustomAttachment'
 import LoadingSpinner from './LoadingSpinner'
 import CustomChannelList from './CustomChannelList'
 import CustomChannelHeader from './CustomChannelHeader'
@@ -328,7 +328,7 @@ const Chat: React.FC<ChatProps> = () => {
             options={options}
             initialChannelId={channelId}
           />
-          <Channel Attachment={CustomAttachment} SendButton={CustomSendButton}>
+          <Channel SendButton={CustomSendButton}>
             <Window>
               <CustomChannelHeader />
               <div className="message-area-container">
@@ -337,6 +337,7 @@ const Chat: React.FC<ChatProps> = () => {
                   disableDateSeparator={false}
                 />
               </div>
+          
               <CustomMessageInput />
             </Window>
             <Thread />

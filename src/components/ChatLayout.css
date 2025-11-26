@@ -819,6 +819,15 @@
 
 .mobile-chat-info {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-chat-info-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .mobile-chat-info h3 {
@@ -826,6 +835,9 @@
   font-weight: 600;
   color: #111827;
   margin: 0 0 0.125rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-chat-status {
@@ -1737,4 +1749,60 @@
 .str-chat__modal__inner, .str-chat-react__modal__inner {
   max-height: 600px !important;
   min-width: 400px !important;
+}
+
+.mobile-view .custom-attachment-button-external {
+  margin-right: 0px;
+  right: 90px;
+  bottom: -5px;
+}
+
+.custom-attachment-button-external {
+  position: absolute;
+  right: 95px; 
+  bottom: -5px;
+  transform: translateY(-45%);
+  z-index: 10;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.custom-attachment-button-external:hover {
+  color: #2563eb;
+}
+
+.custom-attachment-button-external:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.custom-attachment-button-external img {
+  flex-shrink: 0;
+  filter: brightness(0) saturate(100%) invert(50%) sepia(10%) saturate(250%) hue-rotate(180deg) brightness(95%) contrast(87%);
+  transition: filter 0.2s ease;
+}
+
+.custom-attachment-button-external:hover img {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(204deg) brightness(97%) contrast(97%);
+}
+
+/* Tooltip for Custom Attachment Button - DISABLED */
+.custom-attachment-button-external::before {
+  display: none;
+}
+
+.custom-attachment-button-external::after {
+  display: none;
 }

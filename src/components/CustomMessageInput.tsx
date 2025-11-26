@@ -6,6 +6,7 @@ import CubePlusIcon from '../icons/cube-plus.svg';
 import SendMsgIcon from '../icons/send-msg.svg';
 import CustomAttachment1 from '../assets/custom-attachment-1.png';
 import CustomAttachment2 from '../assets/custom-attachment-2.png';
+import './ChatLayout.css';
 
 // Custom Send Button - receives sendMessage prop automatically
 const CustomSendButton: React.FC<SendButtonProps> = ({ sendMessage, ...rest }) => {
