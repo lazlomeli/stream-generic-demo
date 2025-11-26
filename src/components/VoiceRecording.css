@@ -15,12 +15,14 @@
 
 .mobile-view .custom-attachment-button-external {
   margin-right: 0px;
+  right: 95px;
+  top: 25px;
 }
 
 .custom-attachment-button-external {
   position: absolute;
   right: 100px; /* Position it to the left of the voice recording button */
-  top: 50%;
+  top: 29px;
   transform: translateY(-45%);
   z-index: 10;
   

@@ -1,11 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Channel, MessageInput, useChannelStateContext } from 'stream-chat-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { MessageInput, useChannelStateContext } from 'stream-chat-react';
 import type { SendButtonProps } from 'stream-chat-react';
 import { useResponsive } from '../contexts/ResponsiveContext';
-import './VoiceRecording.css';
-import MicrophoneIcon from '../icons/microphone.svg';
-import StopIcon from '../icons/stop.svg';
-import SendIcon from '../icons/send.svg';
 import CubePlusIcon from '../icons/cube-plus.svg';
 import SendMsgIcon from '../icons/send-msg.svg';
 import CustomAttachment1 from '../assets/custom-attachment-1.png';
@@ -34,13 +30,9 @@ const CustomSendButton: React.FC<SendButtonProps> = ({ sendMessage, ...rest }) =
 };
 
 const CustomMessageInput: React.FC = (props) => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [lastAttachmentSent, setLastAttachmentSent] = useState<1 | 2 | null>(null);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<{ 1: string | null; 2: string | null }>({ 1: null, 2: null });
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isAudioRecorderVisible, setIsAudioRecorderVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { channel } = useChannelStateContext();
   const { isMobileView } = useResponsive();
@@ -49,6 +41,7 @@ const CustomMessageInput: React.FC = (props) => {
     if (uploadedImageUrls[attachmentNumber]) {
       return uploadedImageUrls[attachmentNumber]!;
     }
+
     try {
       const imageUrl = attachmentNumber === 1 ? CustomAttachment1 : CustomAttachment2;
       const filename = `custom-attachment-${attachmentNumber}.png`;
@@ -73,6 +66,7 @@ const CustomMessageInput: React.FC = (props) => {
     try {
       const attachmentToSend = lastAttachmentSent === 1 ? 2 : 1;
       const filename = `custom-attachment-${attachmentToSend}.png`;
+
       if (channel) {
         const streamImageUrl = await getOrUploadImageToStream(attachmentToSend);
         
@@ -98,95 +92,40 @@ const CustomMessageInput: React.FC = (props) => {
     }
   }, [lastAttachmentSent, channel, getOrUploadImageToStream]);
 
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      const chunks: Blob[] = [];
+  // Monitor for audio recorder visibility
+  useEffect(() => {
+    const checkAudioRecorder = () => {
+      const audioRecorder = document.querySelector('.str-chat__audio_recorder-container');
+      setIsAudioRecorderVisible(!!audioRecorder);
+    };
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
+    // Initial check
+    checkAudioRecorder();
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
-        stream.getTracks().forEach(track => track.stop());
-      };
+    // Create a MutationObserver to watch for DOM changes
+    const observer = new MutationObserver(checkAudioRecorder);
 
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('Unable to access microphone. Please check permissions.');
-    }
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-    }
-  }, [isRecording]);
-
-  const sendVoiceMessage = useCallback(async () => {
-    if (!audioBlob) return;
-    try {
-      const event = new CustomEvent('voiceMessageReady', {
-        detail: {
-          audioBlob,
-          duration: recordingTime,
-          size: audioBlob.size
-        }
+    // Observe the container and its children
+    if (containerRef.current) {
+      observer.observe(containerRef.current, {
+        childList: true,
+        subtree: true,
       });
-      window.dispatchEvent(event);
-      setAudioBlob(null);
-      setRecordingTime(0);
-    } catch (error) {
-      console.error('Error preparing voice message:', error);
-      alert('Failed to prepare voice message. Please try again.');
     }
-  }, [audioBlob, recordingTime]);
 
-  const cancelRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-      
-      setAudioBlob(null);
-      setRecordingTime(0);
-    }
-  }, [isRecording]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+    // Cleanup
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <div className="custom-message-input" ref={containerRef}>
       <div className="message-input-wrapper">
         <MessageInput 
-          {...props} 
+          {...props}
+          audioRecordingEnabled={true}
+          // grow={true}
           additionalTextareaProps={{
             placeholder: "Type a message..."
           }}
@@ -198,6 +137,7 @@ const CustomMessageInput: React.FC = (props) => {
           title={isMobileView ? undefined : "Custom Attachment"}
           type="button"
           data-tooltip={isMobileView ? undefined : "Custom Attachment"}
+          style={{ display: isAudioRecorderVisible ? 'none' : 'flex' }}
         >
           <img 
             src={CubePlusIcon} 
@@ -206,70 +146,9 @@ const CustomMessageInput: React.FC = (props) => {
             height={20}
           />
         </button>
-
-        {!isRecording && !audioBlob && (
-          <button
-            className="voice-record-button-integrated"
-            onClick={startRecording}
-            title="Record voice message"
-          >
-            <img 
-              src={MicrophoneIcon} 
-              alt="Microphone" 
-              width={16} 
-              height={16} 
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
-          </button>
-        )}
       </div>
-      
-      {(isRecording || audioBlob) && (
-        <div className="voice-recording-controls-integrated">
-          {isRecording && (
-            <div className="recording-controls-integrated">
-              <div className="recording-timer-integrated">{formatTime(recordingTime)}</div>
-              <button
-                className="stop-recording-button-integrated"
-                onClick={stopRecording}
-                title="Stop recording"
-              >
-                <img src={StopIcon} alt="Stop" width={20} height={20} />
-              </button>
-            </div>
-          )}
-          {audioBlob && !isRecording && (
-            <div className="voice-preview-controls-integrated">
-              <div className="voice-preview-info-integrated">
-                <span className="voice-duration-integrated">{formatTime(recordingTime)}</span>
-                <span className="voice-size-integrated">{(audioBlob.size / 1024).toFixed(1)} KB</span>
-              </div>
-              <button
-                className="send-voice-button-integrated"
-                onClick={sendVoiceMessage}
-                title="Send voice message"
-              >
-                <img src={SendIcon} alt="Send" width={16} height={16} />
-              </button>
-              <button
-                className="cancel-voice-button-integrated"
-                onClick={cancelRecording}
-                title="Cancel voice message"
-              >
-                ×
-              </button>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
 
 export { CustomSendButton, CustomMessageInput };
-
-
-// Then in your Channel component, pass the custom SendButton:
-// <Channel channel={channel} SendButton={CustomSendButton}>
-//   <CustomMessageInput />
-// </Channel>

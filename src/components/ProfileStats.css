@@ -3,14 +3,19 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  margin-left: 25px;
 }
 
 .stat-button {
+  display: flex;
   text-align: center;
   transition: opacity 0.2s ease;
   background: transparent;
   border: none;
   cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
 }
 
 .stat-button:hover {

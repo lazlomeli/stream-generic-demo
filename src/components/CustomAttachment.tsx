@@ -121,7 +121,7 @@ const VoiceRecordingPlayer: React.FC<{ attachment: VoiceRecordingAttachment }> =
         
         <div className="voice-recording-info">
           <div className="voice-recording-title">
-            {attachment.title || 'Voice Message'}
+            Voice Message
           </div>
           <div className="voice-recording-duration">
             {attachment.duration ? formatTime(attachment.duration) : formatFileSize(attachment.file_size)}

@@ -13,7 +13,6 @@ import {
 import { CustomMessageInput, CustomSendButton } from './CustomMessageInput'
 import CustomAttachment from './CustomAttachment'
 import LoadingSpinner from './LoadingSpinner'
-import VoiceMessageHandler from './VoiceMessageHandler'
 import CustomChannelList from './CustomChannelList'
 import CustomChannelHeader from './CustomChannelHeader'
 import PinnedMessages from './PinnedMessages'
@@ -23,20 +22,15 @@ import MobileChatView from './MobileChatView'
 import { useResponsive } from '../contexts/ResponsiveContext'
 import { useLocation } from 'react-router-dom'
 import 'stream-chat-react/dist/css/v2/index.css'
-
-import "./VoiceRecording.css";
-import "./ChatLayout.css";
+import "./ChatLayout.css"
 
 interface ChatProps {}
-
-
 
 const Chat: React.FC<ChatProps> = () => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { channelId } = useParams<{ channelId?: string }>();
   const { isMobileView, toggleView } = useResponsive();
   const location = useLocation();
-
   const apiKey = import.meta.env.VITE_STREAM_API_KEY as string | undefined;
 
   const [clientReady, setClientReady] = useState(false);
@@ -46,7 +40,6 @@ const Chat: React.FC<ChatProps> = () => {
   const [mobileViewState, setMobileViewState] = useState<'channelList' | 'chat'>('channelList');
   const [selectedMobileChannel, setSelectedMobileChannel] = useState<StreamChannel | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
   const streami18n = new Streami18n();
   streami18n.setLanguage('en');
   
@@ -55,7 +48,6 @@ const Chat: React.FC<ChatProps> = () => {
     name: string;
     image?: string;
   }>>([]);
-
   const clientRef = useRef<StreamChat | null>(null);
   
   const sanitizeUserId = useCallback((userId: string) => {
@@ -102,16 +94,13 @@ const Chat: React.FC<ChatProps> = () => {
         { id: 1 },
         { limit: 100 }
       );
-
       const currentUserId = clientRef.current.userID;
       const userList = users.users
         .filter(user => {
-          // Exclude current user
           if (user.id === currentUserId) {
             console.log('📱 Mobile: Filtering out current user:', user.id);
             return false;
           }
-          
           return true;
         })
         .map(user => ({
@@ -119,13 +108,11 @@ const Chat: React.FC<ChatProps> = () => {
           name: user.name || user.id,
           image: user.image
         }));
-
       setAvailableUsers(userList);
     } catch (error) {
       console.error('❌ Mobile: Error fetching users:', error);
     }
   }, []);
-
 
   const handleMobileChannelCreated = useCallback(async (channelId: string) => {
     console.log('Mobile channel created:', channelId);
@@ -175,7 +162,6 @@ const Chat: React.FC<ChatProps> = () => {
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
-
     if (!apiKey) {
       setError(
         "Stream API key not configured. Set VITE_STREAM_API_KEY in your frontend env."
@@ -184,7 +170,6 @@ const Chat: React.FC<ChatProps> = () => {
     }
 
     let cancelled = false;
-
     const client = new StreamChat(apiKey);
     clientRef.current = client;
 
@@ -192,7 +177,6 @@ const Chat: React.FC<ChatProps> = () => {
       try {
         setIsConnecting(true);
         setError(null);
-
         const token = await getStreamToken(sanitizedUserId);
         if (cancelled) return;
 
@@ -223,19 +207,15 @@ const Chat: React.FC<ChatProps> = () => {
             const errorData = await response.json();
             if (response.status === 404) {
               console.error('❌ General channel does not exist:', errorData.message);
-
             } else {
               console.error('❌ Failed to add user to general channel:', errorData);
             }
-          } else {
-
           }
         } catch (error) {
           console.error('❌ Network error adding user to general channel:', error);
         }
 
         setClientReady(true);
-        
         fetchUsers();
       } catch (e: any) {
         console.error("Error connecting to Stream:", e);
@@ -266,8 +246,6 @@ const Chat: React.FC<ChatProps> = () => {
     getAccessTokenSilently,
     sanitizedUserId,
   ]);
-
-
 
   if (error) {
     return (
@@ -362,7 +340,6 @@ const Chat: React.FC<ChatProps> = () => {
               <CustomMessageInput />
             </Window>
             <Thread />
-            <VoiceMessageHandler />
           </Channel>
         </ChatComponent>
       </div>

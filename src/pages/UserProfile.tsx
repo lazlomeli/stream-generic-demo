@@ -99,6 +99,9 @@ export function UserProfile({ onBack }: UserProfileProps) {
   }, [client, userId]);
 
   const displayUserName = realUserName || `User ${userId.replace("user-", "")}`;
+  const truncatedDisplayName = displayUserName.length > 27 
+    ? displayUserName.substring(0, 27) + '...' 
+    : displayUserName;
   
   const handleFollowToggle = () => {
     if (isFollowingUser) {
@@ -150,7 +153,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
         </div>
         
         <div className="profile-details">
-          <h2 className="profile-name">{displayUserName}</h2>
+          <h2 className="profile-name">{truncatedDisplayName}</h2>
           <p className="profile-username">@{userId}</p>
         </div>
 
