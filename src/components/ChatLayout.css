@@ -1499,8 +1499,8 @@
 
 /* Update desktop custom send button size */
 .custom-send-button {
-  width: 32px !important;
-  height: 32px !important;
+  width: 40px !important;
+  height: 40px !important;
   padding: 0 !important;
   border: none !important;
   border-radius: 3px;
