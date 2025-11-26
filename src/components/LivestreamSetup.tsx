@@ -58,10 +58,6 @@ const LivestreamSetup: React.FC<LivestreamSetupProps> = ({ onSetupComplete }) =>
         <source src={videoLoop} type="video/quicktime" />
       </video>
       
-      <div className="stream-logo">
-        <img src={StreamIcon} alt="Stream" />
-      </div>
-      
       <div className="setup-back">
         <button className="back-btn" onClick={handleGoBack}>
           <img src={CaretIcon} alt="Go Back" className="back-icon" />

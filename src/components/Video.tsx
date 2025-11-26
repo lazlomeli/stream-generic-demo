@@ -19,14 +19,16 @@ import { useResponsive } from '../contexts/ResponsiveContext'
 import { useLocation } from 'react-router-dom'
 import MobileBottomNav from './MobileBottomNav'
 import ViewersIcon from '../icons/viewers.svg'
-import MessageCircleIcon from '../icons/message-circle.svg'
+import MessageCircleIcon from '../icons/message-circle.svg';
 import CaretIcon from '../icons/caret.svg'
 import MicrophoneIcon from '../icons/microphone.svg'
 import MicrophoneOffIcon from '../icons/microphone-off.svg'
 import VideoIcon from '../icons/video.svg'
 import VideoOffIcon from '../icons/video-off.svg'
 import HeartIcon from '../icons/heart.svg'
+import CopyIcon from '../icons/file-copy-line.svg'
 import DeviceDesktopIcon from '../icons/device-desktop.svg'
+import ExitIcon from '../icons/logout-2.svg'
 import StopIcon from '../icons/stop.svg'
 import videoLoop from '../assets/video-loop.mov'
 import '@stream-io/video-react-sdk/dist/css/styles.css'
@@ -372,7 +374,7 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
 
       <div className="waiting-room-content">
         <button className="exit-btn" onClick={() => window.location.href = '/feeds'}>
-          Exit
+          <img src={ExitIcon} width={18} height={18} />
         </button>
         
         <div className="waiting-room-header">
@@ -382,7 +384,7 @@ const ViewerWaitingRoom: React.FC<ViewerWaitingRoomProps> = ({
         </div>
 
         <div className="waiting-room-participants">
-          <h3>
+          <h3 className="waiting-room-participants-header">
             <img src={ViewersIcon} alt="Waiting" className="section-icon" />
             Waiting Room ({participants.length})
           </h3>
@@ -538,20 +540,19 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
           ) : (
             <div className="camera-placeholder">Camera not available</div>
           )}
-          <div className="preview-label">Camera preview</div>
         </div>
       </div>
 
       <div className="backstage-content">
         <button className="exit-btn" onClick={() => window.location.href = '/feeds'}>
-          Exit
+          <img src={ExitIcon} width={18} height={18} style={{ filter: 'invert(1)', opacity: 0.5 }} />
         </button>
         
         <div className="backstage-header">
-          <h1>You're in the backstage!</h1>
+          <h1>BACKSTAGE MODE</h1>
           
           <div className="title-input-section">
-            <label htmlFor="stream-title">Stream Title (Optional)</label>
+            <label htmlFor="stream-title" className="stream-title-label">Stream Title (Optional)</label>
             <input
               id="stream-title"
               type="text"
@@ -571,7 +572,7 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
                 className={`copy-link-btn ${copySuccess ? 'copied' : ''}`}
                 onClick={copyLinkToClipboard}
               >
-                {copySuccess ? '✓ Copied!' : '📋 Copy'}
+                <img src={CopyIcon} alt="Copy" className="copy-icon" />
               </button>
             </div>
           </div>
@@ -628,7 +629,7 @@ const BackstageMode: React.FC<BackstageModeProps> = ({
             </div>
           ) : (
             <div className="no-participants">
-              <p>No one is waiting yet. Share your stream link to invite viewers!</p>
+              <p>No one is waiting yet</p>
             </div>
           )}
         </div>
