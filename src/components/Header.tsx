@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import SendIcon from '../icons/send.svg'
 import HomeIcon from '../icons/home.svg'
 import LogoutIcon from '../icons/logout-2.svg'
-import StreamLogo from '../assets/stream-logo.png'
+import StreamLogo from '../assets/stream-logo-typo.png'
 import CastIcon from '../icons/stream.svg'
 import BookmarkIcon from '../icons/bookmark.svg'
 import ResetIcon from '../icons/restore.svg'  
@@ -320,15 +320,23 @@ const Header: React.FC<HeaderProps> = ({ showNavigation = true }) => {
               )}
             </div>
             
-            {/* Center - Responsive Toggle Button and Reset */}
+            {/* Center - Responsive Toggle Switch and Reset */}
             <div className="header-center">
-              <button
-                onClick={toggleView}
-                className="responsive-toggle-button"
+              <div 
+                className="responsive-toggle-switch"
                 title={isMobileView ? 'Switch to Desktop View' : 'Switch to Mobile View'}
               >
-                <span>{isMobileView ? 'Desktop' : 'Mobile'}</span>
-              </button>
+                <span className={`toggle-label ${!isMobileView ? 'active' : ''}`}>Desktop</span>
+                <button
+                  onClick={toggleView}
+                  className={`toggle-track ${isMobileView ? 'mobile-active' : ''}`}
+                  role="switch"
+                  aria-checked={isMobileView}
+                >
+                  <span className="toggle-thumb" />
+                </button>
+                <span className={`toggle-label ${isMobileView ? 'active' : ''}`}>Mobile</span>
+              </div>
               
               {/* Reset Button */}
               {isAuthenticated && (

@@ -1,5 +1,112 @@
 /* CallPage.css */
 
+/* Embedded Pronto Call Styles */
+.embedded-call-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0f;
+  z-index: 1000;
+}
+
+.embedded-call-container.mobile-call {
+  /* iPhone 14 aspect ratio simulation */
+  max-width: 390px;
+  max-height: 844px;
+  margin: auto;
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+}
+
+.embedded-call-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #1a1a24 0%, #12121a 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.embedded-call-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.call-indicator {
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse-green 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.embedded-call-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.embedded-call-close:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: scale(1.05);
+}
+
+.embedded-call-close img {
+  filter: brightness(0) saturate(100%) invert(45%) sepia(95%) saturate(1500%) hue-rotate(335deg) brightness(100%) contrast(95%);
+}
+
+.embedded-call-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #0a0a0f;
+}
+
+/* Mobile embedded call styles */
+@media (max-width: 768px) {
+  .embedded-call-header {
+    padding: 10px 16px;
+  }
+
+  .embedded-call-title {
+    font-size: 14px;
+  }
+
+  .embedded-call-close {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Legacy CallPage styles */
 .call-page {
   height: 100vh;
   width: 100vw;
@@ -81,7 +188,7 @@
 }
 
 .call-interface {
-  height: 100vh;
+  /* height: 100vh; */
   display: flex;
   flex-direction: column;
   background-color: #1a1a1a;
@@ -92,10 +199,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #212125;
 }
 
 .call-header h2 {
-  font-size: 1.25rem;
+  font-size: 14px;
   font-weight: 600;
   color: white;
   display: flex;
@@ -115,6 +223,7 @@
   justify-content: center;
   padding: 1rem;
   min-height: 0;
+  background: #18181b;
 }
 
 .audio-call-layout {
@@ -215,6 +324,10 @@
 } */
 
 
+.call-controls-container {
+  background: #212125;
+}
+
 .call-controls-row {
   display: flex;
   align-items: center;
@@ -229,7 +342,7 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 50%;
+  border-radius: 3px;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -238,7 +351,6 @@
 
 .call-control-btn:hover {
   background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
 }
 
 .call-control-btn .control-icon {
@@ -247,22 +359,9 @@
   filter: brightness(0) invert(1);
 }
 
-/* Microphone button states */
-.call-control-btn.microphone-btn.muted {
-  background-color: #ef4444;
-}
 
 .call-control-btn.microphone-btn.muted:hover {
-  background-color: #dc2626;
-}
-
-/* Camera button states */
-.call-control-btn.camera-btn.camera-off {
-  background-color: #ef4444;
-}
-
-.call-control-btn.camera-btn.camera-off:hover {
-  background-color: #dc2626;
+  background-color: #7e2626;
 }
 
 /* End call button */

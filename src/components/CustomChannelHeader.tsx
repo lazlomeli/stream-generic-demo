@@ -189,23 +189,11 @@ const CustomChannelHeader: React.FC = () => {
   }, [channel, muteToggleKey]);
 
   const handleAudioCall = () => {
-    if (!channel || !channel.id) return;
-    
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
-    const timestamp = Date.now().toString().slice(-8);
-    const callId = `audio_${sanitizedChannelId}_${timestamp}`.slice(0, 60);
-    
-    navigate(`/call/${callId}?type=audio&channel=${channel.id}`);
+    navigate('/call/audio?return=/chat');
   };
 
   const handleVideoCall = () => {
-    if (!channel || !channel.id) return;
-    
-    const sanitizedChannelId = channel.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
-    const timestamp = Date.now().toString().slice(-8);
-    const callId = `video_${sanitizedChannelId}_${timestamp}`.slice(0, 60);
-    
-    navigate(`/call/${callId}?type=video&channel=${channel.id}`);
+    navigate('/call/video?return=/chat');
   };
 
 

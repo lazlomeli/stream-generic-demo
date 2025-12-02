@@ -350,6 +350,15 @@
   background-color: rgb(254 226 226);
 }
 
+/* Replies Loading */
+.replies-loading {
+  margin-left: 2.5rem;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  color: rgb(107 114 128);
+  font-style: italic;
+}
+
 /* Replies Container */
 .replies-container {
   position: relative;

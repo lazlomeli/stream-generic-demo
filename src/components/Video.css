@@ -624,30 +624,6 @@
   display: block !important;
 }
 
-/* ===== STREAM SDK BUTTON ICONS OVERRIDE ===== */
-
-/* Hide all default Stream icons with maximum specificity */
-.str-video__call-controls svg,
-.str-video__call-controls button svg,
-.str-video__call-controls .str-video__composite-button svg,
-.str-video__call-controls * svg {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-/* Target buttons within call controls with maximum specificity */
-.str-video__call-controls button,
-.str-video__call-controls .str-video__composite-button button {
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-width: 3rem !important;
-  min-height: 3rem !important;
-  overflow: visible !important;
-}
-
 
 /* Add custom icons to buttons using data-testid selectors for accurate targeting */
 
@@ -703,34 +679,8 @@
   pointer-events: none !important;
 }
 
-/* Video ON state - use video.svg */
-.str-video__call-controls .str-video__composite-button__button[data-testid="video-mute-button"]::before {
-  background-image: url('../icons/video.svg') !important;
-  filter: brightness(0) invert(1) !important;
-}
 
-/* 3. Add a Reaction Button */
-.str-video__call-controls .str-video__composite-button__button[data-testid*="reaction"]::before,
-.str-video__call-controls .str-video__composite-button__button[data-testid*="emoji"]::before,
-.str-video__call-controls .str-video__composite-button__button[data-testid="reaction-button"]::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-  background-image: url('../icons/heart.svg') !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  filter: brightness(0) invert(1) !important;
-  z-index: 999999 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: none !important;
-}
+
 
 /* 4. Share Screen Button */
 .str-video__call-controls .str-video__composite-button__button[data-testid*="screen-share"]::before,
@@ -755,9 +705,6 @@
 }
 
 /* Screen Share ACTIVE state - use green tint */
-.str-video__call-controls .str-video__composite-button__button[data-testid="screen-share-button"][aria-pressed="true"]::before {
-  filter: brightness(0) saturate(100%) invert(44%) sepia(78%) saturate(2476%) hue-rotate(92deg) brightness(101%) contrast(107%) !important;
-}
 
 /* 5. Stop Livestream Button */
 .str-video__call-controls .str-video__composite-button__button[data-testid*="end"]::before,

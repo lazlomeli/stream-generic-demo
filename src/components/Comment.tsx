@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ActivityResponse, CommentResponse } from "@stream-io/feeds-client";
 import { Avatar } from "./Avatar";
 import { useUser } from "../hooks/feeds/useUser";
@@ -18,6 +18,7 @@ interface CommentsPanelProps {
 
 interface CommentWithReplies extends CommentResponse {
   replies: CommentWithReplies[];
+  repliesLoaded?: boolean;
 }
 
 const ReplyForm = ({
@@ -105,9 +106,40 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
   const [replyLoading, setReplyLoading] = useState(false);
   const [commentReactions, setCommentReactions] = useState<Record<string, Set<string>>>({});
   const [reactionCounts, setReactionCounts] = useState<Record<string, Record<string, number>>>({});
-  const { user } = useUser();
+  const [loadedReplies, setLoadedReplies] = useState<Record<string, CommentResponse[]>>({});
+  const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
+  const { user, client } = useUser();
   const { addComment, addReply, deleteComment, toggleCommentReaction } =
     useComments();
+
+  // Function to fetch replies for a comment
+  const fetchReplies = useCallback(async (commentId: string) => {
+    if (!client || loadedReplies[commentId] || loadingReplies[commentId]) return;
+    
+    try {
+      setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
+      const response = await client.getCommentReplies({ id: commentId, limit: 50 });
+      setLoadedReplies(prev => ({ 
+        ...prev, 
+        [commentId]: response.comments || [] 
+      }));
+    } catch (error) {
+      console.error("Failed to fetch replies:", error);
+    } finally {
+      setLoadingReplies(prev => ({ ...prev, [commentId]: false }));
+    }
+  }, [client, loadedReplies, loadingReplies]);
+
+  // Fetch replies for comments that have reply_count > 0
+  useEffect(() => {
+    if (!showComments || !client) return;
+    
+    activity.comments.forEach(comment => {
+      if (comment.reply_count > 0 && !loadedReplies[comment.id] && !loadingReplies[comment.id]) {
+        fetchReplies(comment.id);
+      }
+    });
+  }, [showComments, activity.comments, client, fetchReplies, loadedReplies, loadingReplies]);
 
   useEffect(() => {
     setShowCommentInput(false);
@@ -180,6 +212,11 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
         "activity"
       );
       if (res) {
+        // Add the new reply to local state immediately for instant UI update
+        setLoadedReplies(prev => ({
+          ...prev,
+          [parentCommentId]: [...(prev[parentCommentId] || []), res]
+        }));
         setReplyingTo(null);
       }
     } catch {
@@ -276,20 +313,23 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
     const commentMap = new Map<string, CommentWithReplies>();
     const rootComments: CommentWithReplies[] = [];
 
+    // First, add all root comments (from activity.comments)
     comments.forEach((comment) => {
-      commentMap.set(comment.id, { ...comment, replies: [] });
-    });
-
-    comments.forEach((comment) => {
-      const commentWithReplies = commentMap.get(comment.id)!;
-
-      if (comment.parent_id) {
-        const parentComment = commentMap.get(comment.parent_id);
-        if (parentComment) {
-          parentComment.replies.push(commentWithReplies);
-        }
-      } else {
-        rootComments.push(commentWithReplies);
+      if (!comment.parent_id) {
+        // This is a root comment - get its replies from loadedReplies
+        const replies = loadedReplies[comment.id] || [];
+        const repliesWithNested: CommentWithReplies[] = replies.map(reply => ({
+          ...reply,
+          replies: [],
+          repliesLoaded: true
+        }));
+        
+        commentMap.set(comment.id, { 
+          ...comment, 
+          replies: repliesWithNested,
+          repliesLoaded: !!loadedReplies[comment.id]
+        });
+        rootComments.push(commentMap.get(comment.id)!);
       }
     });
 
@@ -392,6 +432,13 @@ export default function CommentsPanel({ activity, showComments, onToggleComments
             )}
           </div>
         </div>
+
+        {/* Show loading indicator while fetching replies */}
+        {level === 0 && comment.reply_count > 0 && loadingReplies[comment.id] && (
+          <div className="replies-loading">
+            <span>Loading replies...</span>
+          </div>
+        )}
 
         {comment.replies && comment.replies.length > 0 && (
           <div className="replies-container">

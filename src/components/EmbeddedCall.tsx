@@ -1,22 +1,20 @@
 import React, { useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUILayout } from '../App';
-import { useResponsive } from '../contexts/ResponsiveContext';
 import CloseIcon from '../icons/logout-2.svg';
-import './CallPage.css';
+import './EmbeddedCall.css';
 
-const CallPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+const EmbeddedCall: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setHideHeader } = useUILayout();
-  const { isMobileView } = useResponsive();
   
-  const returnPath = searchParams.get('return') || '/chat';
-
   const callUrl = useMemo(() => {
     const callId = Math.floor(Math.random() * 100000000);
     return `https://pronto.getstream.io/join/${callId}`;
   }, []);
+  
+  const returnPath = searchParams.get('return') || '/chat';
 
   useEffect(() => {
     setHideHeader(true);
@@ -28,7 +26,7 @@ const CallPage: React.FC = () => {
   };
 
   return (
-    <div className={`embedded-call-container ${isMobileView ? 'mobile-call' : ''}`}>
+    <div className="embedded-call-container">
       <div className="embedded-call-header">
         <div className="embedded-call-title">
           <span className="call-indicator" />
@@ -53,4 +51,5 @@ const CallPage: React.FC = () => {
   );
 };
 
-export default CallPage;
+export default EmbeddedCall;
+

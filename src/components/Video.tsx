@@ -1061,9 +1061,18 @@ const Video: React.FC<VideoProps> = () => {
             {content}
           </div>
           {location.pathname !== '/video' && (
-            <button className="desktop-toggle-button" onClick={toggleView}>
-              🖥️ Desktop
-            </button>
+            <div className="mobile-view-toggle" title="Switch to Desktop View">
+              <span className="toggle-label active">Mobile</span>
+              <button
+                onClick={toggleView}
+                className="toggle-track mobile-active"
+                role="switch"
+                aria-checked={true}
+              >
+                <span className="toggle-thumb" />
+              </button>
+              <span className="toggle-label">Desktop</span>
+            </div>
           )}
         </div>
       );
