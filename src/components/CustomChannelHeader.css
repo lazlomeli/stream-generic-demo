@@ -68,33 +68,13 @@
   padding: 0;
 }
 
-.call-button:hover {
-  background-color: rgba(156, 163, 175, 0.1);
-}
-
-.call-button:active {
-  background-color: rgba(156, 163, 175, 0.15);
+.video-call-button:hover, .audio-call-button:hover {
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .call-button img {
   filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%); /* Grey color */
-}
-
-/* Specific call button hover effects */
-.audio-call-button:hover {
-  background-color: rgba(34, 197, 94, 0.1);
-}
-
-.audio-call-button:hover img {
-  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(119%) contrast(119%); /* Green on hover */
-}
-
-.video-call-button:hover {
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-.video-call-button:hover img {
-  filter: brightness(0) saturate(100%) invert(40%) sepia(100%) saturate(1240%) hue-rotate(217deg) brightness(95%) contrast(98%); /* Blue on hover */
 }
 
 .options-menu-container {

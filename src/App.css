@@ -204,17 +204,18 @@ body {
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   /* background: linear-gradient(135deg, #00a2ff 0%, #0031b6 100%); */
-  border: 0.5px solid white;
-  color: white;
+  border: 0.5px solid #adb3b8;
+  color: #374151;
   border-radius: 0.3rem;
   cursor: pointer;
   transition: all 0.2s ease;
   height: 27px;
-  background: linear-gradient(170deg,#0066ff 50%,#014ac0 75%);
+  background: white;
 }
 
 .responsive-toggle-button:hover {
-  background: linear-gradient(135deg, #0078be 0%, #001e6f 100%);
+  background: #f3f4f6;
+  color: #374151;
   transition: background-color 0.3s ease;
 }
 
@@ -808,13 +809,8 @@ body {
   gap: 1rem;
   padding: 1.5rem;
   border-radius: 1rem;
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.feature-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
