@@ -10,7 +10,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Chat from './components/Chat'
 import Video from './components/Video'
 import CallPage from './components/CallPage'
-import EmbeddedCall from './components/EmbeddedCall'
 import ToastContainer from './components/ToastContainer'
 import { ToastProvider } from './contexts/ToastContext'
 import { ResponsiveProvider, useResponsive } from './contexts/ResponsiveContext'
@@ -46,7 +45,7 @@ function AppContent() {
   const showSidebars = isAuthenticated && !isMobileView && (location.pathname.startsWith('/feeds') || location.pathname === '/bookmarked' || location.pathname === '/notifications' || location.pathname.startsWith('/profile/'))
   
   const isVideoPage = location.pathname === '/video'
-  const isCallPage = location.pathname.startsWith('/call/') || location.pathname === '/video-call'
+  const isCallPage = location.pathname === '/call'
   
   const shouldHideHeader = hideHeader || isMobileView
 
@@ -85,14 +84,9 @@ function AppContent() {
                     <Video />
                   </ProtectedRoute>
                 } />
-                <Route path="/call/:callId" element={
+                <Route path="/call" element={
                   <ProtectedRoute>
                     <CallPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/video-call" element={
-                  <ProtectedRoute>
-                    <EmbeddedCall />
                   </ProtectedRoute>
                 } />
                 <Route path="/feeds" element={

@@ -189,11 +189,11 @@ const CustomChannelHeader: React.FC = () => {
   }, [channel, muteToggleKey]);
 
   const handleAudioCall = () => {
-    navigate('/call/audio?return=/chat');
+    navigate('/call');
   };
 
   const handleVideoCall = () => {
-    navigate('/call/video?return=/chat');
+    navigate('/call');
   };
 
 
