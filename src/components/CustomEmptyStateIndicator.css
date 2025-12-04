@@ -1,0 +1,46 @@
+/* CustomEmptyStateIndicator.css */
+.custom-empty-channel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
+    background: white;
+    color: rgb(113, 113, 113);
+  }
+  
+  .custom-empty-chat-icon {
+    opacity: 0.85;
+    width: 150px;
+    height: 100px;   
+    margin-bottom: 40px;
+  }
+
+  .custom-empty-list-icon {
+    opacity: 0.7;
+    width: 200px;
+    height: 200px;   
+  }
+  
+  .custom-empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .custom-empty-description {
+    font-size: 1rem;
+    opacity: 0.9;
+    max-width: 300px;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }

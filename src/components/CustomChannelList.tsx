@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useChatContext, ChannelList as StreamChannelList } from 'stream-chat-react';
+import { useChatContext, ChannelList as StreamChannelList, ChannelListProps } from 'stream-chat-react';
 import type { Channel } from 'stream-chat';
 import CreateChannelModal from './CreateChannelModal';
 import CustomChannelPreview from './CustomChannelPreview';
@@ -8,15 +8,20 @@ import sendIcon from '../icons/send-msg.svg';
 import searchIcon from '../icons/search.svg';
 import './CustomChannelList.css';
 
-interface CustomChannelListProps {
-  filters: any;
-  sort: any;
-  options: any;
+// interface CustomChannelListProps {
+//   filters: any;
+//   sort: any;
+//   options: any;
+//   initialChannelId?: string;
+// }
+
+interface CustomChannelListProps extends ChannelListProps {
   initialChannelId?: string;
 }
 
+// const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
 const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
-  const { filters, sort, options } = props;
+  const { filters, sort, options, EmptyStateIndicator } = props;
   const { client, setActiveChannel } = useChatContext();
 
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
@@ -220,6 +225,7 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
           options={options}
           Preview={CustomChannelPreview}
           channelRenderFilterFn={channelRenderFilterFn}
+          EmptyStateIndicator={EmptyStateIndicator}
         />
       </div>
 

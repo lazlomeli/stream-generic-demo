@@ -19,6 +19,7 @@ import PinnedMessages from './PinnedMessages'
 import MobileBottomNav from './MobileBottomNav'
 import MobileChannelList from './MobileChannelList'
 import MobileChatView from './MobileChatView'
+import CustomEmptyStateIndicator from './CustomEmptyStateIndicator'
 import { useResponsive } from '../contexts/ResponsiveContext'
 import { useLocation } from 'react-router-dom'
 import 'stream-chat-react/dist/css/v2/index.css'
@@ -332,8 +333,9 @@ const Chat: React.FC<ChatProps> = () => {
             sort={sort}
             options={options}
             initialChannelId={channelId}
+            EmptyStateIndicator={CustomEmptyStateIndicator}
           />
-          <Channel SendButton={CustomSendButton}>
+          <Channel SendButton={CustomSendButton} EmptyStateIndicator={CustomEmptyStateIndicator}>
             <Window>
               <CustomChannelHeader />
               <div className="message-area-container">
