@@ -1,108 +1,150 @@
 /* CallPage.css */
 
-/* Embedded Pronto Call Styles */
-.embedded-call-container {
+/* Call Launch Page Styles */
+.call-launch-container {
   position: fixed;
   inset: 0;
   display: flex;
-  flex-direction: column;
-  background: #0a0a0f;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
   z-index: 1000;
 }
 
-.embedded-call-container.mobile-call {
-  /* iPhone 14 aspect ratio simulation */
-  max-width: 390px;
-  max-height: 844px;
-  margin: auto;
-  border-radius: 40px;
-  overflow: hidden;
-  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+.call-launch-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  max-width: 400px;
+  width: 90%;
 }
 
-.embedded-call-header {
+.call-launch-icon {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #1a1a24 0%, #12121a 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-radius: 50%;
+  margin-bottom: 24px;
 }
 
-.embedded-call-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 16px;
-  font-weight: 600;
+.call-launch-icon img {
+  filter: brightness(0) invert(1);
+}
+
+.call-launch-card h2 {
   color: #fff;
-  letter-spacing: 0.3px;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.call-launch-card > p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.call-launch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.call-launch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.call-launch-btn.primary {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+}
+
+.call-launch-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(34, 197, 94, 0.4);
+}
+
+.call-launch-btn.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.call-launch-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.call-launch-btn.secondary img {
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
 }
 
 .call-indicator {
   width: 10px;
   height: 10px;
-  background: #22c55e;
+  background: #fff;
   border-radius: 50%;
-  animation: pulse-green 2s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  animation: pulse-white 2s ease-in-out infinite;
 }
 
-@keyframes pulse-green {
+@keyframes pulse-white {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
   }
   50% {
-    opacity: 0.7;
-    transform: scale(1.1);
+    opacity: 0.6;
+    transform: scale(1.2);
   }
 }
 
-.embedded-call-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.call-launch-note {
+  margin-top: 24px !important;
+  font-size: 12px !important;
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
-.embedded-call-close:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
-  transform: scale(1.05);
-}
-
-.embedded-call-close img {
-  filter: brightness(0) saturate(100%) invert(45%) sepia(95%) saturate(1500%) hue-rotate(335deg) brightness(100%) contrast(95%);
-}
-
-.embedded-call-iframe {
-  flex: 1;
-  width: 100%;
-  border: none;
-  background: #0a0a0f;
-}
-
-/* Mobile embedded call styles */
+/* Mobile styles */
 @media (max-width: 768px) {
-  .embedded-call-header {
-    padding: 10px 16px;
+  .call-launch-card {
+    padding: 32px 24px;
   }
 
-  .embedded-call-title {
-    font-size: 14px;
+  .call-launch-icon {
+    width: 64px;
+    height: 64px;
   }
 
-  .embedded-call-close {
-    width: 36px;
-    height: 36px;
+  .call-launch-icon img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .call-launch-card h2 {
+    font-size: 20px;
   }
 }
 

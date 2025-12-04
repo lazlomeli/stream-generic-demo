@@ -1,125 +1,73 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUILayout } from '../App';
 import { useResponsive } from '../contexts/ResponsiveContext';
+import VideoIcon from '../icons/video.svg';
 import CloseIcon from '../icons/logout-2.svg';
 import './CallPage.css';
 
 const CallPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setHideHeader } = useUILayout();
   const { isMobileView } = useResponsive();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  
-  const returnPath = searchParams.get('return') || '/chat';
+  const hasOpened = useRef(false);
 
   const callUrl = useMemo(() => {
     const callId = Math.floor(Math.random() * 100000000);
-    const url = `https://pronto.getstream.io/join/${callId}`;
-    console.log('🎥 Pronto Call URL:', url);
-    return url;
+    return `https://pronto.getstream.io/join/${callId}`;
   }, []);
 
   useEffect(() => {
     setHideHeader(true);
-    console.log('📍 Current origin:', window.location.origin);
-    console.log('📍 Current URL:', window.location.href);
     return () => setHideHeader(false);
   }, [setHideHeader]);
 
-  const handleClose = () => {
-    navigate(returnPath);
+  const handleJoinCall = () => {
+    if (hasOpened.current) return;
+    hasOpened.current = true;
+    
+    if (isMobileView) {
+      // iPhone 14 dimensions
+      const width = 390;
+      const height = 844;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      window.open(
+        callUrl,
+        '_blank',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+    } else {
+      window.open(callUrl, '_blank');
+    }
   };
 
-  const handleIframeLoad = () => {
-    console.log('✅ Iframe loaded successfully');
-    setIsLoading(false);
-  };
-
-  const handleIframeError = () => {
-    console.error('❌ Iframe failed to load');
-    setHasError(true);
-    setIsLoading(false);
-  };
-
-  const handleOpenInNewTab = () => {
-    window.open(callUrl, '_blank');
+  const handleBack = () => {
+    navigate('/chat');
   };
 
   return (
-    <div className={`embedded-call-container ${isMobileView ? 'mobile-call' : ''}`}>
-      <div className="embedded-call-header">
-        <div className="embedded-call-title">
-          <span className="call-indicator" />
-          Video Call
-          {isLoading && <span style={{ marginLeft: 10, fontSize: 12, opacity: 0.7 }}>Loading...</span>}
+    <div className="call-launch-container">
+      <div className="call-launch-card">
+        <div className="call-launch-icon">
+          <img src={VideoIcon} alt="Video" width="48" height="48" />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button 
-            className="embedded-call-open-tab"
-            onClick={handleOpenInNewTab}
-            title="Open in new tab"
-            style={{
-              padding: '8px 12px',
-              background: 'rgba(59, 130, 246, 0.2)',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
-              borderRadius: 8,
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 12
-            }}
-          >
-            Open in Tab
+        <h2>Ready to join?</h2>
+        <p>Click below to start your video call with Stream Pronto</p>
+        <div className="call-launch-actions">
+          <button className="call-launch-btn primary" onClick={handleJoinCall}>
+            <span className="call-indicator" />
+            Join Call
           </button>
-          <button 
-            className="embedded-call-close" 
-            onClick={handleClose}
-            title="End call and return"
-          >
-            <img src={CloseIcon} alt="Close" width="20" height="20" />
+          <button className="call-launch-btn secondary" onClick={handleBack}>
+            <img src={CloseIcon} alt="Back" width="16" height="16" />
+            Back to Chat
           </button>
         </div>
+        <p className="call-launch-note">
+          The call will open in a new tab for the best experience
+        </p>
       </div>
-      
-      {hasError && (
-        <div style={{ 
-          padding: 20, 
-          textAlign: 'center', 
-          color: '#fff',
-          background: 'rgba(239, 68, 68, 0.1)',
-          margin: 20,
-          borderRadius: 8
-        }}>
-          <p>Unable to embed the call. This might be due to iframe restrictions.</p>
-          <button 
-            onClick={handleOpenInNewTab}
-            style={{
-              marginTop: 12,
-              padding: '10px 20px',
-              background: '#3b82f6',
-              border: 'none',
-              borderRadius: 8,
-              color: '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            Open Call in New Tab
-          </button>
-        </div>
-      )}
-      
-      <iframe
-        src={callUrl}
-        className="embedded-call-iframe"
-        allow="camera; microphone; display-capture; autoplay; clipboard-write"
-        allowFullScreen
-        title="Video Call"
-        onLoad={handleIframeLoad}
-        onError={handleIframeError}
-        style={{ display: hasError ? 'none' : 'block' }}
-      />
     </div>
   );
 };

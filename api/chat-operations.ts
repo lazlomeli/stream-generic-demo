@@ -52,6 +52,7 @@ export default async function handler(
       const { channelName, selectedUsers, currentUserId, isDM, channelImage } = req.body;
       
       if (!selectedUsers || !currentUserId) {
+        console.log({channelName, selectedUsers, currentUserId})
         return res.status(400).json({ 
           error: 'Selected users and current user ID are required',
           received: { channelName, selectedUsers, currentUserId }
