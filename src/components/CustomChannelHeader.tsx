@@ -63,19 +63,27 @@ const CustomChannelHeader: React.FC = () => {
   const onlineCount = onlineUsers.length;
   
   const getSubtitle = () => {
-    if (onlineCount === 0) {
-      return isDM 
-        ? 'Direct Message' 
-        : `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
-    } else if (onlineCount === 1) {
-      const isOnlyUserOnline = onlineUsers.some(member => member.user?.id === currentUserId) && onlineCount === 1;
-      if (isOnlyUserOnline) {
-        return '1 online (You)';
-      } else {
-        return '1 online';
+    if (isDM) {
+      // For DMs, show online status of the other user
+      const otherUser = Object.values(members).find(member => member.user?.id !== currentUserId);
+      if (otherUser?.user?.online) {
+        return 'Online';
       }
+      return 'Offline';
     } else {
-      return `${onlineCount} online`;
+      // For group channels, show "X members, Y online"
+      // Include the current user in the online count
+      const totalOnline = onlineCount;
+      const otherOnlineCount = onlineUsers.filter(member => member.user?.id !== currentUserId).length;
+      
+      if (totalOnline === 0) {
+        return `${memberCount} members, 0 online`;
+      } else if (otherOnlineCount === 0 && totalOnline === 1) {
+        // Only the current user is online
+        return `${memberCount} members, 1 online (You)`;
+      } else {
+        return `${memberCount} members, ${totalOnline} online`;
+      }
     }
   };
 

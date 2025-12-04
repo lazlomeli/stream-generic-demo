@@ -186,9 +186,12 @@ router.post('/create-channel', async (req, res) => {
 
 router.post('/chat-operations', async (req, res) => {
   try {
-    const { type, userId, channelId, channelName, selectedUsers, isDM } = req.body;
+    const { type, userId, currentUserId, channelId, channelName, selectedUsers, isDM } = req.body;
 
-    if (!userId || !type) {
+    // For create-channel, use currentUserId; for other operations, use userId
+    const effectiveUserId = type === 'create-channel' ? currentUserId : userId;
+
+    if (!effectiveUserId || !type) {
       return res.status(400).json({ error: 'userId and type are required' });
     }
 
@@ -210,8 +213,8 @@ router.post('/chat-operations', async (req, res) => {
 
       try {
         const channel = client.channel('livestream', channelId, {
-          created_by_id: userId,
-          members: [userId],
+          created_by_id: effectiveUserId,
+          members: [effectiveUserId],
           channelType: 'livestream'
         } as any);
 
@@ -242,7 +245,7 @@ router.post('/chat-operations', async (req, res) => {
     
       try {
         const parsedUsers = JSON.parse(selectedUsers);
-        const members = [userId, ...parsedUsers].filter(Boolean);
+        const members = [effectiveUserId, ...parsedUsers].filter(Boolean);
         
         if (isDM && members.length === 2) {
           try {
@@ -285,7 +288,7 @@ router.post('/chat-operations', async (req, res) => {
         
         const channelData = {
           name: isDM ? undefined : channelName,
-          created_by_id: userId,
+          created_by_id: effectiveUserId,
           members: members,
           isDM: isDM,
           channelType: 'chat'
@@ -317,7 +320,7 @@ router.post('/chat-operations', async (req, res) => {
         channel = client.channel('messaging', 'general', {
           // @ts-ignore
           name: 'General',
-          created_by_id: userId
+          created_by_id: effectiveUserId
         });
 
         await channel.query();
@@ -331,8 +334,8 @@ router.post('/chat-operations', async (req, res) => {
             channel = client.channel('messaging', 'general', {
               // @ts-ignore
               name: 'General',
-              members: [userId],
-              created_by_id: userId,
+              members: [effectiveUserId],
+              created_by_id: effectiveUserId,
               channelType: 'chat'
             });
             await channel.create();
@@ -353,7 +356,7 @@ router.post('/chat-operations', async (req, res) => {
     
       if (!channelJustCreated) {
         try {
-          await channel.addMembers([userId]);
+          await channel.addMembers([effectiveUserId]);
         } catch (error) {
           return res.status(500).json({ 
             error: 'Failed to add user to general channel',
@@ -378,7 +381,7 @@ router.post('/chat-operations', async (req, res) => {
 
       try {
         const channel = client.channel('messaging', channelId);
-        await channel.removeMembers([userId]);
+        await channel.removeMembers([effectiveUserId]);
 
         return res.status(200).json({
           success: true,

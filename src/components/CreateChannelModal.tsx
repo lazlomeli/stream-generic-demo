@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { generateAvatarUrl } from '../utils/avatarUtils';
 import LoadingIcon from './LoadingIcon';
@@ -38,6 +38,20 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset all state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setChannelName('');
+      setChannelImage(null);
+      setCompressedImageUrl(null);
+      setSelectedUsers(new Set());
+      setIsCreating(false);
+      setError(null);
+      setSuccess(null);
+      setUserSearchQuery('');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleUserToggle = (userId: string) => {
@@ -73,7 +87,6 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
     }
 
     if (currentUserId && selectedUsers.has(currentUserId)) {
-      console.error('Current user found in selected users!');
       setError('Cannot add yourself to the channel');
       return;
     }
@@ -92,7 +105,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       }
       
       const requestBody = {
-        userId: currentUserId || '',
+        currentUserId: currentUserId || '',
         channelName: finalChannelName,
         selectedUsers: JSON.stringify(Array.from(selectedUsers)),
         isDM: isDM,
@@ -162,8 +175,6 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
       return !isCurrentUser;
     })
     .filter(user => user.name.toLowerCase().includes(userSearchQuery.toLowerCase()));
-  
-  console.log(`Showing ${filteredUsers.length} users (total available: ${availableUsers.length}, current user: ${currentUserId})`);
 
   return (
     <div className="create-channel-modal-overlay" onClick={handleClose}>
