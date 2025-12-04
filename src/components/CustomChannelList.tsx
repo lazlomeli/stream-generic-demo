@@ -170,7 +170,6 @@ const CustomChannelList: React.FC<CustomChannelListProps> = (props) => {
               paddingLeft: "2rem",
               background: `url(${searchIcon}) no-repeat 0.5rem center`,
               backgroundSize: "1rem 1rem",
-              filter: 'grayscale(1) brightness(0.9) contrast(0.7)', // also greys out the placeholder text and search icon
             }}
           />
         </div>
