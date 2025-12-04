@@ -2,17 +2,6 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "frame-src https://pronto.getstream.io https://*.getstream.io; frame-ancestors 'self';"
-        }
-      ]
-    }
-  ],
   "functions": {
     "api/auth-tokens.ts": {
       "maxDuration": 30
